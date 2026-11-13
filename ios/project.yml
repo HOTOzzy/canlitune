@@ -10,6 +10,10 @@ targets:
     platform: iOS
     sources:
       - path: CanliTune
+    dependencies:
+      - sdk: AVFoundation.framework
+      - sdk: AudioToolbox.framework
+      - sdk: WebKit.framework
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.canlitune.app
