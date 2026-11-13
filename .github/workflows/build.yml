@@ -1,0 +1,111 @@
+name: build
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Web DSP tests
+        run: node --expose-gc web/test/dsp.test.js
+      - name: Native core tests (real-time safety + JS/C++ equivalence)
+        run: |
+          g++ -std=c++17 -O2 -Wall -Wextra -pthread -o core/test/rt_test core/test/rt_test.cpp
+          g++ -std=c++17 -O2 -Wall -Wextra -o core/test/ctrun core/test/ctrun.cpp
+          ./core/test/rt_test
+          node core/test/equivalence.test.js core/test/ctrun
+      - name: Build UI
+        run: node web/build.js
+      - uses: actions/upload-artifact@v4
+        with: { name: ui, path: web/dist/index.html }
+
+  android:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: ui, path: android/app/src/main/assets }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: "8.7" }
+      - name: Build release APK (signed with debug key for side-loading)
+        working-directory: android
+        run: gradle --no-daemon assembleRelease
+      - name: Rename
+        run: cp android/app/build/outputs/apk/release/app-release.apk CanliTune.apk
+      - uses: actions/upload-artifact@v4
+        with: { name: CanliTune-android, path: CanliTune.apk }
+      - name: Publish as GitHub release (direct phone download)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: CanlıTune 1.0.${{ github.run_number }}
+          make_latest: true
+          files: CanliTune.apk
+          body: |
+            Android: CanliTune.apk dosyasını telefonda indir → "Bilinmeyen kaynaklardan yükleme"ye izin ver → kur.
+            iPhone: CanliTune-unsigned.ipa — Sideloadly/AltStore ile kendi Apple ID'nle imzalayıp yükle (ios iş akışı bitince eklenir).
+
+  ios:
+    needs: test
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: ui, path: ios/CanliTune/Resources }
+      - run: brew install xcodegen
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen
+      - name: Build for simulator (compile check)
+        working-directory: ios
+        run: xcodebuild -project CanliTune.xcodeproj -scheme CanliTune -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO -quiet build
+      - name: Build unsigned device app → .ipa
+        working-directory: ios
+        run: |
+          xcodebuild -project CanliTune.xcodeproj -scheme CanliTune -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO -quiet build
+          mkdir -p Payload && cp -R build/Build/Products/Release-iphoneos/CanliTune.app Payload/
+          zip -qr ../CanliTune-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with: { name: CanliTune-ios-unsigned, path: CanliTune-unsigned.ipa }
+
+  pages:
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: ui, path: site }
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: site }
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+  attach-ipa:
+    needs: [android, ios]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: CanliTune-ios-unsigned }
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          files: CanliTune-unsigned.ipa

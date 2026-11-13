@@ -1,0 +1,12 @@
+web/dist/
+core/test/ctrun
+core/test/rt_test
+android/.gradle/
+android/build/
+android/app/build/
+android/app/.cxx/
+android/local.properties
+ios/*.xcodeproj
+ios/build/
+*.iml
+.DS_Store

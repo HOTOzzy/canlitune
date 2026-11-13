@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0d0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>CanlıTune — Canlı Auto-Tune</title>
+<style>
+:root{--bg:#0d0f14;--card:#161a22;--card2:#1d222c;--line:#2a303c;--tx:#e9edf3;--mut:#8b94a5;--acc:#ff6a3d;--acc2:#3dd6c6;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--r:14px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 6px}
+header h1{font-size:19px;margin:0;letter-spacing:.2px}
+header h1 b{color:var(--acc)}
+#stateDot{font-size:12px;color:var(--mut);display:flex;align-items:center;gap:6px}
+#stateDot i{width:9px;height:9px;border-radius:50%;background:#555;display:inline-block}
+#stateDot.on i{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+main{padding:4px 12px calc(84px + env(safe-area-inset-bottom))}
+section.tab{display:none}section.tab.act{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:10px 0}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);margin:0 0 10px;font-weight:600}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;color:var(--tx);background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-height:46px;cursor:pointer}
+button:active{transform:scale(.98)}
+button.pri{background:var(--acc);border-color:var(--acc);color:#111;font-weight:700}
+button.sec{background:#123c3a;border-color:#1f6b66}
+button.on{background:var(--acc2);border-color:var(--acc2);color:#062724;font-weight:700}
+button.grow{flex:1}
+select,input[type=text],textarea{font:inherit;color:var(--tx);background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px;min-height:44px;width:100%}
+textarea{min-height:110px;font:12px/1.35 ui-monospace,monospace}
+.note{display:flex;align-items:center;justify-content:center;gap:14px;padding:6px 0 2px}
+.note .big{font-size:52px;font-weight:800;min-width:2.2em;text-align:center;font-variant-numeric:tabular-nums}
+.note .arrow{color:var(--mut);font-size:26px}
+.note .tgt{color:var(--acc)}
+.sub{color:var(--mut);font-size:12px;text-align:center}
+.meter{height:10px;background:var(--card2);border-radius:6px;overflow:hidden;position:relative}
+.meter>i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--ok),var(--warn) 75%,var(--bad));width:0}
+.cent{height:26px;background:var(--card2);border-radius:8px;position:relative;margin:8px 0 2px}
+.cent:before{content:"";position:absolute;left:50%;top:3px;bottom:3px;width:2px;background:var(--mut)}
+.cent>i{position:absolute;top:3px;bottom:3px;background:var(--acc);border-radius:4px}
+canvas{width:100%;height:150px;display:block;background:var(--card2);border-radius:10px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:14px}
+.kv span:nth-child(even){font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
+.ctl{margin:12px 0}
+.ctl label{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px}
+.ctl label em{font-style:normal;color:var(--acc2);font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:34px;background:transparent;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:8px;background:var(--line);border-radius:5px}
+input[type=range]::-moz-range-track{height:8px;background:var(--line);border-radius:5px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:var(--acc);margin-top:-10px;border:3px solid #fff2}
+input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:var(--acc);border:3px solid #fff2}
+.chips{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.chips button{padding:8px 0;min-height:42px;font-size:14px}
+.chips button.blk{background:#0b0d11}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#0b0d12f2;border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));backdrop-filter:blur(10px);z-index:5}
+nav button{flex:1;border:0;background:none;color:var(--mut);font-size:12px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:54px}
+nav button b{font-size:21px;font-weight:400}
+nav button.act{color:var(--acc)}
+.msg{font-size:13px;border-radius:10px;padding:10px 12px;margin:8px 0;background:#2a2410;border:1px solid #5b4a14;color:#fde68a;display:none}
+.msg.show{display:block}.msg.err{background:#2c1214;border-color:#6b2226;color:#fecaca}.msg.ok{background:#0f2a1c;border-color:#1f5c3a;color:#bbf7d0}
+.art{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;background:var(--card2)}
+.art h3{margin:0;font-size:17px}.art .era{color:var(--mut);font-size:12px;margin:2px 0 8px}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--mut);margin-bottom:6px}
+.badge.h{color:var(--ok);border-color:#1f5c3a}.badge.m{color:var(--warn);border-color:#5b4a14}.badge.l{color:var(--bad);border-color:#6b2226}
+.art details{margin-top:6px;font-size:13px;color:#c9d1dd}.art summary{cursor:pointer;color:var(--acc2)}
+.art ul{padding-left:18px;margin:6px 0}.art a{color:#93c5fd;word-break:break-word}
+.pills{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}.pills span{font-size:12px;background:#0b0d11;border:1px solid var(--line);border-radius:8px;padding:3px 7px}
+.info p,.info li{font-size:14px;color:#cdd5e0}.info h3{font-size:15px;margin:14px 0 6px}.info a{color:#93c5fd}
+table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid var(--line);padding:6px 4px;text-align:left}td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.small{font-size:12px;color:var(--mut)}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<header><h1>Canlı<b>Tune</b></h1><div id="stateDot"><i></i><span id="stateTx">kapalı</span></div></header>
+<main>
+<!-- ===================== CANLI ===================== -->
+<section class="tab act" id="t-live">
+  <div class="msg" id="msg"></div>
+  <div class="card">
+    <div class="row">
+      <button class="pri grow" id="bMic">🎤 Mikrofonla başlat</button>
+      <button class="sec" id="bFile">📁 Dosya</button>
+      <button id="bStop" class="hide">■ Durdur</button>
+    </div>
+    <input type="file" id="fileIn" accept="audio/*" class="hide">
+    <p class="small" style="margin:8px 0 0">🎧 Kulaklık kullan: hoparlörden dinlersen ses mikrofona geri döner ve uğultu (howl) yapar. Kablolu kulaklık Bluetooth’tan çok daha az gecikir.</p>
+  </div>
+  <div class="card">
+    <div class="note"><div class="big" id="nIn">–</div><div class="arrow">→</div><div class="big tgt" id="nTg">–</div></div>
+    <div class="sub" id="nSub">algılanan → hedef nota</div>
+    <div class="cent"><i id="centBar"></i></div>
+    <div class="sub" id="centTx">düzeltme 0 cent</div>
+    <canvas id="graph" width="700" height="300"></canvas>
+  </div>
+  <div class="card">
+    <div class="row" style="align-items:center;gap:10px">
+      <span class="small" style="width:44px">Giriş</span><div class="meter" style="flex:1"><i id="mIn"></i></div><span class="small" id="mInTx" style="width:52px;text-align:right">–∞</span>
+    </div>
+    <div class="row" style="align-items:center;gap:10px;margin-top:8px">
+      <span class="small" style="width:44px">Çıkış</span><div class="meter" style="flex:1"><i id="mOut"></i></div><span class="small" id="mOutTx" style="width:52px;text-align:right">–∞</span>
+    </div>
+    <div class="sub" id="gateTx" style="margin-top:6px">gate: –</div>
+  </div>
+  <div class="card">
+    <h2>Hızlı ayar</h2>
+    <div class="row"><div style="flex:1" id="qKey"></div><div style="flex:1.4" id="qScale"></div></div>
+    <div id="qCtl"></div>
+    <div class="row">
+      <button class="grow" id="bBypass">Bypass</button>
+      <button class="grow" id="bMute">Monitör açık</button>
+    </div>
+    <p class="small" id="activePreset" style="margin:10px 0 0">Preset: varsayılan</p>
+  </div>
+  <div class="card">
+    <h2>Gecikme (latency)</h2>
+    <div class="kv">
+      <span>Algoritmik (pitch shifter)</span><span id="lAlg">–</span>
+      <span id="lOutLbl">Tarayıcı çıkışı (base+output)</span><span id="lOut">–</span>
+      <span>Mikrofon girişi (sürücü raporu)</span><span id="lIn">–</span>
+      <span>Tahmini toplam</span><span id="lTot">–</span>
+      <span>Ölçülen donanım RTL</span><span id="lMeas">–</span>
+      <span>Ölçülen + algoritmik</span><span id="lMeasTot">–</span>
+      <span>Örnekleme hızı / blok</span><span id="lSr">–</span>
+    </div>
+    <button style="margin-top:10px;width:100%" id="bMeasure">Gerçek gecikmeyi ölç (hoparlör → mikrofon)</button>
+    <p class="small">Ölçüm için kulaklığı çıkar, sesi aç, sessiz ortamda telefonu masaya koy. Uygulama 3 kez “tık” sesi çalar ve mikrofona dönüş süresini ölçer.</p>
+  </div>
+</section>
+
+<!-- ===================== EDİTÖR ===================== -->
+<section class="tab" id="t-edit">
+  <div class="card"><h2>Ton &amp; gam</h2>
+    <div class="row"><div style="flex:1" id="eKey"></div><div style="flex:1.4" id="eScale"></div></div>
+    <p class="small" style="margin:10px 0 6px">Notalara dokunarak özel gam oluştur (koyu = kapalı):</p>
+    <div class="chips" id="chips"></div>
+  </div>
+  <div id="groups"></div>
+  <div class="card"><h2>Presetlerim</h2>
+    <div class="row"><input type="text" id="pName" placeholder="Preset adı" style="flex:1"><button class="pri" id="bSave">Kaydet</button></div>
+    <div class="row" style="margin-top:8px"><select id="pList" style="flex:1"></select></div>
+    <div class="row" style="margin-top:8px"><button class="grow" id="bLoad">Yükle</button><button class="grow" id="bOver">Üzerine yaz</button><button class="grow" id="bDel">Sil</button></div>
+    <div class="row" style="margin-top:8px"><button class="grow" id="bExp">Dışa aktar</button><button class="grow" id="bImp">İçe aktar</button><button class="grow" id="bReset">Sıfırla</button></div>
+    <div id="ioBox" class="hide" style="margin-top:8px">
+      <textarea id="ioTx" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:6px"><button class="grow" id="bCopy">Kopyala</button><button class="grow" id="bDl">.json indir</button><button class="grow" id="bApplyImp">İçe al</button><button class="grow" id="bFileImp">Dosyadan</button></div>
+      <input type="file" id="impFile" accept="application/json,.json" class="hide">
+    </div>
+    <div class="msg" id="pMsg"></div>
+  </div>
+</section>
+
+<!-- ===================== SANATÇILAR ===================== -->
+<section class="tab" id="t-art">
+  <div class="card"><h2>Sanatçı presetleri</h2>
+    <p class="small" style="margin:0">Her değer kaynakla gerekçelendirildi; kaynakta sayı yoksa “uyarlama” yazıyor. Güven etiketi kaynağın gücünü gösterir. Presetler tonu değiştirmez, şarkının tonunu sen seç.</p>
+  </div>
+  <div id="artList"></div>
+</section>
+
+<!-- ===================== BİLGİ ===================== -->
+<section class="tab info" id="t-info">
+  <div class="card">__INFO__</div>
+</section>
+</main>
+<nav>
+  <button class="act" data-t="t-live"><b>◉</b>Canlı</button>
+  <button data-t="t-edit"><b>⚙</b>Editör</button>
+  <button data-t="t-art"><b>★</b>Sanatçılar</button>
+  <button data-t="t-info"><b>ⓘ</b>Teknik</button>
+</nav>
+
+<script id="dsp-src" type="text/plain">__DSP__</script>
+<script id="preset-data" type="application/json">__PRESETS__</script>
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const SCALES = { chromatic:[0,1,2,3,4,5,6,7,8,9,10,11], major:[0,2,4,5,7,9,11], minor:[0,2,3,5,7,8,10], harmMinor:[0,2,3,5,7,8,11], majPent:[0,2,4,7,9], minPent:[0,3,5,7,10], blues:[0,3,5,6,7,10], custom:null };
+const SCALE_TR = { chromatic:'Kromatik', major:'Majör', minor:'Minör (doğal)', harmMinor:'Armonik minör', majPent:'Majör pentatonik', minPent:'Minör pentatonik', blues:'Blues', custom:'Özel' };
+const VOICES = { wide:['Geniş (60–1000 Hz)',60,1000], lowMale:['Kalın erkek (60–450)',60,450], altoTenor:['Tenor / alto (90–800)',90,800], soprano:['Soprano (160–1100)',160,1100] };
+const DIVS = { 0.25:'1/16', 0.5:'1/8', 0.75:'1/8 noktalı', 1:'1/4', 1.5:'1/4 noktalı', 2:'1/2' };
+const DEF = { key:9, scale:'minor', custom:[1,1,1,1,1,1,1,1,1,1,1,1], voice:'wide', bypass:false,
+  inGainDb:0, hpfHz:90, gateDb:-55, retuneMs:20, humanize:0, flex:0, vibrato:0, transpose:0, mode:0, formant:0,
+  v2Level:0, v2Interval:0, v2Detune:0, mix:1, compThr:-18, compRatio:3, compAtk:5, compRel:80, compMakeup:3,
+  satDrive:0, satMix:0, bpm:120, dlyDiv:1, dlyFb:0.25, dlyMix:0, dlyDamp:0.4, revTime:1.2, revDamp:0.5, revPre:15, revMix:0.12, outDb:0, howlGuard:true };
+const PRESET_KEYS = Object.keys(DEF).filter(k => k !== 'bypass');
+let S = Object.assign({}, DEF);
+let ctx = null, node = null, outGain = null, stream = null, srcNode = null, wakeLock = null, running = false, modeName = '';
+let telem = null, muted = false, measuring = false, measSeen = false, inLat = 0, activePreset = 'varsayılan';
+const ART = JSON.parse($('#preset-data').textContent);
+
+/* ---------- state -> engine ---------- */
+function maskAbs() {
+  if (S.scale === 'custom') return S.custom.slice();
+  const m = new Array(12).fill(0);
+  for (const d of SCALES[S.scale]) m[(S.key + d) % 12] = 1;
+  return m;
+}
+function engineParams() {
+  const v = VOICES[S.voice] || VOICES.wide;
+  const p = {}; for (const k in S) p[k] = S[k];
+  p.mask = maskAbs(); p.minF0 = v[1]; p.maxF0 = v[2];
+  p.dlyMs = 60000 / S.bpm * S.dlyDiv;
+  p.mode = +S.mode;
+  delete p.custom; delete p.key; delete p.scale; delete p.voice; delete p.bpm; delete p.dlyDiv;
+  return p;
+}
+/* ---------- native backend (Android Oboe / iOS RemoteIO), when running inside the app ---------- */
+const NATIVE = window.CanliNative ? 'android' : (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.canli) ? 'ios' : null;
+let nativeActive = false, nativeLast = null;
+window.__canliTelem = a => { nativeLast = a; };
+function nativeParams() {
+  const p = engineParams(), o = {};
+  for (const k in p) { if (k === 'mask') o.maskBits = p.mask.reduce((a, v, i) => a | (v ? 1 << i : 0), 0); else o[k] = typeof p[k] === 'boolean' ? (p[k] ? 1 : 0) : +p[k]; }
+  return o;
+}
+const Native = NATIVE === 'android' ? {
+  name: 'yerel motor (Oboe)',
+  start: () => { try { return Promise.resolve(JSON.parse(window.CanliNative.start())); } catch (e) { return Promise.resolve({ ok:false, err:String(e) }); } },
+  stop: () => { try { window.CanliNative.stop(); } catch (e) {} },
+  params: p => window.CanliNative.setParams(JSON.stringify(p)),
+  measure: () => window.CanliNative.measure(),
+  poll: () => { try { return JSON.parse(window.CanliNative.telemetry()); } catch (e) { return null; } },
+} : NATIVE === 'ios' ? {
+  name: 'yerel motor (iOS)',
+  start: () => new Promise(res => { window.__canliStarted = res; window.webkit.messageHandlers.canli.postMessage({ cmd:'start' }); }),
+  stop: () => window.webkit.messageHandlers.canli.postMessage({ cmd:'stop' }),
+  params: p => window.webkit.messageHandlers.canli.postMessage({ cmd:'params', p }),
+  measure: () => window.webkit.messageHandlers.canli.postMessage({ cmd:'measure' }),
+  poll: () => nativeLast,
+} : null;
+let sendPending = false;
+function send() {
+  if (sendPending) return; sendPending = true;
+  requestAnimationFrame(() => { sendPending = false;
+    if (nativeActive) Native.params(nativeParams());
+    else if (node) node.port.postMessage({ type:'params', p: engineParams() }); });
+}
+
+/* ---------- controls ---------- */
+const reg = {};
+function bind(k, el, upd) { (reg[k] = reg[k] || []).push(upd); upd(); }
+function setVal(k, v, silent) { S[k] = v; (reg[k] || []).forEach(f => f()); if (k === 'key' || k === 'scale' || k === 'custom') drawChips(); if (!silent) send(); }
+function fmt(v, step) { const d = step < 0.1 ? 2 : step < 1 ? 1 : 0; return (+v).toFixed(d); }
+function slider(k, label, min, max, step, unit) {
+  const w = document.createElement('div'); w.className = 'ctl';
+  w.innerHTML = `<label><span>${label}</span><em></em></label><input type="range" min="${min}" max="${max}" step="${step}">`;
+  const r = w.querySelector('input'), em = w.querySelector('em');
+  r.addEventListener('input', () => setVal(k, +r.value));
+  bind(k, r, () => { r.value = S[k]; em.textContent = fmt(S[k], step) + (unit ? ' ' + unit : ''); });
+  return w;
+}
+function select(k, label, opts, num) {
+  const w = document.createElement('div'); w.className = 'ctl';
+  w.innerHTML = (label ? `<label><span>${label}</span></label>` : '') + '<select></select>';
+  const s = w.querySelector('select');
+  for (const [v, t] of opts) { const o = document.createElement('option'); o.value = v; o.textContent = t; s.appendChild(o); }
+  s.addEventListener('change', () => setVal(k, num ? +s.value : s.value));
+  bind(k, s, () => { s.value = String(S[k]); });
+  return w;
+}
+function check(k, label) {
+  const w = document.createElement('div'); w.className = 'ctl';
+  w.innerHTML = `<label style="align-items:center"><span>${label}</span><input type="checkbox" style="width:24px;height:24px"></label>`;
+  const c = w.querySelector('input'); c.addEventListener('change', () => setVal(k, c.checked));
+  bind(k, c, () => { c.checked = !!S[k]; }); return w;
+}
+const keyOpts = NOTES.map((n, i) => [i, n]);
+const scaleOpts = Object.keys(SCALE_TR).map(k => [k, SCALE_TR[k]]);
+$('#qKey').appendChild(select('key', 'Ton', keyOpts, true));
+$('#qScale').appendChild(select('scale', 'Gam', scaleOpts));
+$('#eKey').appendChild(select('key', 'Ton', keyOpts, true));
+$('#eScale').appendChild(select('scale', 'Gam', scaleOpts));
+$('#qCtl').append(slider('retuneMs', 'Retune hızı (0 = sert efekt)', 0, 200, 1, 'ms'), slider('mix', 'Dry / Wet', 0, 1, 0.01, ''), slider('revMix', 'Reverb', 0, 1, 0.01, ''));
+
+const GROUPS = [
+  ['Düzeltme', [['s','retuneMs','Retune hızı',0,400,1,'ms'], ['s','humanize','Humanize (uzun notalarda yavaşlat)',0,100,1,''], ['s','flex','Flex-Tune (yalnız hedefe yaklaşınca düzelt)',0,100,1,''], ['s','vibrato','Doğal vibrato (− azalt / + artır)',-100,100,1,''], ['s','transpose','Transpoze',-12,12,1,'yarım ton']]],
+  ['Ses motoru', [['sel','mode','Mod',[[0,'Ultra düşük gecikme (formant perdeyle kayar)'],[1,'Formant koruma — TD-PSOLA (daha fazla gecikme)']],true], ['s','formant','Formant / Throat (yalnız PSOLA)',-6,6,0.5,'yarım ton'], ['sel','voice','Ses aralığı (Input Type)',Object.keys(VOICES).map(k=>[k,VOICES[k][0]])]]],
+  ['2. ses — double / oktav', [['s','v2Level','Seviye',0,1,0.01,''], ['s','v2Interval','Aralık',-12,12,1,'yarım ton'], ['s','v2Detune','Detune',-50,50,1,'cent']]],
+  ['Giriş', [['s','inGainDb','Giriş kazancı',-12,24,0.5,'dB'], ['s','hpfHz','High-pass filtre',20,300,1,'Hz'], ['s','gateDb','Noise gate eşiği',-80,-20,1,'dBFS']]],
+  ['Kompresör', [['s','compThr','Eşik',-50,0,1,'dB'], ['s','compRatio','Oran (1 = kapalı)',1,20,0.1,':1'], ['s','compAtk','Atak',0.1,50,0.1,'ms'], ['s','compRel','Bırakma',10,500,1,'ms'], ['s','compMakeup','Makeup',0,18,0.5,'dB']]],
+  ['Saturasyon / drive', [['s','satDrive','Drive',0,30,0.5,'dB'], ['s','satMix','Miktar',0,1,0.01,'']]],
+  ['Delay', [['s','bpm','Tempo',60,200,1,'BPM'], ['sel','dlyDiv','Nota',Object.keys(DIVS).map(k=>[k,DIVS[k]]),true], ['s','dlyFb','Feedback',0,0.9,0.01,''], ['s','dlyMix','Seviye',0,1,0.01,''], ['s','dlyDamp','Karanlık (HF sönüm)',0,0.9,0.01,'']]],
+  ['Reverb', [['s','revTime','Süre (RT60)',0.2,6,0.05,'s'], ['s','revDamp','HF sönüm',0,0.9,0.01,''], ['s','revPre','Pre-delay',0,200,1,'ms'], ['s','revMix','Seviye',0,1,0.01,'']]],
+  ['Çıkış', [['s','mix','Dry / Wet',0,1,0.01,''], ['s','outDb','Çıkış seviyesi',-24,6,0.5,'dB'], ['c','howlGuard','Geri besleme (howl) koruması']]],
+];
+for (const [title, items] of GROUPS) {
+  const c = document.createElement('div'); c.className = 'card'; c.innerHTML = `<h2>${title}</h2>`;
+  for (const it of items) {
+    if (it[0] === 's') c.appendChild(slider(it[1], it[2], it[3], it[4], it[5], it[6]));
+    else if (it[0] === 'sel') c.appendChild(select(it[1], it[2], it[3], it[4]));
+    else c.appendChild(check(it[1], it[2]));
+  }
+  $('#groups').appendChild(c);
+}
+function drawChips() {
+  const box = $('#chips'); box.innerHTML = ''; const m = maskAbs();
+  NOTES.forEach((n, i) => {
+    const b = document.createElement('button'); b.textContent = n; b.className = m[i] ? 'on' : 'blk';
+    b.onclick = () => { const mm = maskAbs(); mm[i] = mm[i] ? 0 : 1; S.custom = mm; setVal('scale', 'custom'); };
+    box.appendChild(b);
+  });
+}
+drawChips();
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('act', x === b));
+  document.querySelectorAll('section.tab').forEach(s => s.classList.toggle('act', s.id === b.dataset.t));
+  window.scrollTo(0, 0);
+});
+function msg(t, kind, el) { const m = el || $('#msg'); m.textContent = t; m.className = 'msg show' + (kind ? ' ' + kind : ''); if (!t) m.className = 'msg'; }
+
+/* ---------- audio ---------- */
+const PROC = `
+class ATProc extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.e = new AutoTuneEngine(sampleRate); this.t = new Float32Array(12); this.cnt = 0; this.sab = null;
+    this.port.onmessage = (ev) => { const d = ev.data;
+      if (d.type === 'params') this.e.setParams(d.p);
+      else if (d.type === 'measure') this.e.measureStart();
+      else if (d.type === 'sab') this.sab = new Float32Array(d.buf); };
+  }
+  process(inputs, outputs) {
+    const ich = inputs[0] && inputs[0][0] ? inputs[0][0] : null;
+    const o = outputs[0], L = o[0], R = o[1] || o[0];
+    if (!L) return true;
+    this.e.process(ich, L, R, L.length);
+    if (++this.cnt >= 10) { this.cnt = 0;
+      if (this.sab) { this.e.telemetry(this.sab); }       // zero-allocation path (needs cross-origin isolation)
+      else { this.e.telemetry(this.t); this.port.postMessage(this.t); } }
+    return true;
+  }
+}
+registerProcessor('autotune', ATProc);`;
+let sabView = null;
+async function buildGraph() {
+  const code = $('#dsp-src').textContent + '\n' + PROC;
+  const url = URL.createObjectURL(new Blob([code], { type:'application/javascript' }));
+  await ctx.audioWorklet.addModule(url);
+  node = new AudioWorkletNode(ctx, 'autotune', { numberOfInputs:1, numberOfOutputs:1, outputChannelCount:[2], channelCount:1, channelCountMode:'explicit', channelInterpretation:'speakers' });
+  node.port.onmessage = e => { telem = e.data; };
+  if (self.crossOriginIsolated && typeof SharedArrayBuffer !== 'undefined') {
+    const buf = new SharedArrayBuffer(12 * 4); sabView = new Float32Array(buf); node.port.postMessage({ type:'sab', buf });
+  }
+  outGain = ctx.createGain(); outGain.gain.value = muted ? 0 : 1;
+  node.connect(outGain).connect(ctx.destination);
+  node.port.postMessage({ type:'params', p: engineParams() });
+}
+function newCtx() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  ctx = new AC({ latencyHint:'interactive' });
+  return ctx.resume();
+}
+async function startMic() {
+  await stop();
+  msg('');
+  if (Native) {
+    const r = await Native.start();
+    if (!r.ok) {
+      if (r.err === 'perm') { msg('Mikrofon izni isteniyor…'); window.__canliPerm = g => g ? startMic() : msg('Mikrofon izni verilmedi. Ayarlar → Uygulamalar → CanlıTune → İzinler.', 'err'); return; }
+      msg('Yerel ses motoru başlatılamadı: ' + r.err, 'err'); return;
+    }
+    nativeActive = true; modeName = Native.name; inLat = r.inLat || 0; Native.params(nativeParams()); started(); return;
+  }
+  if (!window.isSecureContext) { msg('Mikrofon yalnızca HTTPS (veya localhost) üzerinde çalışır. Dosyayı HTTPS bir adreste aç.', 'err'); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { msg('Bu tarayıcı mikrofon erişimi sunmuyor.', 'err'); return; }
+  try {
+    const resumed = newCtx();
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false, channelCount:1, latency:0 } });
+    await resumed;
+    if (!ctx.audioWorklet) throw new Error('AudioWorklet desteklenmiyor (Chrome 66+, Safari 14.5+ gerekir).');
+    await buildGraph();
+    srcNode = ctx.createMediaStreamSource(stream); srcNode.connect(node);
+    const st = stream.getAudioTracks()[0].getSettings ? stream.getAudioTracks()[0].getSettings() : {};
+    inLat = st.latency ? st.latency * 1000 : 0;
+    modeName = 'mikrofon'; started();
+    if (st.echoCancellation) msg('Uyarı: tarayıcı yankı engellemeyi kapatmadı; gecikme ve ses kalitesi etkilenebilir.', '');
+  } catch (e) {
+    await stop();
+    const blocked = /Permission|NotAllowed|denied|policy|SecurityError/i.test(e.name + ' ' + e.message);
+    msg(blocked ? 'Mikrofon izni verilmedi ya da bu sayfa mikrofona erişemiyor (ör. Claude önizleme çerçevesi mikrofonu engeller). Sayfayı kendi HTTPS adresinde aç ya da “Dosya” ile bir vokal kaydı dene.' : ('Başlatılamadı: ' + e.message), 'err');
+  }
+}
+async function startFile(file) {
+  await stop(); msg('');
+  try {
+    await newCtx(); await buildGraph();
+    const buf = await ctx.decodeAudioData(await file.arrayBuffer());
+    srcNode = ctx.createBufferSource(); srcNode.buffer = buf; srcNode.loop = true; srcNode.connect(node); srcNode.start();
+    inLat = 0; modeName = 'dosya: ' + file.name; started();
+  } catch (e) { await stop(); msg('Dosya açılamadı: ' + e.message, 'err'); }
+}
+async function started() {
+  running = true; $('#stateDot').classList.add('on'); $('#stateTx').textContent = modeName;
+  $('#bStop').classList.remove('hide');
+  try { if (navigator.wakeLock) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+}
+async function stop() {
+  running = false;
+  if (nativeActive) { Native.stop(); nativeActive = false; nativeLast = null; }
+  try { if (srcNode) { srcNode.disconnect(); if (srcNode.stop) srcNode.stop(); } } catch (e) {}
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  if (ctx) { try { await ctx.close(); } catch (e) {} }
+  ctx = node = srcNode = stream = null; telem = null; sabView = null;
+  try { if (wakeLock) await wakeLock.release(); } catch (e) {} wakeLock = null;
+  $('#stateDot').classList.remove('on'); $('#stateTx').textContent = 'kapalı'; $('#bStop').classList.add('hide');
+}
+$('#bMic').onclick = startMic;
+$('#bFile').onclick = () => $('#fileIn').click();
+$('#fileIn').onchange = e => { const f = e.target.files[0]; if (f) startFile(f); e.target.value = ''; };
+$('#bStop').onclick = stop;
+$('#bBypass').onclick = () => { setVal('bypass', !S.bypass); $('#bBypass').classList.toggle('on', S.bypass); $('#bBypass').textContent = S.bypass ? 'Bypass AÇIK' : 'Bypass'; };
+$('#bMute').onclick = () => { muted = !muted; if (outGain) outGain.gain.value = muted ? 0 : 1; $('#bMute').textContent = muted ? 'Monitör sessiz' : 'Monitör açık'; $('#bMute').classList.toggle('on', muted); };
+$('#bMeasure').onclick = () => {
+  if (!nativeActive && (!node || modeName !== 'mikrofon')) { msg('Önce mikrofonla başlat.', 'err'); return; }
+  measuring = true; measSeen = false; $('#lMeas').textContent = 'ölçülüyor…';
+  if (nativeActive) Native.measure(); else node.port.postMessage({ type:'measure' });
+};
+document.addEventListener('visibilitychange', async () => { if (!document.hidden && running && ctx && ctx.state !== 'running') { try { await ctx.resume(); } catch (e) {} } });
+
+/* ---------- telemetry UI ---------- */
+const H = 300, hIn = new Float32Array(H).fill(-1), hTg = new Float32Array(H).fill(-1); let hI = 0;
+const cv = $('#graph'), g2 = cv.getContext('2d');
+const db = v => v > 1e-6 ? 20 * Math.log10(v) : -120;
+const nn = m => m < 0 ? '–' : NOTES[((Math.round(m) % 12) + 12) % 12] + (Math.floor(Math.round(m) / 12) - 1);
+let lastSeen = 0;
+function frame() {
+  requestAnimationFrame(frame);
+  const t = nativeActive ? Native.poll() : (sabView || telem); if (!t || !running) return;
+  const inD = db(t[0]), outD = db(t[1]);
+  $('#mIn').style.width = Math.max(0, Math.min(100, (inD + 60) / 60 * 100)) + '%'; $('#mInTx').textContent = inD < -99 ? '–∞' : inD.toFixed(0) + ' dB';
+  $('#mOut').style.width = Math.max(0, Math.min(100, (outD + 60) / 60 * 100)) + '%'; $('#mOutTx').textContent = outD < -99 ? '–∞' : outD.toFixed(0) + ' dB';
+  const voiced = t[4] >= 0;
+  $('#nIn').textContent = nn(t[4]); $('#nTg').textContent = nn(t[5]);
+  const devC = voiced ? Math.round((t[4] - Math.round(t[4])) * 100) : 0;
+  $('#nSub').textContent = voiced ? `${t[2].toFixed(1)} Hz · ${devC >= 0 ? '+' : ''}${devC} cent · güven ${(t[3] * 100).toFixed(0)}%` : 'ses yok / perdesiz';
+  const c = Math.max(-100, Math.min(100, t[6])), bar = $('#centBar');
+  bar.style.left = (50 + Math.min(0, c) / 2) + '%'; bar.style.width = Math.abs(c) / 2 + '%';
+  $('#centTx').textContent = `düzeltme ${t[6] >= 0 ? '+' : ''}${t[6].toFixed(0)} cent`;
+  $('#gateTx').textContent = (t[8] ? 'gate: açık' : 'gate: kapalı') + (t[9] ? ' · ⚠ GERİ BESLEME: çıkış kısıldı — kulaklık kullan' : '');
+  $('#gateTx').style.color = t[9] ? 'var(--bad)' : '';
+  // latency
+  const out = nativeActive ? (t[14] || 0) : ctx ? ((ctx.baseLatency || 0) + (ctx.outputLatency || 0)) * 1000 : 0;
+  if (nativeActive && t[15]) inLat = t[15];
+  $('#lAlg').textContent = (S.bypass ? 0 : t[7]).toFixed(1) + ' ms';
+  $('#lOut').textContent = out ? out.toFixed(1) + ' ms' : 'rapor yok';
+  $('#lIn').textContent = inLat ? inLat.toFixed(1) + ' ms' : 'rapor yok';
+  $('#lTot').textContent = (t[7] + out + inLat).toFixed(1) + ' ms';
+  $('#lSr').textContent = nativeActive ? `${t[12] || '?'} Hz / ${t[13] || '?'}` : ctx ? `${ctx.sampleRate} Hz / 128` : '–';
+  if (measuring && t[11] !== 0) measSeen = true;
+  if (measuring && measSeen && t[11] === 0 && t[10] !== -1) {
+    measuring = false;
+    if (t[10] < 0) { $('#lMeas').textContent = 'başarısız'; msg('Tık sesi mikrofona ulaşmadı: kulaklığı çıkar, sesi aç, tekrar dene.', 'err'); }
+    else { $('#lMeas').textContent = t[10].toFixed(1) + ' ms'; $('#lMeasTot').textContent = (t[10] + t[7]).toFixed(1) + ' ms'; }
+  }
+  // history graph
+  const now = performance.now(); if (now - lastSeen > 25) { lastSeen = now; hIn[hI] = t[4]; hTg[hI] = t[5]; hI = (hI + 1) % H; drawGraph(); }
+}
+function drawGraph() {
+  const W = cv.width, Hh = cv.height; g2.clearRect(0, 0, W, Hh);
+  let center = -1; for (let k = 1; k <= H; k++) { const v = hTg[(hI - k + H) % H]; if (v >= 0) { center = v; break; } }
+  if (center < 0) center = 57;
+  const span = 7, y = m => Hh / 2 - (m - center) / span * (Hh / 2);
+  const mask = maskAbs(); g2.font = '20px system-ui';
+  for (let m = Math.floor(center - span); m <= Math.ceil(center + span); m++) {
+    const on = mask[((m % 12) + 12) % 12]; g2.strokeStyle = on ? '#343c4b' : '#1c2028'; g2.lineWidth = on ? 2 : 1;
+    g2.beginPath(); g2.moveTo(56, y(m)); g2.lineTo(W, y(m)); g2.stroke();
+    if (on) { g2.fillStyle = '#6b7487'; g2.fillText(nn(m), 4, y(m) + 7); }
+  }
+  const line = (arr, col, w) => { g2.strokeStyle = col; g2.lineWidth = w; g2.beginPath(); let pen = false;
+    for (let k = 0; k < H; k++) { const v = arr[(hI + k) % H], x = 56 + k / (H - 1) * (W - 56);
+      if (v < 0) { pen = false; continue; } if (!pen) { g2.moveTo(x, y(v)); pen = true; } else g2.lineTo(x, y(v)); } g2.stroke(); };
+  line(hTg, '#ff6a3d', 5); line(hIn, '#3dd6c6', 3);
+}
+requestAnimationFrame(frame);
+
+/* ---------- presets ---------- */
+const LS = 'canlitune.presets.v1';
+let user = {};
+try { user = JSON.parse(localStorage.getItem(LS) || '{}'); } catch (e) { user = {}; }
+function persist() { try { localStorage.setItem(LS, JSON.stringify(user)); return true; } catch (e) { return false; } }
+function snapshot() { const o = {}; for (const k of PRESET_KEYS) o[k] = Array.isArray(S[k]) ? S[k].slice() : S[k]; return o; }
+function applyPreset(p, name, keepKey) {
+  for (const k of PRESET_KEYS) if (k in p && !(keepKey && k === 'key')) S[k] = Array.isArray(p[k]) ? p[k].slice() : p[k];
+  for (const k in reg) reg[k].forEach(f => f());
+  drawChips(); send(); activePreset = name; $('#activePreset').textContent = 'Preset: ' + name;
+}
+function refreshList() {
+  const l = $('#pList'); l.innerHTML = '';
+  const names = Object.keys(user).sort();
+  if (!names.length) { const o = document.createElement('option'); o.textContent = '(kayıtlı preset yok)'; o.value = ''; l.appendChild(o); }
+  for (const n of names) { const o = document.createElement('option'); o.value = n; o.textContent = n; l.appendChild(o); }
+}
+refreshList();
+const pm = (t, k) => msg(t, k, $('#pMsg'));
+let overArm = 0;
+$('#bSave').onclick = () => {
+  const n = $('#pName').value.trim(); if (!n) { pm('Bir ad yaz.', 'err'); return; }
+  if (user[n] && overArm !== 1) { overArm = 1; pm(`“${n}” zaten var. Üzerine yazmak için tekrar Kaydet'e bas.`); return; }
+  overArm = 0; user[n] = snapshot(); const ok = persist(); refreshList(); $('#pList').value = n;
+  pm(ok ? `“${n}” kaydedildi.` : `“${n}” bu oturum için tutuldu (tarayıcı kalıcı depolamaya izin vermedi — Dışa aktar ile yedekle).`, ok ? 'ok' : '');
+};
+$('#bOver').onclick = () => { const n = $('#pList').value; if (!n) return; user[n] = snapshot(); persist(); pm(`“${n}” güncellendi.`, 'ok'); };
+$('#bLoad').onclick = () => { const n = $('#pList').value; if (!n) return; applyPreset(user[n], n); $('#pName').value = n; pm(`“${n}” yüklendi.`, 'ok'); };
+let delArm = '';
+$('#bDel').onclick = () => { const n = $('#pList').value; if (!n) return;
+  if (delArm !== n) { delArm = n; pm(`“${n}” silinsin mi? Onay için Sil'e tekrar bas.`); return; }
+  delArm = ''; delete user[n]; persist(); refreshList(); pm(`“${n}” silindi.`, 'ok'); };
+$('#bReset').onclick = () => { applyPreset(DEF, 'varsayılan'); pm('Varsayılan ayarlar yüklendi.', 'ok'); };
+$('#bExp').onclick = () => { $('#ioBox').classList.remove('hide');
+  $('#ioTx').value = JSON.stringify({ schema:'canlitune-user-presets/v1', current: snapshot(), presets: user }, null, 1); pm('JSON hazır: kopyala ya da indir.'); };
+$('#bImp').onclick = () => { $('#ioBox').classList.remove('hide'); $('#ioTx').value = ''; $('#ioTx').focus(); pm('JSON yapıştır ve “İçe al”a bas, ya da “Dosyadan” seç.'); };
+$('#bCopy').onclick = async () => { try { await navigator.clipboard.writeText($('#ioTx').value); pm('Panoya kopyalandı.', 'ok'); } catch (e) { $('#ioTx').select(); pm('Otomatik kopyalama engellendi; metin seçildi, elle kopyala.'); } };
+$('#bDl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([$('#ioTx').value], { type:'application/json' })); a.download = 'canlitune-presets.json'; a.click(); pm('İndirme başlatıldı (bazı önizleme çerçeveleri engeller; o zaman Kopyala kullan).'); };
+function importText(txt) {
+  try {
+    const d = JSON.parse(txt); const src = d.presets || d; let c = 0;
+    for (const n in src) { const p = src[n]; if (p && typeof p === 'object' && ('retuneMs' in p || 'params' in p)) { user[n] = p.params ? p.params : p; c++; } }
+    persist(); refreshList(); pm(`${c} preset içe alındı.`, 'ok');
+  } catch (e) { pm('Geçersiz JSON: ' + e.message, 'err'); }
+}
+$('#bApplyImp').onclick = () => importText($('#ioTx').value);
+$('#bFileImp').onclick = () => $('#impFile').click();
+$('#impFile').onchange = async e => { const f = e.target.files[0]; if (f) importText(await f.text()); e.target.value = ''; };
+
+/* ---------- artist browser ---------- */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+function confClass(c) { return /^yüksek/.test(c) ? 'h' : /^orta/.test(c) ? 'm' : 'l'; }
+for (const a of ART.presets) {
+  const p = a.params, d = document.createElement('div'); d.className = 'art';
+  const why = Object.entries(a.why).map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('');
+  const src = a.sources.map(s => `<li><a href="${esc(s.u)}" target="_blank" rel="noopener">${esc(s.t)}</a></li>`).join('');
+  d.innerHTML = `<h3>${esc(a.name)}</h3><div class="era">${esc(a.era)}</div><span class="badge ${confClass(a.confidence)}">güven: ${esc(a.confidence)}</span>
+   <div class="pills"><span>Retune ${p.retuneMs} ms</span><span>Humanize ${p.humanize}</span><span>Flex ${p.flex}</span><span>${SCALE_TR[p.scale]}</span><span>Formant ${p.formant > 0 ? '+' : ''}${p.formant}</span><span>${p.mode ? 'PSOLA' : 'Düşük gecikme'}</span>${p.v2Level ? `<span>2. ses ${p.v2Interval} st</span>` : ''}<span>Delay ${DIVS[p.dlyDiv] || p.dlyDiv}</span><span>Reverb ${p.revTime}s</span></div>
+   <p class="small" style="margin:6px 0">${esc(a.performance)}</p>
+   <button class="pri" style="width:100%">Yükle</button>
+   <details><summary>Neden bu değerler?</summary><ul>${why}</ul></details>
+   <details><summary>Kaynaklar</summary><ul>${src}</ul></details>`;
+  d.querySelector('button').onclick = () => { applyPreset(p, a.name, true); msg(`“${a.name}” yüklendi — ton: ${NOTES[S.key]} ${SCALE_TR[S.scale]} (tonu şarkına göre ayarla).`, 'ok'); document.querySelector('nav button[data-t="t-live"]').click(); };
+  $('#artList').appendChild(d);
+}
+if (Native) {
+  $('#lOutLbl').textContent = 'Çıkış tamponu (sürücü raporu)';
+  $('#bMic').innerHTML = '🎤 Başlat (yerel motor)';
+  document.querySelector('header h1').insertAdjacentHTML('beforeend', ' <span class="small" style="color:var(--acc2)">APP</span>');
+}
+</script>
+</body>
+</html>

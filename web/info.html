@@ -1,0 +1,52 @@
+<h2>Teknik şartname (Faz 1 özeti)</h2>
+<h3>DSP hattı</h3>
+<p>Mikrofon → giriş kazancı → HPF (2. derece Butterworth) → noise gate (1 ms atak, 120 ms tutma, 80 ms bırakma) → halka tampon (32768 örnek) → <b>YIN</b> perde tespiti → gam kuantalayıcı → perde kaydırıcı (2 mod) → 2. ses → dry/wet → kompresör → saturasyon → delay → stereo reverb → howl koruması + limiter → çıkış.</p>
+<h3>Perde tespiti</h3>
+<ul>
+<li><b>YIN</b> (de Cheveigné &amp; Kawahara, JASA 2002): fark fonksiyonu + kümülatif ortalama normalizasyonu, eşik 0.15, parabolik interpolasyon. Otokorelasyonun oktav hatalarını azaltır.</li>
+<li>Seçim gerekçesi: MPM (McLeod &amp; Wyvill) de aynı ailede ve doğru; YIN eşiği sesli/sessiz kararını doğrudan verdiği için tercih edildi. pYIN'in HMM yumuşatması gecikme ekler; canlıda kullanılmadı.</li>
+<li>Maliyeti düşürmek için 2×4. derece LPF + 4× seyreltme (48 kHz → 12 kHz), 16 ms pencere; ardından tam hızda ±5 örneklik ince arama. Her 256 örnekte (5.3 ms) bir güncelleme.</li>
+<li>Oktav sıçrama koruması (2 kare), sesli/sessiz histerezisi (2 açılış / 3 kapanış karesi).</li>
+</ul>
+<h3>Düzeltme mantığı (Auto-Tune kontrollerinin karşılığı)</h3>
+<ul>
+<li><b>Retune</b>: düzeltme miktarı tek kutuplu yumuşatıcıdan geçer; τ = retune/2.3, yani hedefe yaklaşık retune süresinde %90 ulaşılır (test: 25 ms → 21 ms, 100 ms → 91 ms). Antares'in kesin eğrisi yayımlanmadığı için bu bir modelleme seçimi.</li>
+<li><b>Humanize</b>: nota 80 ms'den uzun sürünce retune'a 0–300 ms ekler (Antares: yavaş retune yalnızca uzun notaların sürdürülen kısmına uygulanır).</li>
+<li><b>Flex-Tune</b>: hedeften uzak sapmalar daha az düzeltilir; yalnızca hedefe yaklaşıldığında tam düzeltme.</li>
+<li><b>Doğal vibrato</b>: ~120 ms yumuşatılmış perdeden ayrılan vibrato bileşeni −%100…+%100 ölçeklenir.</li>
+<li>Gam: 12 notalık maske, ton + gam veya özel nota seçimi; 12 cent histerezis ile nota sınırında titreme önlenir.</li>
+</ul>
+<h3>Perde kaydırma — iki mod</h3>
+<table><tr><th>Mod</th><th>Yöntem</th><th>Gecikme</th></tr>
+<tr><td>Ultra düşük gecikme</td><td>Gecikme hattında yeniden örnekleyen okuma kafası; pencereden çıkınca tam bir periyot atlar ve 1.3 ms çapraz geçiş yapar (periyoda hizalı ekleme). Formantlar perdeyle birlikte kayar — küçük düzeltmelerde duyulmaz.</td><td>≈ 3.5–4 ms</td></tr>
+<tr><td>Formant koruma</td><td>Gerçek zamanlı <b>TD-PSOLA</b>: analiz işaretleri periyot aralıklı, 2H uzunluklu Hann taneleri, sentez aralığı T/oran. Formant (Throat) kaydırma, taneleri yeniden örnekleyerek yapılır.</td><td>≈ 2–2.5 periyot (220 Hz'de ~10 ms, 110 Hz'de ~21 ms)</td></tr></table>
+<p class="small">Faz vocoder (faz kilitlemeli) kaliteli ama FFT penceresi yüzünden 20–40+ ms ekler; canlı mikrofon için elendi. Literatür: zaman alanı yöntemleri düşük gecikmeli, frekans alanı yöntemleri daha yüksek gecikmeli. Formant için LPC/cepstral zarf yeniden uygulama da FFT/çerçeve gecikmesi getirdiğinden PSOLA'nın doğal formant korumasına güvenildi.</p>
+<h3>Gecikme bütçesi (48 kHz, telefon)</h3>
+<table>
+<tr><th>Kalem</th><th>Değer</th></tr>
+<tr><td>AudioWorklet blok (render quantum)</td><td>128 örnek = 2.67 ms</td></tr>
+<tr><td>Algoritmik — düşük gecikme modu</td><td>3.5–4 ms (ölçüldü)</td></tr>
+<tr><td>Algoritmik — PSOLA</td><td>10–21 ms (perdeye bağlı)</td></tr>
+<tr><td>Tarayıcı + işletim sistemi G/Ç (telefon)</td><td>cihaza göre ~20–100+ ms</td></tr>
+</table>
+<p>Dürüst not: &lt;10 ms toplam gecikme, tarayıcıda telefonda <b>mümkün değil</b>; darboğaz algoritma değil, tarayıcı/OS ses yolu. Masaüstü tarayıcı ölçümlerinde bile 39–100 ms bildiriliyor. Bu yüzden aynı DSP çekirdeğinin C++ sürümüyle <b>yerel uygulamalar</b> da var: Android'de Oboe (AAudio, exclusive + low-latency, mikrofon ön ayarı VoicePerformance), iPhone'da RemoteIO AudioUnit (Measurement modu, ~128 örnek tampon). C++ çekirdek JS sürümüyle bit düzeyinde aynı çıktıyı verir ve ses iş parçacığında hiç bellek ayırmaz. Uygulama içinden açıldığında başlıkta “APP” yazar ve gecikme tablosu sürücünün gerçek tampon değerlerini gösterir. Uygulamadaki “Gerçek gecikmeyi ölç” düğmesi cihazının gerçek RTL değerini verir.</p>
+<h3>Gerçek zaman kuralları</h3>
+<ul><li>process() içinde bellek ayırma yok; tüm tamponlar kurucuda oluşturulur (test: 3750 blokta ihmal edilebilir heap artışı).</li>
+<li>Kilit yok, G/Ç yok. Parametreler blok aralarında port mesajıyla gelir.</li>
+<li>Telemetri: sayfa cross-origin-isolated ise SharedArrayBuffer (sıfır ayırma), değilse 37 ms'de bir küçük postMessage.</li>
+<li>Getiri: echoCancellation / noiseSuppression / autoGainControl kapalı istenir (bunlar gecikme ve bozulma ekler).</li>
+<li>Geri besleme: kulaklık önerilir; çıkış 0.6 s boyunca −4 dBFS üzerinde kalırsa 2 s boyunca −24 dB kısılır.</li></ul>
+<h3>Testler (Node, 48 kHz)</h3>
+<table>__TESTS__</table>
+<h3>Kaynaklar</h3>
+<ul>
+<li><a href="https://cagnazzo.wp.imt.fr/files/2013/05/2002_JASA_YIN.pdf" target="_blank">de Cheveigné &amp; Kawahara — YIN (JASA 2002)</a></li>
+<li><a href="https://0110.be/releases/TarsosDSP/TarsosDSP-2.1/TarsosDSP-2.1-Documentation/be/tarsos/dsp/pitch/McLeodPitchMethod.html" target="_blank">McLeod Pitch Method (TarsosDSP belgesi)</a></li>
+<li><a href="https://mac.kaist.ac.kr/~juhan/gct535/Slides/13%20Time%20Scale%20Modification%20and%20Pitch%20Shifting.pdf" target="_blank">KAIST GCT535 — PSOLA ve formant koruma</a></li>
+<li><a href="https://www.aes.org/e-lib/browse.cfm?elib=15382" target="_blank">AES — Real-time TD-PSOLA sorunları ve çözümleri</a></li>
+<li><a href="https://forum.juce.com/t/looking-for-a-timestretching-pitchshifting-library-that-has-very-low-latency/45404" target="_blank">JUCE forum — PSOLA gecikme kuralı</a></li>
+<li><a href="https://phaidra.kug.ac.at/api/object/o:122357/download" target="_blank">KUG tezi — zaman vs frekans alanı perde kaydırma</a></li>
+<li><a href="https://gh.hhj520.top/gilpanal/weblatencytest" target="_blank">Tarayıcı RTL ölçümleri (MLS)</a></li>
+<li><a href="https://source.android.com/devices/audio/latency_measurements" target="_blank">Android — RTL ölçümleri</a></li>
+<li><a href="https://help.antarestech.com/hc/en-us/articles/42855736822932" target="_blank">Antares — Retune / Humanize / Flex-Tune SSS</a></li>
+</ul>

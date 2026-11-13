@@ -1,0 +1,204 @@
+{
+  "schema": "autotune-presets/v1",
+  "notes": "Kaynakta sayısal değer verilmeyen parametreler 'uyarlama' olarak işaretlenmiştir. Ton (key) şarkıya göre değiştiği için presetler tonu değiştirmez; yalnızca gam tipini önerir. 'revMix' ve 'dlyMix' bu uygulamanın ölçeğidir: revMix ≈ wet/(1-wet) (ör. %15 wet → 0.18).",
+  "presets": [
+    {
+      "id": "tpain",
+      "name": "T-Pain",
+      "era": "Rappa Ternt Sanga / Epiphany (2005–2007)",
+      "confidence": "yüksek (retune), uyarlama (zincir)",
+      "params": { "retuneMs": 0, "humanize": 0, "flex": 0, "vibrato": 0, "scale": "major", "formant": 0, "mode": 0, "transpose": 0, "v2Level": 0, "v2Interval": 0, "v2Detune": 0, "mix": 1, "hpfHz": 100, "gateDb": -50, "compThr": -20, "compRatio": 3, "compAtk": 5, "compRel": 80, "compMakeup": 3, "satDrive": 0, "satMix": 0, "bpm": 100, "dlyDiv": 1, "dlyFb": 0.2, "dlyMix": 0.12, "dlyDamp": 0.5, "revTime": 1.2, "revDamp": 0.5, "revPre": 20, "revMix": 0.18 },
+      "why": {
+        "retuneMs": "T-Pain retune speed'i sıfırda kullandığını açıkça söylemiş (New Yorker röportajı, Kottke alıntısı).",
+        "scale": "Şarkının tonunda (kromatik değil) — T-Pain stili tonal kilitlenmeye dayanır; ton sizin tarafınızdan seçilmeli.",
+        "chain": "Kompresör/reverb/delay değerleri kaynakta yok: canlı monitör için hafif, kısa ayarlar (uyarlama)."
+      },
+      "performance": "Auto-Tune kulaklıkta açıkken söyle; T-Pain efektin söylerken duyulmasını savunuyor. Notalar arası sıçramaları net söyle — kayma (portamento) zaten silinecek.",
+      "sources": [
+        { "t": "Kottke: Sasha Frere-Jones on Auto-Tune (T-Pain retune = 0)", "u": "https://also.kottke.org/08/06/sasha-frerejones-on-autotune" },
+        { "t": "MusicRadar: T-Pain Auto-Tune effect explained", "u": "https://musicradar.com/computermusic/the-t-pain-auto-tune-effect-explained-once-and-for-all-246132" },
+        { "t": "Radio.com: T-Pain — Auto-Tune söylerken kullanılmalı", "u": "https://webarchive.library.unt.edu/dentonfracking/20141029222304/http://radio.com/2014/10/29/t-pain-kanye-west-auto-tune-doesnt-use-correctly" }
+      ]
+    },
+    {
+      "id": "cher",
+      "name": "Cher — “Believe”",
+      "era": "1998 (Mark Taylor & Brian Rawling)",
+      "confidence": "orta",
+      "params": { "retuneMs": 0, "humanize": 0, "flex": 0, "vibrato": 0, "scale": "major", "formant": 0, "mode": 0, "transpose": 0, "v2Level": 0, "v2Interval": 0, "v2Detune": 0, "mix": 1, "hpfHz": 90, "gateDb": -50, "compThr": -18, "compRatio": 3, "compAtk": 8, "compRel": 100, "compMakeup": 3, "satDrive": 0, "satMix": 0, "bpm": 133, "dlyDiv": 0.75, "dlyFb": 0.25, "dlyMix": 0.1, "dlyDamp": 0.4, "revTime": 1.6, "revDamp": 0.4, "revPre": 25, "revMix": 0.22 },
+      "why": {
+        "retuneMs": "Prodüktörler, portamentoyu silen aşırı hızlı düzeltme ayarı kullanmış; Auto-Tune 5 kılavuzu sıfır hız ayarını 'Cher Effect' diye anıyor. Not: oturumda tam olarak 0 kullanıldığı prodüktörlerden birine dayandırılmış değil.",
+        "chain": "Delay/reverb değerleri kaynakta yok; dans-pop için uyarlama."
+      },
+      "performance": "Uzun, düz heceli notalarda nota geçişleri 'kırılarak' duyulur; geçişleri bilerek kaydır. Gam: şarkının majör tonu.",
+      "sources": [
+        { "t": "Sound On Sound (1999): Recording Cher's 'Believe'", "u": "https://www.soundonsound.com/node/4918619" },
+        { "t": "Wikipedia: Believe (Cher song)", "u": "https://en.wikipedia.org/wiki/Believe_(Cher_song)" },
+        { "t": "Las Vegas Sun: AT5 kılavuzunda 'Cher Effect'", "u": "https://lasvegassun.com/blogs/joe-brown/2008/jun/07/cher-effect/" },
+        { "t": "Orphiq: '0' detayının kaynaksız olduğu notu", "u": "https://orphiq.com/resources/what-is-autotune" }
+      ]
+    },
+    {
+      "id": "kanye808",
+      "name": "Kanye West — 808s & Heartbreak",
+      "era": "2008",
+      "confidence": "orta (zincir yapısı belgeli, sayılar uyarlama)",
+      "params": { "retuneMs": 2, "humanize": 0, "flex": 0, "vibrato": 0, "scale": "minor", "formant": 0, "mode": 0, "transpose": 0, "v2Level": 0.35, "v2Interval": -12, "v2Detune": 0, "mix": 1, "hpfHz": 100, "gateDb": -48, "compThr": -20, "compRatio": 4, "compAtk": 5, "compRel": 90, "compMakeup": 4, "satDrive": 14, "satMix": 0.55, "bpm": 88, "dlyDiv": 1, "dlyFb": 0.3, "dlyMix": 0.22, "dlyDamp": 0.55, "revTime": 1.8, "revDamp": 0.6, "revPre": 20, "revMix": 0.2 },
+      "why": {
+        "chain": "Jeff Bhasker: albüm adındaki 'heartbreak' vokal efektidir — distorsiyon, oktav ve Auto-Tune. Kanye: 'Auto-Tune + distorsiyon + biraz delay'. Bu yüzden saturasyon yüksek, 2. ses −12 (oktav) açık, delay açık.",
+        "retuneMs": "Hızlı retune örneği olarak 'Heartless' gösteriliyor (MixButton); kesin değer yayınlanmamış → 2 ms.",
+        "v2Level": "Oktav katmanının seviyesi kaynakta yok (uyarlama)."
+      },
+      "performance": "Canlıda da kullanıldı: Glow in the Dark turnesinde Auto-Tune canlı açıldı. Konuşur gibi, düz ve uzun notalar.",
+      "sources": [
+        { "t": "Rolling Stone: The making of 808s & Heartbreak (Jeff Bhasker)", "u": "https://www.rollingstone.com/music/music-features/making-of-808s-heartbreak-759011/" },
+        { "t": "Ethan Hein: Kanye alıntısı (Auto-Tune + distortion + delay)", "u": "https://ethanhein.substack.com/p/kanye" },
+        { "t": "MixButton: Heartless hızlı retune örneği", "u": "https://mixbutton.com/music-production/vocal-processing/how-to-use-auto-tune-on-your-vocals" }
+      ]
+    },
+    {
+      "id": "future",
+      "name": "Future — “Draco” dönemi",
+      "era": "2015–2017 (Seth Firkins)",
+      "confidence": "yüksek (zincir), orta (retune)",
+      "params": { "retuneMs": 15, "humanize": 0, "flex": 0, "vibrato": 0, "scale": "minor", "formant": 0, "mode": 0, "transpose": 0, "v2Level": 0.18, "v2Interval": 0, "v2Detune": 8, "mix": 1, "hpfHz": 110, "gateDb": -48, "compThr": -24, "compRatio": 4, "compAtk": 20, "compRel": 120, "compMakeup": 5, "satDrive": 6, "satMix": 0.25, "bpm": 140, "dlyDiv": 1, "dlyFb": 0.25, "dlyMix": 0.15, "dlyDamp": 0.5, "revTime": 0.75, "revDamp": 0.55, "revPre": 15, "revMix": 0.18 },
+      "why": {
+        "chain": "Firkins: Auto-Tune 5 her kayıtta açık ve basılıyor; monitör aux'u Auto-Tune → çeyrek nota delay → D-Verb (%12–15, 12 ms pre-delay). Grup reverbi: Medium Room, 15 ms pre-delay, 751 ms decay, 9.36 kHz HF kesim, %15 wet → revTime 0.75, revPre 15, revMix 0.18.",
+        "retuneMs": "Firkins retune değerini söylememiş. Antares'in Future stili için önerisi 10–25 (başlangıç 15–20) → 15. Canlı mühendisi Bobby Crown efektin '%100' açık olduğunu söylüyor.",
+        "compAtk": "Antares: ağır kazanç azaltma, görece yavaş atak.",
+        "v2Detune": "Firkins zincirdeki flanger/mod-delay hafif dalgalanması için: hafif detune'lu ikinci ses (yaklaşım)."
+      },
+      "performance": "Rap ederken de açık kalır; efekt cümle sonlarında 'warble' yapar. U87 → Neve 1073 → CL1B ile kaydedildi; canlıda dinamik mikrofon + kulak içi monitör.",
+      "sources": [
+        { "t": "Sound On Sound: Inside Track — Future 'Draco' (Seth Firkins)", "u": "https://www.soundonsound.com/techniques/inside-track-future-draco" },
+        { "t": "Antares: Auto-Tune for rap & trap", "u": "https://www.antarestech.com/blog/auto-tune-for-rap-hip-hop-how-trap-producers-use-pitch-correction" },
+        { "t": "Antares: Bobby Crown (Future canlı rig)", "u": "https://www.antarestech.com/blog/bobby-crown" }
+      ]
+    },
+    {
+      "id": "uzi",
+      "name": "Lil Uzi Vert — Luv Is Rage 2",
+      "era": "2017 (Kesha Lee)",
+      "confidence": "yüksek",
+      "params": { "retuneMs": 8, "humanize": 0, "flex": 0, "vibrato": 0, "scale": "minor", "formant": 0, "mode": 0, "transpose": 0, "v2Level": 0, "v2Interval": 0, "v2Detune": 0, "mix": 1, "hpfHz": 100, "gateDb": -45, "compThr": -20, "compRatio": 3.5, "compAtk": 8, "compRel": 100, "compMakeup": 4, "satDrive": 0, "satMix": 0, "bpm": 150, "dlyDiv": 2, "dlyFb": 0.43, "dlyMix": 0.14, "dlyDamp": 0.45, "revTime": 2.0, "revDamp": 0.75, "revPre": 20, "revMix": 0.16 },
+      "why": {
+        "retuneMs": "Kesha Lee: önce varsayılan 20, sonra Uzi 'daha fazla Auto-Tune' isteyince 12 ile 5 arası → 8.",
+        "dlyDiv": "Delay aux: Mod Delay II yarım nota, feedback %43.",
+        "revDamp": "Renaissance Reverb 'Hall 1', reverb EQ'sunda tizler kesilmiş → uzun, karanlık hall.",
+        "gateDb": "Zincirde Waves C1 gate var."
+      },
+      "performance": "Uzi Auto-Tune'u kulaklıkta duyarak söylüyor. Kayıt: TLM103 → Avalon 737 → CL1B.",
+      "sources": [
+        { "t": "Equipboard: Luv Is Rage 2 (Sound On Sound Aralık 2017 alıntıları)", "u": "https://equipboard.com/albums/lil-uzi-vert-luv-is-rage-2" },
+        { "t": "Complex: Kesha Lee kayıt süreci", "u": "https://www.complex.com/music/2017/11/lil-uzi-vert-recording-process-engineer-kesha-lee" }
+      ]
+    },
+    {
+      "id": "travis",
+      "name": "Travis Scott (hard trap)",
+      "era": "Rodeo → Astroworld",
+      "confidence": "orta (Antares rehberi; mühendis değil)",
+      "params": { "retuneMs": 2, "humanize": 0, "flex": 0, "vibrato": 0, "scale": "chromatic", "formant": 0, "mode": 0, "transpose": 0, "v2Level": 0, "v2Interval": 0, "v2Detune": 0, "mix": 1, "hpfHz": 110, "gateDb": -48, "compThr": -22, "compRatio": 4, "compAtk": 10, "compRel": 70, "compMakeup": 4, "satDrive": 4, "satMix": 0.2, "bpm": 140, "dlyDiv": 1, "dlyFb": 0.18, "dlyMix": 0.2, "dlyDamp": 0.6, "revTime": 2.8, "revDamp": 0.85, "revPre": 30, "revMix": 0.3 },
+      "why": {
+        "retuneMs": "Antares: retune 0–5, Flex-Tune kapalı, kromatik ya da şarkı tonu.",
+        "dlyDiv": "Antares: çeyrek nota delay, 2–3 tekrar, %15–20 feedback (ikinci kısa delay bu uygulamada yok).",
+        "revDamp": "Antares: uzun, karanlık reverb (hall/plate), yoğun HF sönümleme.",
+        "compRatio": "Antares: Auto-Tune öncesi 3–6 dB kazanç azaltma, orta atak (burada Auto-Tune sonrasında)."
+      },
+      "performance": "Delay en az pitch kadar önemli. Ad-lib'leri ayrı preset/daha hızlı retune ile dene (Antares: lead 15 iken ad-lib 0).",
+      "sources": [
+        { "t": "Antares: Auto-Tune for rap & trap (Travis Scott bölümü)", "u": "https://www.antarestech.com/blog/auto-tune-for-rap-hip-hop-how-trap-producers-use-pitch-correction" },
+        { "t": "FADER: Mike Dean — Travis Scott & Kanye", "u": "https://www.thefader.com/2018/10/08/mike-dean-interview-travis-scott-and-kanye-west" }
+      ]
+    },
+    {
+      "id": "postmalone",
+      "name": "Post Malone (doğal)",
+      "era": "Stoney → Beerbongs & Bentleys (Louis Bell)",
+      "confidence": "orta",
+      "params": { "retuneMs": 45, "humanize": 15, "flex": 25, "vibrato": 0, "scale": "major", "formant": 0, "mode": 1, "transpose": 0, "v2Level": 0, "v2Interval": 0, "v2Detune": 0, "mix": 1, "hpfHz": 85, "gateDb": -55, "compThr": -20, "compRatio": 3, "compAtk": 10, "compRel": 120, "compMakeup": 3, "satDrive": 3, "satMix": 0.15, "bpm": 80, "dlyDiv": 0.5, "dlyFb": 0.2, "dlyMix": 0.1, "dlyDamp": 0.5, "revTime": 1.8, "revDamp": 0.5, "revPre": 25, "revMix": 0.22 },
+      "why": {
+        "retuneMs": "Louis Bell: ayar Melodyne'da, ardından Auto-Tune 'çok hafif'. Antares'in şeffaf düzeltme önerisi 15–50 ms → 45.",
+        "flex": "Antares şeffaf ayar: Flex-Tune 15–30.",
+        "humanize": "Antares şeffaf ayar: Humanize 10–20.",
+        "mode": "Doğal tını için formant koruyan PSOLA modu."
+      },
+      "performance": "Bell: 'Rockstar'daki titreme Auto-Tune değil, Post'un söyleyişi. Vibratoyu bastırmayın.",
+      "sources": [
+        { "t": "Equipboard: Louis Bell — Melodyne + hafif Auto-Tune", "u": "https://equipboard.com/albums/louis-bell-rockstar" },
+        { "t": "Antares SSS: şeffaf düzeltme önerileri", "u": "https://help.antarestech.com/hc/en-us/articles/42855736822932" }
+      ]
+    },
+    {
+      "id": "carti",
+      "name": "Playboi Carti — “baby voice” (WLR)",
+      "era": "Whole Lotta Red (2020)",
+      "confidence": "düşük (yalnız ticari preset rehberi; mühendis kaynağı bulunamadı)",
+      "params": { "retuneMs": 8, "humanize": 0, "flex": 0, "vibrato": 0, "scale": "chromatic", "formant": 3, "mode": 1, "transpose": 0, "v2Level": 0, "v2Interval": 0, "v2Detune": 0, "mix": 1, "hpfHz": 140, "gateDb": -45, "compThr": -22, "compRatio": 5, "compAtk": 3, "compRel": 60, "compMakeup": 5, "satDrive": 10, "satMix": 0.4, "bpm": 150, "dlyDiv": 0.5, "dlyFb": 0.2, "dlyMix": 0.1, "dlyDamp": 0.5, "revTime": 2.0, "revDamp": 0.5, "revPre": 15, "revMix": 0.6 },
+      "why": {
+        "formant": "RysUp rehberi: baby voice için hızlı düzeltme + formant +2…+4 st (doğrulanmamış).",
+        "retuneMs": "Aynı rehber: 5–15 ms, kromatik ya da minör pentatonik.",
+        "revMix": "Aynı rehber: WLR reverbi %35–45 wet → ~0.6."
+      },
+      "performance": "Carti'nin 'baby voice' büyük ölçüde söyleyiş tekniği (yüksek, burundan, kelimeleri esneterek); bu preset onu taklit etmez, yalnızca tınıyı yaklaşıklar.",
+      "sources": [
+        { "t": "RysUp: Playboi Carti vocal preset (kendisi de doğrulanmadığını belirtiyor)", "u": "https://rysupaudio.com/blogs/news/playboi-carti-vocal-preset" },
+        { "t": "Complex: Baby voice tarihçesi", "u": "https://www.complex.com/music/a/greg-gaffney/playboi-carti-baby-voice-history" }
+      ]
+    },
+    {
+      "id": "toliver",
+      "name": "Don Toliver (melodik, canlı zincir)",
+      "era": "2025 dünya turnesi",
+      "confidence": "düşük (pitch ayarı belgesiz), orta (canlı zincir yapısı)",
+      "params": { "retuneMs": 15, "humanize": 15, "flex": 0, "vibrato": 0, "scale": "minor", "formant": 0, "mode": 0, "transpose": 0, "v2Level": 0, "v2Interval": 0, "v2Detune": 0, "mix": 1, "hpfHz": 100, "gateDb": -50, "compThr": -22, "compRatio": 4, "compAtk": 3, "compRel": 80, "compMakeup": 4, "satDrive": 4, "satMix": 0.2, "bpm": 120, "dlyDiv": 0.25, "dlyFb": 0.1, "dlyMix": 0.15, "dlyDamp": 0.4, "revTime": 2.2, "revDamp": 0.5, "revPre": 25, "revMix": 0.3 },
+      "why": {
+        "chain": "FOH zinciri: Neve 5045 → SSL kanal → EQ → de-esser → CLA-76 → CLA-2A → kompresörler; kısa slap delay (SuperTap) + H-Delay; H-Reverb albüm presetleri. Sayısal değer verilmemiş.",
+        "dlyDiv": "Kısa slap için 1/16 nota (uyarlama).",
+        "retuneMs": "Pitch düzeltme ayarları yayınlanmamış; stil rehberleri 'orta–hızlı retune + humanize' diyor (uyarlama)."
+      },
+      "performance": "Yumuşak, geniş reverb'lü melodik hatlar; kulak içi monitörde de vokal sıkıştırılarak veriliyor.",
+      "sources": [
+        { "t": "ProSoundWeb: Waves on Don Toliver's 2025 tour", "u": "https://www.prosoundweb.com/waves-deployed-for-don-tolivers-2025-world-tour/" },
+        { "t": "Cedar Sound Studios: Don Toliver stili rehber", "u": "https://www.cedarsoundstudios.com/blogs/news/how-to-sound-like-don-toliver-a-modern-melodic-trap-vibe" }
+      ]
+    },
+    {
+      "id": "adlib",
+      "name": "Trap ad-lib (sert)",
+      "era": "Genel — Antares katmanlama önerisi",
+      "confidence": "orta",
+      "params": { "retuneMs": 0, "humanize": 0, "flex": 0, "vibrato": 0, "scale": "minor", "formant": 0, "mode": 0, "transpose": 0, "v2Level": 0.3, "v2Interval": 0, "v2Detune": 12, "mix": 1, "hpfHz": 180, "gateDb": -42, "compThr": -22, "compRatio": 5, "compAtk": 3, "compRel": 60, "compMakeup": 5, "satDrive": 6, "satMix": 0.3, "bpm": 140, "dlyDiv": 1, "dlyFb": 0.3, "dlyMix": 0.25, "dlyDamp": 0.6, "revTime": 2.5, "revDamp": 0.7, "revPre": 20, "revMix": 0.35 },
+      "why": {
+        "retuneMs": "Antares: ad-lib'ler lead'den sert çalışır (ör. lead 15, ad-lib 0).",
+        "hpfHz": "Antares: ad-lib'ler lead'in temel frekans bölgesiyle çakışmamalı → yüksek HPF.",
+        "v2Detune": "Antares Harmony: hafif detune'lu unison."
+      },
+      "performance": "Kısa, vurgulu sesler; mikrofona biraz uzaktan.",
+      "sources": [ { "t": "Antares: Auto-Tune for rap & trap", "u": "https://www.antarestech.com/blog/auto-tune-for-rap-hip-hop-how-trap-producers-use-pitch-correction" } ]
+    },
+    {
+      "id": "melodictrap",
+      "name": "Melodik trap (orta yol)",
+      "era": "Genel — Antares",
+      "confidence": "orta",
+      "params": { "retuneMs": 18, "humanize": 0, "flex": 0, "vibrato": 0, "scale": "minor", "formant": 0, "mode": 0, "transpose": 0, "v2Level": 0, "v2Interval": 0, "v2Detune": 0, "mix": 1, "hpfHz": 100, "gateDb": -50, "compThr": -20, "compRatio": 3.5, "compAtk": 10, "compRel": 80, "compMakeup": 4, "satDrive": 4, "satMix": 0.2, "bpm": 140, "dlyDiv": 1, "dlyFb": 0.2, "dlyMix": 0.15, "dlyDamp": 0.5, "revTime": 1.8, "revDamp": 0.6, "revPre": 20, "revMix": 0.2 },
+      "why": { "retuneMs": "Antares: 10–25 melodik orta yol; 30–40 'kaza gibi' duyulabilir.", "flex": "Antares: Flex-Tune kapalı." },
+      "performance": "Şarkının minör tonunu seçin.",
+      "sources": [ { "t": "Antares: Auto-Tune for rap & trap", "u": "https://www.antarestech.com/blog/auto-tune-for-rap-hip-hop-how-trap-producers-use-pitch-correction" } ]
+    },
+    {
+      "id": "natural",
+      "name": "Doğal / şeffaf düzeltme",
+      "era": "Genel — Antares önerisi",
+      "confidence": "yüksek",
+      "params": { "retuneMs": 30, "humanize": 15, "flex": 25, "vibrato": 0, "scale": "major", "formant": 0, "mode": 1, "transpose": 0, "v2Level": 0, "v2Interval": 0, "v2Detune": 0, "mix": 1, "hpfHz": 80, "gateDb": -55, "compThr": -18, "compRatio": 2.5, "compAtk": 10, "compRel": 120, "compMakeup": 2, "satDrive": 0, "satMix": 0, "bpm": 90, "dlyDiv": 1, "dlyFb": 0.15, "dlyMix": 0, "dlyDamp": 0.5, "revTime": 1.4, "revDamp": 0.5, "revPre": 20, "revMix": 0.15 },
+      "why": { "retuneMs": "Antares: retune 15–50 ms, Flex-Tune 15–30, Humanize 10–20.", "mode": "Formant koruyan mod." },
+      "performance": "Önce Humanize 0 iken retune'u kısa notalar düzelene kadar ayarla, sonra uzun notalar statikse Humanize'ı artır (Antares iş akışı).",
+      "sources": [
+        { "t": "Antares SSS", "u": "https://help.antarestech.com/hc/en-us/articles/42855736822932" },
+        { "t": "Antares: Humanize", "u": "https://help.antarestech.com/hc/en-us/articles/42858099043092" }
+      ]
+    }
+  ]
+}

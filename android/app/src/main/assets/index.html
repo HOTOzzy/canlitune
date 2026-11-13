@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0d0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>CanlıTune — Canlı Auto-Tune</title>
+<style>
+:root{--bg:#0d0f14;--card:#161a22;--card2:#1d222c;--line:#2a303c;--tx:#e9edf3;--mut:#8b94a5;--acc:#ff6a3d;--acc2:#3dd6c6;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--r:14px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 6px}
+header h1{font-size:19px;margin:0;letter-spacing:.2px}
+header h1 b{color:var(--acc)}
+#stateDot{font-size:12px;color:var(--mut);display:flex;align-items:center;gap:6px}
+#stateDot i{width:9px;height:9px;border-radius:50%;background:#555;display:inline-block}
+#stateDot.on i{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+main{padding:4px 12px calc(84px + env(safe-area-inset-bottom))}
+section.tab{display:none}section.tab.act{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:10px 0}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);margin:0 0 10px;font-weight:600}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;color:var(--tx);background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-height:46px;cursor:pointer}
+button:active{transform:scale(.98)}
+button.pri{background:var(--acc);border-color:var(--acc);color:#111;font-weight:700}
+button.sec{background:#123c3a;border-color:#1f6b66}
+button.on{background:var(--acc2);border-color:var(--acc2);color:#062724;font-weight:700}
+button.grow{flex:1}
+select,input[type=text],textarea{font:inherit;color:var(--tx);background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px;min-height:44px;width:100%}
+textarea{min-height:110px;font:12px/1.35 ui-monospace,monospace}
+.note{display:flex;align-items:center;justify-content:center;gap:14px;padding:6px 0 2px}
+.note .big{font-size:52px;font-weight:800;min-width:2.2em;text-align:center;font-variant-numeric:tabular-nums}
+.note .arrow{color:var(--mut);font-size:26px}
+.note .tgt{color:var(--acc)}
+.sub{color:var(--mut);font-size:12px;text-align:center}
+.meter{height:10px;background:var(--card2);border-radius:6px;overflow:hidden;position:relative}
+.meter>i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--ok),var(--warn) 75%,var(--bad));width:0}
+.cent{height:26px;background:var(--card2);border-radius:8px;position:relative;margin:8px 0 2px}
+.cent:before{content:"";position:absolute;left:50%;top:3px;bottom:3px;width:2px;background:var(--mut)}
+.cent>i{position:absolute;top:3px;bottom:3px;background:var(--acc);border-radius:4px}
+canvas{width:100%;height:150px;display:block;background:var(--card2);border-radius:10px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:14px}
+.kv span:nth-child(even){font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
+.ctl{margin:12px 0}
+.ctl label{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px}
+.ctl label em{font-style:normal;color:var(--acc2);font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:34px;background:transparent;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:8px;background:var(--line);border-radius:5px}
+input[type=range]::-moz-range-track{height:8px;background:var(--line);border-radius:5px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:var(--acc);margin-top:-10px;border:3px solid #fff2}
+input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:var(--acc);border:3px solid #fff2}
+.chips{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.chips button{padding:8px 0;min-height:42px;font-size:14px}
+.chips button.blk{background:#0b0d11}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#0b0d12f2;border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));backdrop-filter:blur(10px);z-index:5}
+nav button{flex:1;border:0;background:none;color:var(--mut);font-size:12px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:54px}
+nav button b{font-size:21px;font-weight:400}
+nav button.act{color:var(--acc)}
+.msg{font-size:13px;border-radius:10px;padding:10px 12px;margin:8px 0;background:#2a2410;border:1px solid #5b4a14;color:#fde68a;display:none}
+.msg.show{display:block}.msg.err{background:#2c1214;border-color:#6b2226;color:#fecaca}.msg.ok{background:#0f2a1c;border-color:#1f5c3a;color:#bbf7d0}
+.art{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;background:var(--card2)}
+.art h3{margin:0;font-size:17px}.art .era{color:var(--mut);font-size:12px;margin:2px 0 8px}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--mut);margin-bottom:6px}
+.badge.h{color:var(--ok);border-color:#1f5c3a}.badge.m{color:var(--warn);border-color:#5b4a14}.badge.l{color:var(--bad);border-color:#6b2226}
+.art details{margin-top:6px;font-size:13px;color:#c9d1dd}.art summary{cursor:pointer;color:var(--acc2)}
+.art ul{padding-left:18px;margin:6px 0}.art a{color:#93c5fd;word-break:break-word}
+.pills{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}.pills span{font-size:12px;background:#0b0d11;border:1px solid var(--line);border-radius:8px;padding:3px 7px}
+.info p,.info li{font-size:14px;color:#cdd5e0}.info h3{font-size:15px;margin:14px 0 6px}.info a{color:#93c5fd}
+table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid var(--line);padding:6px 4px;text-align:left}td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.small{font-size:12px;color:var(--mut)}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<header><h1>Canlı<b>Tune</b></h1><div id="stateDot"><i></i><span id="stateTx">kapalı</span></div></header>
+<main>
+<!-- ===================== CANLI ===================== -->
+<section class="tab act" id="t-live">
+  <div class="msg" id="msg"></div>
+  <div class="card">
+    <div class="row">
+      <button class="pri grow" id="bMic">🎤 Mikrofonla başlat</button>
+      <button class="sec" id="bFile">📁 Dosya</button>
+      <button id="bStop" class="hide">■ Durdur</button>
+    </div>
+    <input type="file" id="fileIn" accept="audio/*" class="hide">
+    <p class="small" style="margin:8px 0 0">🎧 Kulaklık kullan: hoparlörden dinlersen ses mikrofona geri döner ve uğultu (howl) yapar. Kablolu kulaklık Bluetooth’tan çok daha az gecikir.</p>
+  </div>
+  <div class="card">
+    <div class="note"><div class="big" id="nIn">–</div><div class="arrow">→</div><div class="big tgt" id="nTg">–</div></div>
+    <div class="sub" id="nSub">algılanan → hedef nota</div>
+    <div class="cent"><i id="centBar"></i></div>
+    <div class="sub" id="centTx">düzeltme 0 cent</div>
+    <canvas id="graph" width="700" height="300"></canvas>
+  </div>
+  <div class="card">
+    <div class="row" style="align-items:center;gap:10px">
+      <span class="small" style="width:44px">Giriş</span><div class="meter" style="flex:1"><i id="mIn"></i></div><span class="small" id="mInTx" style="width:52px;text-align:right">–∞</span>
+    </div>
+    <div class="row" style="align-items:center;gap:10px;margin-top:8px">
+      <span class="small" style="width:44px">Çıkış</span><div class="meter" style="flex:1"><i id="mOut"></i></div><span class="small" id="mOutTx" style="width:52px;text-align:right">–∞</span>
+    </div>
+    <div class="sub" id="gateTx" style="margin-top:6px">gate: –</div>
+  </div>
+  <div class="card">
+    <h2>Hızlı ayar</h2>
+    <div class="row"><div style="flex:1" id="qKey"></div><div style="flex:1.4" id="qScale"></div></div>
+    <div id="qCtl"></div>
+    <div class="row">
+      <button class="grow" id="bBypass">Bypass</button>
+      <button class="grow" id="bMute">Monitör açık</button>
+    </div>
+    <p class="small" id="activePreset" style="margin:10px 0 0">Preset: varsayılan</p>
+  </div>
+  <div class="card">
+    <h2>Gecikme (latency)</h2>
+    <div class="kv">
+      <span>Algoritmik (pitch shifter)</span><span id="lAlg">–</span>
+      <span id="lOutLbl">Tarayıcı çıkışı (base+output)</span><span id="lOut">–</span>
+      <span>Mikrofon girişi (sürücü raporu)</span><span id="lIn">–</span>
+      <span>Tahmini toplam</span><span id="lTot">–</span>
+      <span>Ölçülen donanım RTL</span><span id="lMeas">–</span>
+      <span>Ölçülen + algoritmik</span><span id="lMeasTot">–</span>
+      <span>Örnekleme hızı / blok</span><span id="lSr">–</span>
+    </div>
+    <button style="margin-top:10px;width:100%" id="bMeasure">Gerçek gecikmeyi ölç (hoparlör → mikrofon)</button>
+    <p class="small">Ölçüm için kulaklığı çıkar, sesi aç, sessiz ortamda telefonu masaya koy. Uygulama 3 kez “tık” sesi çalar ve mikrofona dönüş süresini ölçer.</p>
+  </div>
+</section>
+
+<!-- ===================== EDİTÖR ===================== -->
+<section class="tab" id="t-edit">
+  <div class="card"><h2>Ton &amp; gam</h2>
+    <div class="row"><div style="flex:1" id="eKey"></div><div style="flex:1.4" id="eScale"></div></div>
+    <p class="small" style="margin:10px 0 6px">Notalara dokunarak özel gam oluştur (koyu = kapalı):</p>
+    <div class="chips" id="chips"></div>
+  </div>
+  <div id="groups"></div>
+  <div class="card"><h2>Presetlerim</h2>
+    <div class="row"><input type="text" id="pName" placeholder="Preset adı" style="flex:1"><button class="pri" id="bSave">Kaydet</button></div>
+    <div class="row" style="margin-top:8px"><select id="pList" style="flex:1"></select></div>
+    <div class="row" style="margin-top:8px"><button class="grow" id="bLoad">Yükle</button><button class="grow" id="bOver">Üzerine yaz</button><button class="grow" id="bDel">Sil</button></div>
+    <div class="row" style="margin-top:8px"><button class="grow" id="bExp">Dışa aktar</button><button class="grow" id="bImp">İçe aktar</button><button class="grow" id="bReset">Sıfırla</button></div>
+    <div id="ioBox" class="hide" style="margin-top:8px">
+      <textarea id="ioTx" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:6px"><button class="grow" id="bCopy">Kopyala</button><button class="grow" id="bDl">.json indir</button><button class="grow" id="bApplyImp">İçe al</button><button class="grow" id="bFileImp">Dosyadan</button></div>
+      <input type="file" id="impFile" accept="application/json,.json" class="hide">
+    </div>
+    <div class="msg" id="pMsg"></div>
+  </div>
+</section>
+
+<!-- ===================== SANATÇILAR ===================== -->
+<section class="tab" id="t-art">
+  <div class="card"><h2>Sanatçı presetleri</h2>
+    <p class="small" style="margin:0">Her değer kaynakla gerekçelendirildi; kaynakta sayı yoksa “uyarlama” yazıyor. Güven etiketi kaynağın gücünü gösterir. Presetler tonu değiştirmez, şarkının tonunu sen seç.</p>
+  </div>
+  <div id="artList"></div>
+</section>
+
+<!-- ===================== BİLGİ ===================== -->
+<section class="tab info" id="t-info">
+  <div class="card"><h2>Teknik şartname (Faz 1 özeti)</h2>
+<h3>DSP hattı</h3>
+<p>Mikrofon → giriş kazancı → HPF (2. derece Butterworth) → noise gate (1 ms atak, 120 ms tutma, 80 ms bırakma) → halka tampon (32768 örnek) → <b>YIN</b> perde tespiti → gam kuantalayıcı → perde kaydırıcı (2 mod) → 2. ses → dry/wet → kompresör → saturasyon → delay → stereo reverb → howl koruması + limiter → çıkış.</p>
+<h3>Perde tespiti</h3>
+<ul>
+<li><b>YIN</b> (de Cheveigné &amp; Kawahara, JASA 2002): fark fonksiyonu + kümülatif ortalama normalizasyonu, eşik 0.15, parabolik interpolasyon. Otokorelasyonun oktav hatalarını azaltır.</li>
+<li>Seçim gerekçesi: MPM (McLeod &amp; Wyvill) de aynı ailede ve doğru; YIN eşiği sesli/sessiz kararını doğrudan verdiği için tercih edildi. pYIN'in HMM yumuşatması gecikme ekler; canlıda kullanılmadı.</li>
+<li>Maliyeti düşürmek için 2×4. derece LPF + 4× seyreltme (48 kHz → 12 kHz), 16 ms pencere; ardından tam hızda ±5 örneklik ince arama. Her 256 örnekte (5.3 ms) bir güncelleme.</li>
+<li>Oktav sıçrama koruması (2 kare), sesli/sessiz histerezisi (2 açılış / 3 kapanış karesi).</li>
+</ul>
+<h3>Düzeltme mantığı (Auto-Tune kontrollerinin karşılığı)</h3>
+<ul>
+<li><b>Retune</b>: düzeltme miktarı tek kutuplu yumuşatıcıdan geçer; τ = retune/2.3, yani hedefe yaklaşık retune süresinde %90 ulaşılır (test: 25 ms → 21 ms, 100 ms → 91 ms). Antares'in kesin eğrisi yayımlanmadığı için bu bir modelleme seçimi.</li>
+<li><b>Humanize</b>: nota 80 ms'den uzun sürünce retune'a 0–300 ms ekler (Antares: yavaş retune yalnızca uzun notaların sürdürülen kısmına uygulanır).</li>
+<li><b>Flex-Tune</b>: hedeften uzak sapmalar daha az düzeltilir; yalnızca hedefe yaklaşıldığında tam düzeltme.</li>
+<li><b>Doğal vibrato</b>: ~120 ms yumuşatılmış perdeden ayrılan vibrato bileşeni −%100…+%100 ölçeklenir.</li>
+<li>Gam: 12 notalık maske, ton + gam veya özel nota seçimi; 12 cent histerezis ile nota sınırında titreme önlenir.</li>
+</ul>
+<h3>Perde kaydırma — iki mod</h3>
+<table><tr><th>Mod</th><th>Yöntem</th><th>Gecikme</th></tr>
+<tr><td>Ultra düşük gecikme</td><td>Gecikme hattında yeniden örnekleyen okuma kafası; pencereden çıkınca tam bir periyot atlar ve 1.3 ms çapraz geçiş yapar (periyoda hizalı ekleme). Formantlar perdeyle birlikte kayar — küçük düzeltmelerde duyulmaz.</td><td>≈ 3.5–4 ms</td></tr>
+<tr><td>Formant koruma</td><td>Gerçek zamanlı <b>TD-PSOLA</b>: analiz işaretleri periyot aralıklı, 2H uzunluklu Hann taneleri, sentez aralığı T/oran. Formant (Throat) kaydırma, taneleri yeniden örnekleyerek yapılır.</td><td>≈ 2–2.5 periyot (220 Hz'de ~10 ms, 110 Hz'de ~21 ms)</td></tr></table>
+<p class="small">Faz vocoder (faz kilitlemeli) kaliteli ama FFT penceresi yüzünden 20–40+ ms ekler; canlı mikrofon için elendi. Literatür: zaman alanı yöntemleri düşük gecikmeli, frekans alanı yöntemleri daha yüksek gecikmeli. Formant için LPC/cepstral zarf yeniden uygulama da FFT/çerçeve gecikmesi getirdiğinden PSOLA'nın doğal formant korumasına güvenildi.</p>
+<h3>Gecikme bütçesi (48 kHz, telefon)</h3>
+<table>
+<tr><th>Kalem</th><th>Değer</th></tr>
+<tr><td>AudioWorklet blok (render quantum)</td><td>128 örnek = 2.67 ms</td></tr>
+<tr><td>Algoritmik — düşük gecikme modu</td><td>3.5–4 ms (ölçüldü)</td></tr>
+<tr><td>Algoritmik — PSOLA</td><td>10–21 ms (perdeye bağlı)</td></tr>
+<tr><td>Tarayıcı + işletim sistemi G/Ç (telefon)</td><td>cihaza göre ~20–100+ ms</td></tr>
+</table>
+<p>Dürüst not: &lt;10 ms toplam gecikme, tarayıcıda telefonda <b>mümkün değil</b>; darboğaz algoritma değil, tarayıcı/OS ses yolu. Masaüstü tarayıcı ölçümlerinde bile 39–100 ms bildiriliyor. Bu yüzden aynı DSP çekirdeğinin C++ sürümüyle <b>yerel uygulamalar</b> da var: Android'de Oboe (AAudio, exclusive + low-latency, mikrofon ön ayarı VoicePerformance), iPhone'da RemoteIO AudioUnit (Measurement modu, ~128 örnek tampon). C++ çekirdek JS sürümüyle bit düzeyinde aynı çıktıyı verir ve ses iş parçacığında hiç bellek ayırmaz. Uygulama içinden açıldığında başlıkta “APP” yazar ve gecikme tablosu sürücünün gerçek tampon değerlerini gösterir. Uygulamadaki “Gerçek gecikmeyi ölç” düğmesi cihazının gerçek RTL değerini verir.</p>
+<h3>Gerçek zaman kuralları</h3>
+<ul><li>process() içinde bellek ayırma yok; tüm tamponlar kurucuda oluşturulur (test: 3750 blokta ihmal edilebilir heap artışı).</li>
+<li>Kilit yok, G/Ç yok. Parametreler blok aralarında port mesajıyla gelir.</li>
+<li>Telemetri: sayfa cross-origin-isolated ise SharedArrayBuffer (sıfır ayırma), değilse 37 ms'de bir küçük postMessage.</li>
+<li>Getiri: echoCancellation / noiseSuppression / autoGainControl kapalı istenir (bunlar gecikme ve bozulma ekler).</li>
+<li>Geri besleme: kulaklık önerilir; çıkış 0.6 s boyunca −4 dBFS üzerinde kalırsa 2 s boyunca −24 dB kısılır.</li></ul>
+<h3>Testler (Node, 48 kHz)</h3>
+<table><tr><td>✅ sine 82.4 Hz<br><span class="small">detected 82.40 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 110 Hz<br><span class="small">detected 110.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 146.8 Hz<br><span class="small">detected 146.80 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 196 Hz<br><span class="small">detected 196.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 261.6 Hz<br><span class="small">detected 261.60 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 392 Hz<br><span class="small">detected 392.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 523.3 Hz<br><span class="small">detected 523.30 Hz, err 0.01 cents</span></td><td></td></tr><tr><td>✅ sine 659.3 Hz<br><span class="small">detected 659.30 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 830 Hz<br><span class="small">detected 830.00 Hz, err 0.01 cents</span></td><td></td></tr><tr><td>✅ sweep median error &lt; 5 cents<br><span class="small">median 1.18 c, p95 2.12 c, frames 1425</span></td><td></td></tr><tr><td>✅ vowel f0=98 Hz<br><span class="small">detected 98.00 Hz (0.00 c), YIN conf 0.982</span></td><td></td></tr><tr><td>✅ vowel f0=180 Hz<br><span class="small">detected 180.00 Hz (0.01 c), YIN conf 0.991</span></td><td></td></tr><tr><td>✅ vowel f0=262 Hz<br><span class="small">detected 262.00 Hz (0.00 c), YIN conf 0.996</span></td><td></td></tr><tr><td>✅ [Splice] chromatic, 446 Hz (+23c) -> A4 440<br><span class="small">out 440.00 Hz (-0.00 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] C major,<br><span class="small">455 Hz (+58c) -> A4 440 (A# not in scale)  out 440.00 Hz (0.00 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] chromatic, 459 Hz (+74c) -> A#4 466.16<br><span class="small">out 466.16 Hz (0.01 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] C major, vowel 151 Hz -> D3 146.83<br><span class="small">out 146.83 Hz (0.03 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] chromatic, 446 Hz (+23c) -> A4 440<br><span class="small">out 439.94 Hz (-0.23 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] C major,<br><span class="small">455 Hz (+58c) -> A4 440 (A# not in scale)  out 439.94 Hz (-0.25 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] chromatic, 459 Hz (+74c) -> A#4 466.16<br><span class="small">out 466.02 Hz (-0.52 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] C major, vowel 151 Hz -> D3 146.83<br><span class="small">out 146.79 Hz (-0.48 c from target)</span></td><td></td></tr><tr><td>✅ retune 0 ms: 90% of correction reached<br><span class="small">after 0.0 ms of voiced signal</span></td><td></td></tr><tr><td>✅ retune 25 ms: 90% of correction reached<br><span class="small">after 21.3 ms of voiced signal</span></td><td></td></tr><tr><td>✅ retune 100 ms: 90% of correction reached<br><span class="small">after 90.7 ms of voiced signal</span></td><td></td></tr><tr><td>✅ PSOLA keeps formant envelope while pitch moves +5 st<br><span class="small">pitch 246.9 Hz (0.0 c), LPC F1 740 Hz (x0.95), envelope corr: preserved 0.902 vs shifted 0.761</span></td><td></td></tr><tr><td>✅ Splice mode moves formants with pitch (expected x1.33)<br><span class="small">pitch 246.9 Hz (0.0 c), LPC F1 1015 Hz (x1.30), envelope corr: preserved 0.679 vs shifted 1.000</span></td><td></td></tr><tr><td>✅ PSOLA formant +4 st raises F1 (expected ~x1.26)<br><span class="small">F1 935 Hz (x1.20), pitch 185.0 Hz</span></td><td></td></tr><tr><td>✅ [Splice] f0 110 Hz latency<br><span class="small">onset delay 3.52 ms, steady-state reported 3.53 ms (period 9.09 ms)</span></td><td></td></tr><tr><td>✅ [Splice] f0 220 Hz latency<br><span class="small">onset delay 3.77 ms, steady-state reported 3.76 ms (period 4.55 ms)</span></td><td></td></tr><tr><td>✅ [PSOLA] f0 110 Hz latency<br><span class="small">onset delay 17.54 ms, steady-state reported 20.63 ms (period 9.09 ms)</span></td><td></td></tr><tr><td>✅ [PSOLA] f0 220 Hz latency<br><span class="small">onset delay 16.15 ms, steady-state reported 10.18 ms (period 4.55 ms)</span></td><td></td></tr><tr><td>✅ noise: output finite &amp; limited<br><span class="small">peak 0.890</span></td><td></td></tr><tr><td>✅ noise: mostly classified unvoiced<br><span class="small">0.0% voiced frames</span></td><td></td></tr><tr><td>✅ silence -> silence<br><span class="small"></span></td><td></td></tr><tr><td>✅ measured RTL matches simulated<br><span class="small">measured 25.813 ms, true 25.708 ms</span></td><td></td></tr><tr><td>✅ [Splice] real-time factor<br><span class="small">avg 67.5 µs / 2667 µs block (2.5% of one core), worst 369 µs, 10 s audio in 253 ms</span></td><td></td></tr><tr><td>✅ [Splice] heap growth over 3750 blocks<br><span class="small">447 KiB (includes harness subarray views)</span></td><td></td></tr><tr><td>✅ [PSOLA] real-time factor<br><span class="small">avg 60.2 µs / 2667 µs block (2.3% of one core), worst 294 µs, 10 s audio in 226 ms</span></td><td></td></tr><tr><td>✅ [PSOLA] heap growth over 3750 blocks<br><span class="small">1025 KiB (includes harness subarray views)</span></td><td></td></tr></table>
+<h3>Kaynaklar</h3>
+<ul>
+<li><a href="https://cagnazzo.wp.imt.fr/files/2013/05/2002_JASA_YIN.pdf" target="_blank">de Cheveigné &amp; Kawahara — YIN (JASA 2002)</a></li>
+<li><a href="https://0110.be/releases/TarsosDSP/TarsosDSP-2.1/TarsosDSP-2.1-Documentation/be/tarsos/dsp/pitch/McLeodPitchMethod.html" target="_blank">McLeod Pitch Method (TarsosDSP belgesi)</a></li>
+<li><a href="https://mac.kaist.ac.kr/~juhan/gct535/Slides/13%20Time%20Scale%20Modification%20and%20Pitch%20Shifting.pdf" target="_blank">KAIST GCT535 — PSOLA ve formant koruma</a></li>
+<li><a href="https://www.aes.org/e-lib/browse.cfm?elib=15382" target="_blank">AES — Real-time TD-PSOLA sorunları ve çözümleri</a></li>
+<li><a href="https://forum.juce.com/t/looking-for-a-timestretching-pitchshifting-library-that-has-very-low-latency/45404" target="_blank">JUCE forum — PSOLA gecikme kuralı</a></li>
+<li><a href="https://phaidra.kug.ac.at/api/object/o:122357/download" target="_blank">KUG tezi — zaman vs frekans alanı perde kaydırma</a></li>
+<li><a href="https://gh.hhj520.top/gilpanal/weblatencytest" target="_blank">Tarayıcı RTL ölçümleri (MLS)</a></li>
+<li><a href="https://source.android.com/devices/audio/latency_measurements" target="_blank">Android — RTL ölçümleri</a></li>
+<li><a href="https://help.antarestech.com/hc/en-us/articles/42855736822932" target="_blank">Antares — Retune / Humanize / Flex-Tune SSS</a></li>
+</ul>
+</div>
+</section>
+</main>
+<nav>
+  <button class="act" data-t="t-live"><b>◉</b>Canlı</button>
+  <button data-t="t-edit"><b>⚙</b>Editör</button>
+  <button data-t="t-art"><b>★</b>Sanatçılar</button>
+  <button data-t="t-info"><b>ⓘ</b>Teknik</button>
+</nav>
+
+<script id="dsp-src" type="text/plain">'use strict';
+/*
+ * Live Auto-Tune DSP core.
+ * Runs inside an AudioWorkletProcessor (browser) and under Node (tests).
+ * Rule: nothing inside process() allocates. All buffers are created in the
+ * constructor; setParams() runs between render quanta (port message), not in process().
+ *
+ * Pipeline per sample:
+ *   in -> input gain -> HPF -> noise gate -> ring buffer
+ *      -> (LPF x2, decimate) -> YIN F0 (every HOP samples) + full-rate refinement
+ *      -> scale quantizer (key/scale mask, hysteresis, Flex-Tune, Humanize, Retune)
+ *      -> pitch shifter: mode 0 = period-synchronous splice (lowest latency, formants follow pitch)
+ *                        mode 1 = TD-PSOLA (formant preserving, independent formant shift)
+ *      -> 2nd voice (double / octave / harmony) -> dry/wet
+ *      -> compressor -> saturation -> delay -> stereo reverb -> limiter / howl guard -> out
+ */
+
+const TWO_PI = 2 * Math.PI;
+
+class Biquad {
+  constructor() { this.b0 = 1; this.b1 = 0; this.b2 = 0; this.a1 = 0; this.a2 = 0; this.z1 = 0; this.z2 = 0; }
+  _set(b0, b1, b2, a0, a1, a2) { this.b0 = b0 / a0; this.b1 = b1 / a0; this.b2 = b2 / a0; this.a1 = a1 / a0; this.a2 = a2 / a0; }
+  hp(fc, fs, q) { const w = TWO_PI * fc / fs, c = Math.cos(w), al = Math.sin(w) / (2 * q); this._set((1 + c) / 2, -(1 + c), (1 + c) / 2, 1 + al, -2 * c, 1 - al); }
+  lp(fc, fs, q) { const w = TWO_PI * fc / fs, c = Math.cos(w), al = Math.sin(w) / (2 * q); this._set((1 - c) / 2, 1 - c, (1 - c) / 2, 1 + al, -2 * c, 1 - al); }
+  run(x) { const y = this.b0 * x + this.z1; this.z1 = this.b1 * x - this.a1 * y + this.z2; this.z2 = this.b2 * x - this.a2 * y; return y; }
+}
+
+function lin(buf, mask, pos) {
+  const i = Math.floor(pos), fr = pos - i;
+  const a = buf[i & mask];
+  return a + (buf[(i + 1) & mask] - a) * fr;
+}
+function herm(buf, mask, pos) {
+  const i = Math.floor(pos), t = pos - i;
+  const xm = buf[(i - 1) & mask], x0 = buf[i & mask], x1 = buf[(i + 1) & mask], x2 = buf[(i + 2) & mask];
+  const c1 = 0.5 * (x1 - xm), c2 = xm - 2.5 * x0 + 2 * x1 - 0.5 * x2, c3 = 0.5 * (x2 - xm) + 1.5 * (x0 - x1);
+  return ((c3 * t + c2) * t + c1) * t + x0;
+}
+
+/* Mode 0: resampling read head inside a delay line; when the head drifts out of its
+ * window it jumps by exactly one detected period and crossfades, so the splice is
+ * waveform-aligned. Latency = dMin .. dMin+T (+fade). Formants scale with the ratio. */
+class SpliceVoice {
+  constructor(fs) {
+    this.dMin = Math.round(96 * fs / 48000);
+    this.F = Math.round(64 * fs / 48000);
+    this.rp = 0; this.rpOld = 0; this.fpos = -1; this.delay = 0;
+  }
+  reset(n) { this.rp = n - this.dMin - 100; this.fpos = -1; }
+  step(n, ratio, T, x, mask) {
+    this.rp += ratio;
+    const d = n - this.rp;
+    if (this.fpos < 0) {
+      if (d < this.dMin) { this.rpOld = this.rp; this.rp -= T; this.fpos = 0; }
+      else if (d > this.dMin + T + this.F) { this.rpOld = this.rp; this.rp += T; this.fpos = 0; }
+    }
+    let y = herm(x, mask, this.rp);
+    if (this.fpos >= 0) {
+      this.rpOld += ratio;
+      const g = (this.fpos + 0.5) / this.F;
+      y = y * g + herm(x, mask, this.rpOld) * (1 - g);
+      if (++this.fpos >= this.F) this.fpos = -1;
+    }
+    this.delay = n - this.rp;
+    return y;
+  }
+}
+
+/* Mode 1: real-time TD-PSOLA. Grains of length 2H (Hann) taken around analysis marks
+ * spaced by the detected period T, overlap-added at synthesis marks spaced T/ratio.
+ * Formant factor f resamples each grain (f>1 raises formants). */
+class PsolaVoice {
+  constructor(N, fs) {
+    this.N = N; this.mask = N - 1;
+    this.acc = new Float32Array(N); this.w = new Float32Array(N);
+    this.sNext = 0; this.lat = 0; this.maxH = Math.round(fs / 40);
+  }
+  reset(n, T) { this.acc.fill(0); this.w.fill(0); this.sNext = n + T; }
+  place(n, ratio, T, f, markPos, x, xmask) {
+    const S = T / ratio;
+    let H = Math.max(T, S); if (H > this.maxH) H = this.maxH;
+    const Hi = Math.max(8, Math.round(H));
+    const start = Math.round(this.sNext - Hi);
+    const reach = Hi * f + 3;
+    let src = markPos;
+    while (src + reach > n) src -= T;
+    this.lat = this.sNext - src;
+    const acc = this.acc, w = this.w, m = this.mask, L = 2 * Hi, k = Math.PI / Hi;
+    for (let j = 0; j < L; j++) {
+      const o = start + j;
+      if (o < n) continue;
+      const win = 0.5 - 0.5 * Math.cos(k * (j + 0.5));
+      const idx = o & m;
+      acc[idx] += win * lin(x, xmask, src + (j + 0.5 - Hi) * f);
+      w[idx] += win;
+    }
+    this.sNext += S;
+    return Hi;
+  }
+  step(n, ratio, T, f, markPos, x, xmask) {
+    const S = T / ratio;
+    const Hi = Math.round(Math.min(Math.max(T, S), this.maxH));
+    let guard = 0;
+    while (this.sNext - Hi <= n && guard++ < 8) this.place(n, ratio, T, f, markPos, x, xmask);
+    if (this.sNext < n - this.maxH) this.sNext = n + 1; // resync after a stall
+    const i = n & this.mask;
+    const ww = this.w[i];
+    const y = this.acc[i] / (ww > 0.5 ? ww : 0.5);
+    this.acc[i] = 0; this.w[i] = 0;
+    return y;
+  }
+}
+
+class Comb {
+  constructor(len) { this.buf = new Float32Array(len); this.i = 0; this.fs = 0; this.g = 0.8; this.d = 0.3; }
+  run(x) {
+    const o = this.buf[this.i];
+    this.fs = o * (1 - this.d) + this.fs * this.d;
+    this.buf[this.i] = x + this.fs * this.g;
+    if (++this.i >= this.buf.length) this.i = 0;
+    return o;
+  }
+}
+class Allpass {
+  constructor(len) { this.buf = new Float32Array(len); this.i = 0; }
+  run(x) {
+    const b = this.buf[this.i];
+    this.buf[this.i] = x + b * 0.5;
+    if (++this.i >= this.buf.length) this.i = 0;
+    return b - x;
+  }
+}
+
+const DEFAULT_PARAMS = {
+  bypass: false,
+  inGainDb: 0, hpfHz: 90, gateDb: -55,
+  minF0: 70, maxF0: 900, yinThresh: 0.15,
+  mask: [1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1], // absolute pitch classes C..B
+  retuneMs: 20, humanize: 0, flex: 0, vibrato: 0, transpose: 0,
+  mode: 0, formant: 0,
+  v2Level: 0, v2Interval: 0, v2Detune: 0,
+  mix: 1,
+  compThr: -18, compRatio: 3, compAtk: 5, compRel: 80, compMakeup: 3,
+  satDrive: 0, satMix: 0,
+  dlyMs: 375, dlyFb: 0.25, dlyMix: 0, dlyDamp: 0.4,
+  revTime: 1.2, revDamp: 0.5, revPre: 15, revMix: 0,
+  outDb: 0, howlGuard: true,
+};
+
+class AutoTuneEngine {
+  constructor(fs) {
+    this.fs = fs;
+    const N = 1 << 15; this.N = N; this.mask = N - 1;
+    this.x = new Float32Array(N);
+    this.n = 0;
+    // detection (decimated)
+    this.dec = fs >= 88000 ? 8 : fs >= 40000 ? 4 : 2;
+    this.dfs = fs / this.dec;
+    this.lp1 = new Biquad(); this.lp2 = new Biquad();
+    const lpc = Math.min(2600, 0.42 * this.dfs);
+    this.lp1.lp(lpc, fs, 0.54); this.lp2.lp(lpc, fs, 1.31);
+    this.dN = 4096; this.dmask = this.dN - 1; this.dx = new Float32Array(this.dN); this.dn = 0; this.decPh = 0;
+    this.tauMaxAbs = Math.ceil(this.dfs / 45) + 2;
+    this.Wd = Math.round(0.016 * this.dfs);
+    this.frame = new Float32Array(this.Wd + this.tauMaxAbs + 4);
+    this.cm = new Float64Array(this.tauMaxAbs + 4);
+    this.hop = Math.round(256 * fs / 48000);
+    this.hopCnt = 0;
+    this.Wf = Math.round(0.012 * fs);
+    // pitch state
+    this.f0 = 0; this.conf = 0; this.voiced = false; this.vOn = 0; this.vOff = 0; this.rms = 0;
+    this.T = fs / 200; this.Tdef = Math.round(0.006 * fs);
+    this.inMidi = 0; this.inSmooth = 0; this.targetMidi = -1; this.held = 0; this.corr = 0; this.semis = 0;
+    this.ratio = 1; this.ratioInc = 0; this.r2 = 1; this.r2Inc = 0; this.rampLeft = 0;
+    this.octHold = 0; this.markPos = 0;
+    // voices
+    this.s1 = new SpliceVoice(fs); this.s2 = new SpliceVoice(fs); this.s2.dMin += Math.round(0.006 * fs);
+    this.p1 = new PsolaVoice(N, fs); this.p2 = new PsolaVoice(N, fs);
+    this.latency = 0; this.dryD = 0;
+    // input conditioning
+    this.hpf = new Biquad(); this.gEnv = 0; this.gGain = 0; this.gOpen = false; this.gHold = 0;
+    this.inPk = 0; this.outPk = 0;
+    // comp
+    this.cEnv = 0; this.cGr = 0;
+    // delay
+    this.dly = new Float32Array(Math.ceil(fs * 2.1)); this.dI = 0; this.dLp = 0;
+    // reverb
+    const sc = fs / 44100, sp = Math.round(23 * sc);
+    const cl = [1116, 1188, 1277, 1356], al = [556, 441];
+    this.cL = cl.map(v => new Comb(Math.round(v * sc))); this.cR = cl.map(v => new Comb(Math.round(v * sc) + sp));
+    this.aL = al.map(v => new Allpass(Math.round(v * sc))); this.aR = al.map(v => new Allpass(Math.round(v * sc) + sp));
+    this.pre = new Float32Array(Math.ceil(fs * 0.25)); this.preI = 0;
+    // limiter / howl guard
+    this.limG = 1; this.howlEnv = 0; this.howlT = 0; this.duck = 1; this.duckT = 0; this.howl = false;
+    // loopback measurement
+    this.meas = { state: 0, t: 0, noise: 0, start: 0, result: -1, tries: 0, r: new Float64Array(5), env: 0 };
+    this.measDone = false; this.measMs = -1;
+    this.p = Object.assign({}, DEFAULT_PARAMS);
+    this.mask12 = new Int8Array(12);
+    this.setParams(this.p);
+    this.s1.reset(0); this.s2.reset(0);
+  }
+
+  setParams(q) {
+    const p = this.p, fs = this.fs;
+    for (const k in q) if (k in p) p[k] = q[k];
+    for (let i = 0; i < 12; i++) this.mask12[i] = p.mask[i] ? 1 : 0;
+    let any = 0; for (let i = 0; i < 12; i++) any += this.mask12[i];
+    if (!any) this.mask12.fill(1);
+    this.inGain = Math.pow(10, p.inGainDb / 20);
+    this.hpf.hp(Math.max(20, p.hpfHz), fs, 0.707);
+    this.gateThr = Math.pow(10, p.gateDb / 20);
+    this.tauMinD = Math.max(2, Math.floor(this.dfs / Math.min(p.maxF0, this.dfs / 3)));
+    this.tauMaxD = Math.min(this.tauMaxAbs - 2, Math.ceil(this.dfs / Math.max(45, p.minF0)));
+    this.fmt = Math.pow(2, p.formant / 12);
+    this.cAtk = Math.exp(-1 / (fs * Math.max(0.1, p.compAtk) / 1000));
+    this.cRel = Math.exp(-1 / (fs * Math.max(5, p.compRel) / 1000));
+    this.cMake = Math.pow(10, p.compMakeup / 20);
+    const g = Math.pow(10, p.satDrive / 20); this.satG = g; this.satK = 0.5 / Math.tanh(0.5 * g);
+    this.dlyN = Math.max(1, Math.min(this.dly.length - 2, Math.round(p.dlyMs * fs / 1000)));
+    this.dlyDampC = Math.min(0.95, Math.max(0, p.dlyDamp));
+    const rt = Math.max(0.1, p.revTime);
+    const setC = (c) => { c.g = Math.pow(10, -3 * c.buf.length / (fs * rt)); c.d = Math.min(0.9, Math.max(0, p.revDamp)) * 0.7; };
+    this.cL.forEach(setC); this.cR.forEach(setC);
+    this.preN = Math.max(1, Math.min(this.pre.length - 1, Math.round(p.revPre * fs / 1000)));
+    this.outG = Math.pow(10, p.outDb / 20);
+    if (p.mode !== this._mode) {
+      this._mode = p.mode;
+      this.s1.reset(this.n); this.s2.reset(this.n); this.p1.reset(this.n, this.T); this.p2.reset(this.n, this.T);
+    }
+  }
+
+  nearest(m) {
+    const c = Math.round(m);
+    let best = c, bd = 1e9;
+    for (let k = c - 7; k <= c + 7; k++) {
+      if (!this.mask12[((k % 12) + 12) % 12]) continue;
+      const d = Math.abs(m - k);
+      if (d < bd) { bd = d; best = k; }
+    }
+    return best;
+  }
+
+  detect() {
+    const W = this.Wd, tmax = this.tauMaxD, tmin = this.tauMinD;
+    const len = W + tmax + 2;
+    if (this.dn < len + 2) return 0;
+    const fr = this.frame, dx = this.dx, dm = this.dmask, base = this.dn - len;
+    let e = 0;
+    for (let j = 0; j < len; j++) { const v = dx[(base + j) & dm]; fr[j] = v; }
+    for (let j = len - W; j < len; j++) e += fr[j] * fr[j];
+    this.rms = Math.sqrt(e / W);
+    if (!this.gOpen || this.rms < 1e-4) return 0;
+    const cm = this.cm; let run = 0; cm[0] = 1;
+    for (let tau = 1; tau <= tmax + 1; tau++) {
+      let s = 0;
+      for (let j = 0; j < W; j++) { const d = fr[j] - fr[j + tau]; s += d * d; }
+      run += s; cm[tau] = run > 0 ? s * tau / run : 1;
+    }
+    let t = -1;
+    const thr = this.p.yinThresh;
+    for (let tau = tmin; tau < tmax; tau++) {
+      if (cm[tau] < thr) { while (tau + 1 < tmax && cm[tau + 1] < cm[tau]) tau++; t = tau; break; }
+    }
+    if (t < 0) {
+      let mi = 1e9;
+      for (let tau = tmin; tau < tmax; tau++) if (cm[tau] < mi) { mi = cm[tau]; t = tau; }
+      if (mi > 0.35) return 0;
+    }
+    if (t < 1) return 0;
+    const a = cm[t - 1], b = cm[t], c = cm[t + 1], den = a + c - 2 * b;
+    let dl = den !== 0 ? 0.5 * (a - c) / den : 0; if (dl > 1) dl = 1; if (dl < -1) dl = -1;
+    this.conf = 1 - b;
+    // full-rate refinement around dec * tau
+    const tf = (t + dl) * this.dec, x = this.x, m = this.mask, Wf = this.Wf;
+    const lo = Math.max(2, Math.floor(tf - this.dec - 1)), hi = Math.ceil(tf + this.dec + 1);
+    const st = this.n - Wf - hi - 1;
+    let bt = lo, bv = 1e18, pv = 0, nv = 0, prev = 0;
+    for (let tau = lo; tau <= hi + 1; tau++) {
+      let s = 0;
+      for (let j = 0; j < Wf; j++) { const d = x[(st + j) & m] - x[(st + j + tau) & m]; s += d * d; }
+      if (tau <= hi && s < bv) { bv = s; bt = tau; pv = prev; }
+      if (tau === bt + 1) nv = s;
+      prev = s;
+    }
+    let tFull = bt;
+    if (bt > lo && bt < hi) { const dd = pv + nv - 2 * bv; if (dd > 0) { let o = 0.5 * (pv - nv) / dd; if (o > 1) o = 1; if (o < -1) o = -1; tFull = bt + o; } }
+    return this.fs / tFull;
+  }
+
+  control() {
+    const p = this.p, dt = this.hop / this.fs;
+    let f = this.detect();
+    // octave-jump guard
+    if (f > 0 && this.voiced && this.f0 > 0) {
+      const r = f / this.f0;
+      if ((Math.abs(r - 2) < 0.12 || Math.abs(r - 0.5) < 0.06) && this.octHold < 2) { this.octHold++; f = this.f0; }
+      else this.octHold = 0;
+    }
+    if (f > 0) { this.vOn++; this.vOff = 0; } else { this.vOff++; this.vOn = 0; }
+    const wasVoiced = this.voiced;
+    if (!this.voiced && this.vOn >= 2) this.voiced = true;
+    if (this.voiced && this.vOff >= 3) { this.voiced = false; this.targetMidi = -1; }
+    if (f > 0) this.f0 = f;
+    if (this.voiced && this.f0 > 0) {
+      this.T = this.fs / this.f0;
+      const im = 69 + 12 * Math.log2(this.f0 / 440);
+      if (!wasVoiced) this.inSmooth = im;
+      this.inMidi = im;
+      this.inSmooth += (im - this.inSmooth) * (1 - Math.exp(-dt / 0.12));
+      const vib = im - this.inSmooth;
+      const cand = this.nearest(im);
+      if (this.targetMidi < 0 || !this.mask12[((this.targetMidi % 12) + 12) % 12]) { this.targetMidi = cand; this.held = 0; }
+      else if (cand !== this.targetMidi && Math.abs(im - cand) + 0.12 < Math.abs(im - this.targetMidi)) { this.targetMidi = cand; this.held = 0; }
+      else this.held += dt;
+      const dev = this.targetMidi - im;
+      let wgt = 1;
+      if (p.flex > 0) {
+        const z = 0.6 - 0.5 * (p.flex / 100), z0 = z * 0.5, ad = Math.abs(dev);
+        wgt = ad <= z0 ? 1 : ad >= z ? 0 : 1 - (ad - z0) / (z - z0);
+      }
+      const ct = dev * wgt;
+      let hs = (this.held - 0.08) / 0.27; hs = hs < 0 ? 0 : hs > 1 ? 1 : hs;
+      const ret = p.retuneMs + (p.humanize / 100) * 300 * hs;
+      const alpha = ret <= 0.5 ? 1 : 1 - Math.exp(-dt / (ret / 1000 / 2.3));
+      this.corr += (ct - this.corr) * alpha;
+      this.semis = this.corr + (p.vibrato / 100) * vib + p.transpose;
+    } else {
+      this.corr *= Math.exp(-dt / 0.03);
+      this.semis = this.corr + p.transpose;
+      if (this.vOff > 10) this.T += (this.Tdef - this.T) * 0.2;
+    }
+    let r = Math.pow(2, this.semis / 12); r = r < 0.5 ? 0.5 : r > 2 ? 2 : r;
+    let r2 = r * Math.pow(2, (p.v2Interval + p.v2Detune / 100) / 12); r2 = r2 < 0.45 ? 0.45 : r2 > 2 ? 2 : r2;
+    this.ratioInc = (r - this.ratio) / this.hop; this.r2Inc = (r2 - this.r2) / this.hop; this.rampLeft = this.hop;
+  }
+
+  measureStart() { const M = this.meas; M.state = 1; M.t = 0; M.noise = 0; M.tries = 0; M.result = -1; this.measDone = false; this.measMs = -1; }
+
+  _measure(raw) {
+    // returns sample to emit; state 1 = noise floor, 2 = click+listen, 3 = gap
+    const M = this.meas, fs = this.fs, a = Math.abs(raw);
+    M.t++;
+    if (M.state === 1) { if (a > M.noise) M.noise = a; if (M.t > fs * 0.3) { M.state = 2; M.t = 0; M.start = this.n; } return 0; }
+    if (M.state === 2) {
+      const ct = M.t - 1, cl = Math.round(fs * 0.003);
+      let y = 0;
+      if (ct < cl) y = 0.8 * Math.sin(Math.PI * ct / cl) * Math.sin(TWO_PI * 2000 * ct / fs);
+      const thr = Math.max(M.noise * 6, 0.02);
+      if (ct > 2 && a > thr) { M.r[M.tries++] = this.n - M.start; M.state = 3; M.t = 0; }
+      else if (ct > fs * 0.8) { M.state = 0; M.result = -2; this.measDone = true; this.measMs = -2; }
+      return y;
+    }
+    if (M.state === 3) {
+      if (M.t > fs * 0.35) {
+        if (M.tries >= 3) {
+          const r = M.r, a0 = r[0], a1 = r[1], a2 = r[2];
+          M.result = Math.max(Math.min(a0, a1), Math.min(Math.max(a0, a1), a2)); // median of 3, no allocation
+          M.state = 0; this.measDone = true; this.measMs = M.result * 1000 / fs;
+        } else { M.state = 2; M.t = 0; M.start = this.n + 1; }
+      }
+      return 0;
+    }
+    return 0;
+  }
+
+  process(inp, outL, outR, len) {
+    const p = this.p, fs = this.fs, x = this.x, m = this.mask;
+    const gAt = Math.exp(-1 / (fs * 0.001)), gRe = Math.exp(-1 / (fs * 0.08));
+    for (let i = 0; i < len; i++) {
+      const raw = inp ? inp[i] : 0;
+      this.n++;
+      const n = this.n;
+      if (this.meas.state) {
+        x[n & m] = 0;
+        const y = this._measure(raw);
+        outL[i] = y; outR[i] = y; continue;
+      }
+      let s = this.hpf.run(raw * this.inGain);
+      const a = Math.abs(s);
+      if (a > this.inPk) this.inPk = a;
+      this.gEnv = a > this.gEnv ? a : this.gEnv * 0.9995;
+      if (this.gEnv > this.gateThr * 1.4) { this.gOpen = true; this.gHold = fs * 0.12; }
+      else if (this.gEnv < this.gateThr) { if (this.gHold > 0) this.gHold--; else this.gOpen = false; }
+      const gt = this.gOpen ? 1 : 0;
+      this.gGain = gt > this.gGain ? gt + (this.gGain - gt) * gAt : gt + (this.gGain - gt) * gRe;
+      s *= this.gGain;
+      x[n & m] = s;
+      const ls = this.lp2.run(this.lp1.run(s));
+      if (++this.decPh >= this.dec) { this.decPh = 0; this.dx[this.dn & this.dmask] = ls; this.dn++; }
+      if (++this.hopCnt >= this.hop) { this.hopCnt = 0; this.control(); }
+      if (this.rampLeft > 0) { this.ratio += this.ratioInc; this.r2 += this.r2Inc; this.rampLeft--; }
+      const T = this.T;
+      while (this.markPos + T <= n) this.markPos += T;
+      if (n - this.markPos > 4096) this.markPos = n;
+
+      let y;
+      if (p.bypass) { y = s; this.latency = 0; }
+      else {
+        let w1, w2 = 0;
+        if (p.mode === 0) {
+          w1 = this.s1.step(n, this.ratio, T, x, m);
+          if (p.v2Level > 0) w2 = this.s2.step(n, this.r2, T, x, m);
+          this.latency = this.s1.delay;
+        } else {
+          w1 = this.p1.step(n, this.ratio, T, this.fmt, this.markPos, x, m);
+          if (p.v2Level > 0) w2 = this.p2.step(n, this.r2, T, this.fmt, this.markPos, x, m);
+          this.latency = this.p1.lat;
+        }
+        this.dryD += (this.latency - this.dryD) * 0.002;
+        const dry = lin(x, m, n - Math.max(1, this.dryD));
+        y = dry * (1 - p.mix) + (w1 + p.v2Level * w2) * p.mix;
+      }
+      // compressor (soft knee 6 dB)
+      if (p.compRatio > 1.01) {
+        const ay = Math.abs(y);
+        this.cEnv = ay > this.cEnv ? ay + (this.cEnv - ay) * this.cAtk : ay + (this.cEnv - ay) * this.cRel;
+        const lvl = 20 * Math.log10(this.cEnv + 1e-9), over = lvl - p.compThr;
+        let gr = 0;
+        if (over > 3) gr = over * (1 - 1 / p.compRatio);
+        else if (over > -3) { const o = over + 3; gr = (1 - 1 / p.compRatio) * o * o / 12; }
+        y *= Math.pow(10, -gr / 20) * this.cMake;
+      }
+      if (p.satMix > 0) y += p.satMix * (Math.tanh(this.satG * y) * this.satK - y);
+      // delay
+      if (p.dlyMix > 0) {
+        const L = this.dly.length;
+        let ri = this.dI - this.dlyN; if (ri < 0) ri += L;
+        const dv = this.dly[ri];
+        this.dLp = dv + (this.dLp - dv) * this.dlyDampC;
+        this.dly[this.dI] = y + this.dLp * p.dlyFb;
+        if (++this.dI >= L) this.dI = 0;
+        y += dv * p.dlyMix;
+      }
+      // reverb
+      let yl = y, yr = y;
+      if (p.revMix > 0) {
+        const PL = this.pre.length;
+        this.pre[this.preI] = y;
+        let pi = this.preI - this.preN; if (pi < 0) pi += PL;
+        if (++this.preI >= PL) this.preI = 0;
+        const rin = this.pre[pi] * 0.17; // calibrated: revMix 1.0 ~ wet at dry level (0 dB)
+        let l = 0, r = 0;
+        for (let k = 0; k < 4; k++) { l += this.cL[k].run(rin); r += this.cR[k].run(rin); }
+        for (let k = 0; k < 2; k++) { l = this.aL[k].run(l); r = this.aR[k].run(r); }
+        yl = y + l * p.revMix; yr = y + r * p.revMix;
+      }
+      // howl guard + limiter
+      const g = this.outG;
+      yl *= g; yr *= g;
+      const pk = Math.max(Math.abs(yl), Math.abs(yr));
+      if (pk > this.outPk) this.outPk = pk;
+      if (p.howlGuard) {
+        this.howlEnv += (pk - this.howlEnv) * 0.0005;
+        if (this.howlEnv > 0.6) { if (++this.howlT > fs * 0.6) { this.duckT = fs * 2; this.howl = true; this.howlT = 0; } }
+        else this.howlT = 0;
+        if (this.duckT > 0) { this.duckT--; this.duck += (0.06 - this.duck) * 0.01; }
+        else { this.duck += (1 - this.duck) * 0.0005; this.howl = false; }
+        yl *= this.duck; yr *= this.duck;
+      }
+      const pk2 = Math.max(Math.abs(yl), Math.abs(yr)) * this.limG;
+      if (pk2 > 0.89) this.limG = 0.89 / Math.max(Math.abs(yl), Math.abs(yr));
+      else this.limG += (1 - this.limG) * 0.0003;
+      yl *= this.limG; yr *= this.limG;
+      outL[i] = yl > 1 ? 1 : yl < -1 ? -1 : yl;
+      outR[i] = yr > 1 ? 1 : yr < -1 ? -1 : yr;
+    }
+  }
+
+  telemetry(t) { // t: Float32Array(12), filled in place
+    t[0] = this.inPk; t[1] = this.outPk; this.inPk = 0; this.outPk = 0;
+    t[2] = this.voiced ? this.f0 : 0; t[3] = this.conf;
+    t[4] = this.voiced ? this.inMidi : -1; t[5] = this.voiced ? this.targetMidi : -1;
+    t[6] = this.voiced ? (this.semis - this.p.transpose) * 100 : 0;
+    t[7] = this.latency * 1000 / this.fs; t[8] = this.gOpen ? 1 : 0; t[9] = this.howl ? 1 : 0;
+    t[10] = this.measMs; // latched: -1 none, -2 failed, else ms
+    t[11] = this.meas.state;
+  }
+}
+
+if (typeof module !== 'undefined') module.exports = { AutoTuneEngine, DEFAULT_PARAMS };
+</script>
+<script id="preset-data" type="application/json">{
+  "schema": "autotune-presets/v1",
+  "notes": "Kaynakta sayısal değer verilmeyen parametreler 'uyarlama' olarak işaretlenmiştir. Ton (key) şarkıya göre değiştiği için presetler tonu değiştirmez; yalnızca gam tipini önerir. 'revMix' ve 'dlyMix' bu uygulamanın ölçeğidir: revMix ≈ wet/(1-wet) (ör. %15 wet → 0.18).",
+  "presets": [
+    {
+      "id": "tpain",
+      "name": "T-Pain",
+      "era": "Rappa Ternt Sanga / Epiphany (2005–2007)",
+      "confidence": "yüksek (retune), uyarlama (zincir)",
+      "params": { "retuneMs": 0, "humanize": 0, "flex": 0, "vibrato": 0, "scale": "major", "formant": 0, "mode": 0, "transpose": 0, "v2Level": 0, "v2Interval": 0, "v2Detune": 0, "mix": 1, "hpfHz": 100, "gateDb": -50, "compThr": -20, "compRatio": 3, "compAtk": 5, "compRel": 80, "compMakeup": 3, "satDrive": 0, "satMix": 0, "bpm": 100, "dlyDiv": 1, "dlyFb": 0.2, "dlyMix": 0.12, "dlyDamp": 0.5, "revTime": 1.2, "revDamp": 0.5, "revPre": 20, "revMix": 0.18 },
+      "why": {
+        "retuneMs": "T-Pain retune speed'i sıfırda kullandığını açıkça söylemiş (New Yorker röportajı, Kottke alıntısı).",
+        "scale": "Şarkının tonunda (kromatik değil) — T-Pain stili tonal kilitlenmeye dayanır; ton sizin tarafınızdan seçilmeli.",
+        "chain": "Kompresör/reverb/delay değerleri kaynakta yok: canlı monitör için hafif, kısa ayarlar (uyarlama)."
+      },
+      "performance": "Auto-Tune kulaklıkta açıkken söyle; T-Pain efektin söylerken duyulmasını savunuyor. Notalar arası sıçramaları net söyle — kayma (portamento) zaten silinecek.",
+      "sources": [
+        { "t": "Kottke: Sasha Frere-Jones on Auto-Tune (T-Pain retune = 0)", "u": "https://also.kottke.org/08/06/sasha-frerejones-on-autotune" },
+        { "t": "MusicRadar: T-Pain Auto-Tune effect explained", "u": "https://musicradar.com/computermusic/the-t-pain-auto-tune-effect-explained-once-and-for-all-246132" },
+        { "t": "Radio.com: T-Pain — Auto-Tune söylerken kullanılmalı", "u": "https://webarchive.library.unt.edu/dentonfracking/20141029222304/http://radio.com/2014/10/29/t-pain-kanye-west-auto-tune-doesnt-use-correctly" }
+      ]
+    },
+    {
+      "id": "cher",
+      "name": "Cher — “Believe”",
+      "era": "1998 (Mark Taylor & Brian Rawling)",
+      "confidence": "orta",
+      "params": { "retuneMs": 0, "humanize": 0, "flex": 0, "vibrato": 0, "scale": "major", "formant": 0, "mode": 0, "transpose": 0, "v2Level": 0, "v2Interval": 0, "v2Detune": 0, "mix": 1, "hpfHz": 90, "gateDb": -50, "compThr": -18, "compRatio": 3, "compAtk": 8, "compRel": 100, "compMakeup": 3, "satDrive": 0, "satMix": 0, "bpm": 133, "dlyDiv": 0.75, "dlyFb": 0.25, "dlyMix": 0.1, "dlyDamp": 0.4, "revTime": 1.6, "revDamp": 0.4, "revPre": 25, "revMix": 0.22 },
+      "why": {
+        "retuneMs": "Prodüktörler, portamentoyu silen aşırı hızlı düzeltme ayarı kullanmış; Auto-Tune 5 kılavuzu sıfır hız ayarını 'Cher Effect' diye anıyor. Not: oturumda tam olarak 0 kullanıldığı prodüktörlerden birine dayandırılmış değil.",
+        "chain": "Delay/reverb değerleri kaynakta yok; dans-pop için uyarlama."
+      },
+      "performance": "Uzun, düz heceli notalarda nota geçişleri 'kırılarak' duyulur; geçişleri bilerek kaydır. Gam: şarkının majör tonu.",
+      "sources": [
+        { "t": "Sound On Sound (1999): Recording Cher's 'Believe'", "u": "https://www.soundonsound.com/node/4918619" },
+        { "t": "Wikipedia: Believe (Cher song)", "u": "https://en.wikipedia.org/wiki/Believe_(Cher_song)" },
+        { "t": "Las Vegas Sun: AT5 kılavuzunda 'Cher Effect'", "u": "https://lasvegassun.com/blogs/joe-brown/2008/jun/07/cher-effect/" },
+        { "t": "Orphiq: '0' detayının kaynaksız olduğu notu", "u": "https://orphiq.com/resources/what-is-autotune" }
+      ]
+    },
+    {
+      "id": "kanye808",
+      "name": "Kanye West — 808s & Heartbreak",
+      "era": "2008",
+      "confidence": "orta (zincir yapısı belgeli, sayılar uyarlama)",
+      "params": { "retuneMs": 2, "humanize": 0, "flex": 0, "vibrato": 0, "scale": "minor", "formant": 0, "mode": 0, "transpose": 0, "v2Level": 0.35, "v2Interval": -12, "v2Detune": 0, "mix": 1, "hpfHz": 100, "gateDb": -48, "compThr": -20, "compRatio": 4, "compAtk": 5, "compRel": 90, "compMakeup": 4, "satDrive": 14, "satMix": 0.55, "bpm": 88, "dlyDiv": 1, "dlyFb": 0.3, "dlyMix": 0.22, "dlyDamp": 0.55, "revTime": 1.8, "revDamp": 0.6, "revPre": 20, "revMix": 0.2 },
+      "why": {
+        "chain": "Jeff Bhasker: albüm adındaki 'heartbreak' vokal efektidir — distorsiyon, oktav ve Auto-Tune. Kanye: 'Auto-Tune + distorsiyon + biraz delay'. Bu yüzden saturasyon yüksek, 2. ses −12 (oktav) açık, delay açık.",
+        "retuneMs": "Hızlı retune örneği olarak 'Heartless' gösteriliyor (MixButton); kesin değer yayınlanmamış → 2 ms.",
+        "v2Level": "Oktav katmanının seviyesi kaynakta yok (uyarlama)."
+      },
+      "performance": "Canlıda da kullanıldı: Glow in the Dark turnesinde Auto-Tune canlı açıldı. Konuşur gibi, düz ve uzun notalar.",
+      "sources": [
+        { "t": "Rolling Stone: The making of 808s & Heartbreak (Jeff Bhasker)", "u": "https://www.rollingstone.com/music/music-features/making-of-808s-heartbreak-759011/" },
+        { "t": "Ethan Hein: Kanye alıntısı (Auto-Tune + distortion + delay)", "u": "https://ethanhein.substack.com/p/kanye" },
+        { "t": "MixButton: Heartless hızlı retune örneği", "u": "https://mixbutton.com/music-production/vocal-processing/how-to-use-auto-tune-on-your-vocals" }
+      ]
+    },
+    {
+      "id": "future",
+      "name": "Future — “Draco” dönemi",
+      "era": "2015–2017 (Seth Firkins)",
+      "confidence": "yüksek (zincir), orta (retune)",
+      "params": { "retuneMs": 15, "humanize": 0, "flex": 0, "vibrato": 0, "scale": "minor", "formant": 0, "mode": 0, "transpose": 0, "v2Level": 0.18, "v2Interval": 0, "v2Detune": 8, "mix": 1, "hpfHz": 110, "gateDb": -48, "compThr": -24, "compRatio": 4, "compAtk": 20, "compRel": 120, "compMakeup": 5, "satDrive": 6, "satMix": 0.25, "bpm": 140, "dlyDiv": 1, "dlyFb": 0.25, "dlyMix": 0.15, "dlyDamp": 0.5, "revTime": 0.75, "revDamp": 0.55, "revPre": 15, "revMix": 0.18 },
+      "why": {
+        "chain": "Firkins: Auto-Tune 5 her kayıtta açık ve basılıyor; monitör aux'u Auto-Tune → çeyrek nota delay → D-Verb (%12–15, 12 ms pre-delay). Grup reverbi: Medium Room, 15 ms pre-delay, 751 ms decay, 9.36 kHz HF kesim, %15 wet → revTime 0.75, revPre 15, revMix 0.18.",
+        "retuneMs": "Firkins retune değerini söylememiş. Antares'in Future stili için önerisi 10–25 (başlangıç 15–20) → 15. Canlı mühendisi Bobby Crown efektin '%100' açık olduğunu söylüyor.",
+        "compAtk": "Antares: ağır kazanç azaltma, görece yavaş atak.",
+        "v2Detune": "Firkins zincirdeki flanger/mod-delay hafif dalgalanması için: hafif detune'lu ikinci ses (yaklaşım)."
+      },
+      "performance": "Rap ederken de açık kalır; efekt cümle sonlarında 'warble' yapar. U87 → Neve 1073 → CL1B ile kaydedildi; canlıda dinamik mikrofon + kulak içi monitör.",
+      "sources": [
+        { "t": "Sound On Sound: Inside Track — Future 'Draco' (Seth Firkins)", "u": "https://www.soundonsound.com/techniques/inside-track-future-draco" },
+        { "t": "Antares: Auto-Tune for rap & trap", "u": "https://www.antarestech.com/blog/auto-tune-for-rap-hip-hop-how-trap-producers-use-pitch-correction" },
+        { "t": "Antares: Bobby Crown (Future canlı rig)", "u": "https://www.antarestech.com/blog/bobby-crown" }
+      ]
+    },
+    {
+      "id": "uzi",
+      "name": "Lil Uzi Vert — Luv Is Rage 2",
+      "era": "2017 (Kesha Lee)",
+      "confidence": "yüksek",
+      "params": { "retuneMs": 8, "humanize": 0, "flex": 0, "vibrato": 0, "scale": "minor", "formant": 0, "mode": 0, "transpose": 0, "v2Level": 0, "v2Interval": 0, "v2Detune": 0, "mix": 1, "hpfHz": 100, "gateDb": -45, "compThr": -20, "compRatio": 3.5, "compAtk": 8, "compRel": 100, "compMakeup": 4, "satDrive": 0, "satMix": 0, "bpm": 150, "dlyDiv": 2, "dlyFb": 0.43, "dlyMix": 0.14, "dlyDamp": 0.45, "revTime": 2.0, "revDamp": 0.75, "revPre": 20, "revMix": 0.16 },
+      "why": {
+        "retuneMs": "Kesha Lee: önce varsayılan 20, sonra Uzi 'daha fazla Auto-Tune' isteyince 12 ile 5 arası → 8.",
+        "dlyDiv": "Delay aux: Mod Delay II yarım nota, feedback %43.",
+        "revDamp": "Renaissance Reverb 'Hall 1', reverb EQ'sunda tizler kesilmiş → uzun, karanlık hall.",
+        "gateDb": "Zincirde Waves C1 gate var."
+      },
+      "performance": "Uzi Auto-Tune'u kulaklıkta duyarak söylüyor. Kayıt: TLM103 → Avalon 737 → CL1B.",
+      "sources": [
+        { "t": "Equipboard: Luv Is Rage 2 (Sound On Sound Aralık 2017 alıntıları)", "u": "https://equipboard.com/albums/lil-uzi-vert-luv-is-rage-2" },
+        { "t": "Complex: Kesha Lee kayıt süreci", "u": "https://www.complex.com/music/2017/11/lil-uzi-vert-recording-process-engineer-kesha-lee" }
+      ]
+    },
+    {
+      "id": "travis",
+      "name": "Travis Scott (hard trap)",
+      "era": "Rodeo → Astroworld",
+      "confidence": "orta (Antares rehberi; mühendis değil)",
+      "params": { "retuneMs": 2, "humanize": 0, "flex": 0, "vibrato": 0, "scale": "chromatic", "formant": 0, "mode": 0, "transpose": 0, "v2Level": 0, "v2Interval": 0, "v2Detune": 0, "mix": 1, "hpfHz": 110, "gateDb": -48, "compThr": -22, "compRatio": 4, "compAtk": 10, "compRel": 70, "compMakeup": 4, "satDrive": 4, "satMix": 0.2, "bpm": 140, "dlyDiv": 1, "dlyFb": 0.18, "dlyMix": 0.2, "dlyDamp": 0.6, "revTime": 2.8, "revDamp": 0.85, "revPre": 30, "revMix": 0.3 },
+      "why": {
+        "retuneMs": "Antares: retune 0–5, Flex-Tune kapalı, kromatik ya da şarkı tonu.",
+        "dlyDiv": "Antares: çeyrek nota delay, 2–3 tekrar, %15–20 feedback (ikinci kısa delay bu uygulamada yok).",
+        "revDamp": "Antares: uzun, karanlık reverb (hall/plate), yoğun HF sönümleme.",
+        "compRatio": "Antares: Auto-Tune öncesi 3–6 dB kazanç azaltma, orta atak (burada Auto-Tune sonrasında)."
+      },
+      "performance": "Delay en az pitch kadar önemli. Ad-lib'leri ayrı preset/daha hızlı retune ile dene (Antares: lead 15 iken ad-lib 0).",
+      "sources": [
+        { "t": "Antares: Auto-Tune for rap & trap (Travis Scott bölümü)", "u": "https://www.antarestech.com/blog/auto-tune-for-rap-hip-hop-how-trap-producers-use-pitch-correction" },
+        { "t": "FADER: Mike Dean — Travis Scott & Kanye", "u": "https://www.thefader.com/2018/10/08/mike-dean-interview-travis-scott-and-kanye-west" }
+      ]
+    },
+    {
+      "id": "postmalone",
+      "name": "Post Malone (doğal)",
+      "era": "Stoney → Beerbongs & Bentleys (Louis Bell)",
+      "confidence": "orta",
+      "params": { "retuneMs": 45, "humanize": 15, "flex": 25, "vibrato": 0, "scale": "major", "formant": 0, "mode": 1, "transpose": 0, "v2Level": 0, "v2Interval": 0, "v2Detune": 0, "mix": 1, "hpfHz": 85, "gateDb": -55, "compThr": -20, "compRatio": 3, "compAtk": 10, "compRel": 120, "compMakeup": 3, "satDrive": 3, "satMix": 0.15, "bpm": 80, "dlyDiv": 0.5, "dlyFb": 0.2, "dlyMix": 0.1, "dlyDamp": 0.5, "revTime": 1.8, "revDamp": 0.5, "revPre": 25, "revMix": 0.22 },
+      "why": {
+        "retuneMs": "Louis Bell: ayar Melodyne'da, ardından Auto-Tune 'çok hafif'. Antares'in şeffaf düzeltme önerisi 15–50 ms → 45.",
+        "flex": "Antares şeffaf ayar: Flex-Tune 15–30.",
+        "humanize": "Antares şeffaf ayar: Humanize 10–20.",
+        "mode": "Doğal tını için formant koruyan PSOLA modu."
+      },
+      "performance": "Bell: 'Rockstar'daki titreme Auto-Tune değil, Post'un söyleyişi. Vibratoyu bastırmayın.",
+      "sources": [
+        { "t": "Equipboard: Louis Bell — Melodyne + hafif Auto-Tune", "u": "https://equipboard.com/albums/louis-bell-rockstar" },
+        { "t": "Antares SSS: şeffaf düzeltme önerileri", "u": "https://help.antarestech.com/hc/en-us/articles/42855736822932" }
+      ]
+    },
+    {
+      "id": "carti",
+      "name": "Playboi Carti — “baby voice” (WLR)",
+      "era": "Whole Lotta Red (2020)",
+      "confidence": "düşük (yalnız ticari preset rehberi; mühendis kaynağı bulunamadı)",
+      "params": { "retuneMs": 8, "humanize": 0, "flex": 0, "vibrato": 0, "scale": "chromatic", "formant": 3, "mode": 1, "transpose": 0, "v2Level": 0, "v2Interval": 0, "v2Detune": 0, "mix": 1, "hpfHz": 140, "gateDb": -45, "compThr": -22, "compRatio": 5, "compAtk": 3, "compRel": 60, "compMakeup": 5, "satDrive": 10, "satMix": 0.4, "bpm": 150, "dlyDiv": 0.5, "dlyFb": 0.2, "dlyMix": 0.1, "dlyDamp": 0.5, "revTime": 2.0, "revDamp": 0.5, "revPre": 15, "revMix": 0.6 },
+      "why": {
+        "formant": "RysUp rehberi: baby voice için hızlı düzeltme + formant +2…+4 st (doğrulanmamış).",
+        "retuneMs": "Aynı rehber: 5–15 ms, kromatik ya da minör pentatonik.",
+        "revMix": "Aynı rehber: WLR reverbi %35–45 wet → ~0.6."
+      },
+      "performance": "Carti'nin 'baby voice' büyük ölçüde söyleyiş tekniği (yüksek, burundan, kelimeleri esneterek); bu preset onu taklit etmez, yalnızca tınıyı yaklaşıklar.",
+      "sources": [
+        { "t": "RysUp: Playboi Carti vocal preset (kendisi de doğrulanmadığını belirtiyor)", "u": "https://rysupaudio.com/blogs/news/playboi-carti-vocal-preset" },
+        { "t": "Complex: Baby voice tarihçesi", "u": "https://www.complex.com/music/a/greg-gaffney/playboi-carti-baby-voice-history" }
+      ]
+    },
+    {
+      "id": "toliver",
+      "name": "Don Toliver (melodik, canlı zincir)",
+      "era": "2025 dünya turnesi",
+      "confidence": "düşük (pitch ayarı belgesiz), orta (canlı zincir yapısı)",
+      "params": { "retuneMs": 15, "humanize": 15, "flex": 0, "vibrato": 0, "scale": "minor", "formant": 0, "mode": 0, "transpose": 0, "v2Level": 0, "v2Interval": 0, "v2Detune": 0, "mix": 1, "hpfHz": 100, "gateDb": -50, "compThr": -22, "compRatio": 4, "compAtk": 3, "compRel": 80, "compMakeup": 4, "satDrive": 4, "satMix": 0.2, "bpm": 120, "dlyDiv": 0.25, "dlyFb": 0.1, "dlyMix": 0.15, "dlyDamp": 0.4, "revTime": 2.2, "revDamp": 0.5, "revPre": 25, "revMix": 0.3 },
+      "why": {
+        "chain": "FOH zinciri: Neve 5045 → SSL kanal → EQ → de-esser → CLA-76 → CLA-2A → kompresörler; kısa slap delay (SuperTap) + H-Delay; H-Reverb albüm presetleri. Sayısal değer verilmemiş.",
+        "dlyDiv": "Kısa slap için 1/16 nota (uyarlama).",
+        "retuneMs": "Pitch düzeltme ayarları yayınlanmamış; stil rehberleri 'orta–hızlı retune + humanize' diyor (uyarlama)."
+      },
+      "performance": "Yumuşak, geniş reverb'lü melodik hatlar; kulak içi monitörde de vokal sıkıştırılarak veriliyor.",
+      "sources": [
+        { "t": "ProSoundWeb: Waves on Don Toliver's 2025 tour", "u": "https://www.prosoundweb.com/waves-deployed-for-don-tolivers-2025-world-tour/" },
+        { "t": "Cedar Sound Studios: Don Toliver stili rehber", "u": "https://www.cedarsoundstudios.com/blogs/news/how-to-sound-like-don-toliver-a-modern-melodic-trap-vibe" }
+      ]
+    },
+    {
+      "id": "adlib",
+      "name": "Trap ad-lib (sert)",
+      "era": "Genel — Antares katmanlama önerisi",
+      "confidence": "orta",
+      "params": { "retuneMs": 0, "humanize": 0, "flex": 0, "vibrato": 0, "scale": "minor", "formant": 0, "mode": 0, "transpose": 0, "v2Level": 0.3, "v2Interval": 0, "v2Detune": 12, "mix": 1, "hpfHz": 180, "gateDb": -42, "compThr": -22, "compRatio": 5, "compAtk": 3, "compRel": 60, "compMakeup": 5, "satDrive": 6, "satMix": 0.3, "bpm": 140, "dlyDiv": 1, "dlyFb": 0.3, "dlyMix": 0.25, "dlyDamp": 0.6, "revTime": 2.5, "revDamp": 0.7, "revPre": 20, "revMix": 0.35 },
+      "why": {
+        "retuneMs": "Antares: ad-lib'ler lead'den sert çalışır (ör. lead 15, ad-lib 0).",
+        "hpfHz": "Antares: ad-lib'ler lead'in temel frekans bölgesiyle çakışmamalı → yüksek HPF.",
+        "v2Detune": "Antares Harmony: hafif detune'lu unison."
+      },
+      "performance": "Kısa, vurgulu sesler; mikrofona biraz uzaktan.",
+      "sources": [ { "t": "Antares: Auto-Tune for rap & trap", "u": "https://www.antarestech.com/blog/auto-tune-for-rap-hip-hop-how-trap-producers-use-pitch-correction" } ]
+    },
+    {
+      "id": "melodictrap",
+      "name": "Melodik trap (orta yol)",
+      "era": "Genel — Antares",
+      "confidence": "orta",
+      "params": { "retuneMs": 18, "humanize": 0, "flex": 0, "vibrato": 0, "scale": "minor", "formant": 0, "mode": 0, "transpose": 0, "v2Level": 0, "v2Interval": 0, "v2Detune": 0, "mix": 1, "hpfHz": 100, "gateDb": -50, "compThr": -20, "compRatio": 3.5, "compAtk": 10, "compRel": 80, "compMakeup": 4, "satDrive": 4, "satMix": 0.2, "bpm": 140, "dlyDiv": 1, "dlyFb": 0.2, "dlyMix": 0.15, "dlyDamp": 0.5, "revTime": 1.8, "revDamp": 0.6, "revPre": 20, "revMix": 0.2 },
+      "why": { "retuneMs": "Antares: 10–25 melodik orta yol; 30–40 'kaza gibi' duyulabilir.", "flex": "Antares: Flex-Tune kapalı." },
+      "performance": "Şarkının minör tonunu seçin.",
+      "sources": [ { "t": "Antares: Auto-Tune for rap & trap", "u": "https://www.antarestech.com/blog/auto-tune-for-rap-hip-hop-how-trap-producers-use-pitch-correction" } ]
+    },
+    {
+      "id": "natural",
+      "name": "Doğal / şeffaf düzeltme",
+      "era": "Genel — Antares önerisi",
+      "confidence": "yüksek",
+      "params": { "retuneMs": 30, "humanize": 15, "flex": 25, "vibrato": 0, "scale": "major", "formant": 0, "mode": 1, "transpose": 0, "v2Level": 0, "v2Interval": 0, "v2Detune": 0, "mix": 1, "hpfHz": 80, "gateDb": -55, "compThr": -18, "compRatio": 2.5, "compAtk": 10, "compRel": 120, "compMakeup": 2, "satDrive": 0, "satMix": 0, "bpm": 90, "dlyDiv": 1, "dlyFb": 0.15, "dlyMix": 0, "dlyDamp": 0.5, "revTime": 1.4, "revDamp": 0.5, "revPre": 20, "revMix": 0.15 },
+      "why": { "retuneMs": "Antares: retune 15–50 ms, Flex-Tune 15–30, Humanize 10–20.", "mode": "Formant koruyan mod." },
+      "performance": "Önce Humanize 0 iken retune'u kısa notalar düzelene kadar ayarla, sonra uzun notalar statikse Humanize'ı artır (Antares iş akışı).",
+      "sources": [
+        { "t": "Antares SSS", "u": "https://help.antarestech.com/hc/en-us/articles/42855736822932" },
+        { "t": "Antares: Humanize", "u": "https://help.antarestech.com/hc/en-us/articles/42858099043092" }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const SCALES = { chromatic:[0,1,2,3,4,5,6,7,8,9,10,11], major:[0,2,4,5,7,9,11], minor:[0,2,3,5,7,8,10], harmMinor:[0,2,3,5,7,8,11], majPent:[0,2,4,7,9], minPent:[0,3,5,7,10], blues:[0,3,5,6,7,10], custom:null };
+const SCALE_TR = { chromatic:'Kromatik', major:'Majör', minor:'Minör (doğal)', harmMinor:'Armonik minör', majPent:'Majör pentatonik', minPent:'Minör pentatonik', blues:'Blues', custom:'Özel' };
+const VOICES = { wide:['Geniş (60–1000 Hz)',60,1000], lowMale:['Kalın erkek (60–450)',60,450], altoTenor:['Tenor / alto (90–800)',90,800], soprano:['Soprano (160–1100)',160,1100] };
+const DIVS = { 0.25:'1/16', 0.5:'1/8', 0.75:'1/8 noktalı', 1:'1/4', 1.5:'1/4 noktalı', 2:'1/2' };
+const DEF = { key:9, scale:'minor', custom:[1,1,1,1,1,1,1,1,1,1,1,1], voice:'wide', bypass:false,
+  inGainDb:0, hpfHz:90, gateDb:-55, retuneMs:20, humanize:0, flex:0, vibrato:0, transpose:0, mode:0, formant:0,
+  v2Level:0, v2Interval:0, v2Detune:0, mix:1, compThr:-18, compRatio:3, compAtk:5, compRel:80, compMakeup:3,
+  satDrive:0, satMix:0, bpm:120, dlyDiv:1, dlyFb:0.25, dlyMix:0, dlyDamp:0.4, revTime:1.2, revDamp:0.5, revPre:15, revMix:0.12, outDb:0, howlGuard:true };
+const PRESET_KEYS = Object.keys(DEF).filter(k => k !== 'bypass');
+let S = Object.assign({}, DEF);
+let ctx = null, node = null, outGain = null, stream = null, srcNode = null, wakeLock = null, running = false, modeName = '';
+let telem = null, muted = false, measuring = false, measSeen = false, inLat = 0, activePreset = 'varsayılan';
+const ART = JSON.parse($('#preset-data').textContent);
+
+/* ---------- state -> engine ---------- */
+function maskAbs() {
+  if (S.scale === 'custom') return S.custom.slice();
+  const m = new Array(12).fill(0);
+  for (const d of SCALES[S.scale]) m[(S.key + d) % 12] = 1;
+  return m;
+}
+function engineParams() {
+  const v = VOICES[S.voice] || VOICES.wide;
+  const p = {}; for (const k in S) p[k] = S[k];
+  p.mask = maskAbs(); p.minF0 = v[1]; p.maxF0 = v[2];
+  p.dlyMs = 60000 / S.bpm * S.dlyDiv;
+  p.mode = +S.mode;
+  delete p.custom; delete p.key; delete p.scale; delete p.voice; delete p.bpm; delete p.dlyDiv;
+  return p;
+}
+/* ---------- native backend (Android Oboe / iOS RemoteIO), when running inside the app ---------- */
+const NATIVE = window.CanliNative ? 'android' : (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.canli) ? 'ios' : null;
+let nativeActive = false, nativeLast = null;
+window.__canliTelem = a => { nativeLast = a; };
+function nativeParams() {
+  const p = engineParams(), o = {};
+  for (const k in p) { if (k === 'mask') o.maskBits = p.mask.reduce((a, v, i) => a | (v ? 1 << i : 0), 0); else o[k] = typeof p[k] === 'boolean' ? (p[k] ? 1 : 0) : +p[k]; }
+  return o;
+}
+const Native = NATIVE === 'android' ? {
+  name: 'yerel motor (Oboe)',
+  start: () => { try { return Promise.resolve(JSON.parse(window.CanliNative.start())); } catch (e) { return Promise.resolve({ ok:false, err:String(e) }); } },
+  stop: () => { try { window.CanliNative.stop(); } catch (e) {} },
+  params: p => window.CanliNative.setParams(JSON.stringify(p)),
+  measure: () => window.CanliNative.measure(),
+  poll: () => { try { return JSON.parse(window.CanliNative.telemetry()); } catch (e) { return null; } },
+} : NATIVE === 'ios' ? {
+  name: 'yerel motor (iOS)',
+  start: () => new Promise(res => { window.__canliStarted = res; window.webkit.messageHandlers.canli.postMessage({ cmd:'start' }); }),
+  stop: () => window.webkit.messageHandlers.canli.postMessage({ cmd:'stop' }),
+  params: p => window.webkit.messageHandlers.canli.postMessage({ cmd:'params', p }),
+  measure: () => window.webkit.messageHandlers.canli.postMessage({ cmd:'measure' }),
+  poll: () => nativeLast,
+} : null;
+let sendPending = false;
+function send() {
+  if (sendPending) return; sendPending = true;
+  requestAnimationFrame(() => { sendPending = false;
+    if (nativeActive) Native.params(nativeParams());
+    else if (node) node.port.postMessage({ type:'params', p: engineParams() }); });
+}
+
+/* ---------- controls ---------- */
+const reg = {};
+function bind(k, el, upd) { (reg[k] = reg[k] || []).push(upd); upd(); }
+function setVal(k, v, silent) { S[k] = v; (reg[k] || []).forEach(f => f()); if (k === 'key' || k === 'scale' || k === 'custom') drawChips(); if (!silent) send(); }
+function fmt(v, step) { const d = step < 0.1 ? 2 : step < 1 ? 1 : 0; return (+v).toFixed(d); }
+function slider(k, label, min, max, step, unit) {
+  const w = document.createElement('div'); w.className = 'ctl';
+  w.innerHTML = `<label><span>${label}</span><em></em></label><input type="range" min="${min}" max="${max}" step="${step}">`;
+  const r = w.querySelector('input'), em = w.querySelector('em');
+  r.addEventListener('input', () => setVal(k, +r.value));
+  bind(k, r, () => { r.value = S[k]; em.textContent = fmt(S[k], step) + (unit ? ' ' + unit : ''); });
+  return w;
+}
+function select(k, label, opts, num) {
+  const w = document.createElement('div'); w.className = 'ctl';
+  w.innerHTML = (label ? `<label><span>${label}</span></label>` : '') + '<select></select>';
+  const s = w.querySelector('select');
+  for (const [v, t] of opts) { const o = document.createElement('option'); o.value = v; o.textContent = t; s.appendChild(o); }
+  s.addEventListener('change', () => setVal(k, num ? +s.value : s.value));
+  bind(k, s, () => { s.value = String(S[k]); });
+  return w;
+}
+function check(k, label) {
+  const w = document.createElement('div'); w.className = 'ctl';
+  w.innerHTML = `<label style="align-items:center"><span>${label}</span><input type="checkbox" style="width:24px;height:24px"></label>`;
+  const c = w.querySelector('input'); c.addEventListener('change', () => setVal(k, c.checked));
+  bind(k, c, () => { c.checked = !!S[k]; }); return w;
+}
+const keyOpts = NOTES.map((n, i) => [i, n]);
+const scaleOpts = Object.keys(SCALE_TR).map(k => [k, SCALE_TR[k]]);
+$('#qKey').appendChild(select('key', 'Ton', keyOpts, true));
+$('#qScale').appendChild(select('scale', 'Gam', scaleOpts));
+$('#eKey').appendChild(select('key', 'Ton', keyOpts, true));
+$('#eScale').appendChild(select('scale', 'Gam', scaleOpts));
+$('#qCtl').append(slider('retuneMs', 'Retune hızı (0 = sert efekt)', 0, 200, 1, 'ms'), slider('mix', 'Dry / Wet', 0, 1, 0.01, ''), slider('revMix', 'Reverb', 0, 1, 0.01, ''));
+
+const GROUPS = [
+  ['Düzeltme', [['s','retuneMs','Retune hızı',0,400,1,'ms'], ['s','humanize','Humanize (uzun notalarda yavaşlat)',0,100,1,''], ['s','flex','Flex-Tune (yalnız hedefe yaklaşınca düzelt)',0,100,1,''], ['s','vibrato','Doğal vibrato (− azalt / + artır)',-100,100,1,''], ['s','transpose','Transpoze',-12,12,1,'yarım ton']]],
+  ['Ses motoru', [['sel','mode','Mod',[[0,'Ultra düşük gecikme (formant perdeyle kayar)'],[1,'Formant koruma — TD-PSOLA (daha fazla gecikme)']],true], ['s','formant','Formant / Throat (yalnız PSOLA)',-6,6,0.5,'yarım ton'], ['sel','voice','Ses aralığı (Input Type)',Object.keys(VOICES).map(k=>[k,VOICES[k][0]])]]],
+  ['2. ses — double / oktav', [['s','v2Level','Seviye',0,1,0.01,''], ['s','v2Interval','Aralık',-12,12,1,'yarım ton'], ['s','v2Detune','Detune',-50,50,1,'cent']]],
+  ['Giriş', [['s','inGainDb','Giriş kazancı',-12,24,0.5,'dB'], ['s','hpfHz','High-pass filtre',20,300,1,'Hz'], ['s','gateDb','Noise gate eşiği',-80,-20,1,'dBFS']]],
+  ['Kompresör', [['s','compThr','Eşik',-50,0,1,'dB'], ['s','compRatio','Oran (1 = kapalı)',1,20,0.1,':1'], ['s','compAtk','Atak',0.1,50,0.1,'ms'], ['s','compRel','Bırakma',10,500,1,'ms'], ['s','compMakeup','Makeup',0,18,0.5,'dB']]],
+  ['Saturasyon / drive', [['s','satDrive','Drive',0,30,0.5,'dB'], ['s','satMix','Miktar',0,1,0.01,'']]],
+  ['Delay', [['s','bpm','Tempo',60,200,1,'BPM'], ['sel','dlyDiv','Nota',Object.keys(DIVS).map(k=>[k,DIVS[k]]),true], ['s','dlyFb','Feedback',0,0.9,0.01,''], ['s','dlyMix','Seviye',0,1,0.01,''], ['s','dlyDamp','Karanlık (HF sönüm)',0,0.9,0.01,'']]],
+  ['Reverb', [['s','revTime','Süre (RT60)',0.2,6,0.05,'s'], ['s','revDamp','HF sönüm',0,0.9,0.01,''], ['s','revPre','Pre-delay',0,200,1,'ms'], ['s','revMix','Seviye',0,1,0.01,'']]],
+  ['Çıkış', [['s','mix','Dry / Wet',0,1,0.01,''], ['s','outDb','Çıkış seviyesi',-24,6,0.5,'dB'], ['c','howlGuard','Geri besleme (howl) koruması']]],
+];
+for (const [title, items] of GROUPS) {
+  const c = document.createElement('div'); c.className = 'card'; c.innerHTML = `<h2>${title}</h2>`;
+  for (const it of items) {
+    if (it[0] === 's') c.appendChild(slider(it[1], it[2], it[3], it[4], it[5], it[6]));
+    else if (it[0] === 'sel') c.appendChild(select(it[1], it[2], it[3], it[4]));
+    else c.appendChild(check(it[1], it[2]));
+  }
+  $('#groups').appendChild(c);
+}
+function drawChips() {
+  const box = $('#chips'); box.innerHTML = ''; const m = maskAbs();
+  NOTES.forEach((n, i) => {
+    const b = document.createElement('button'); b.textContent = n; b.className = m[i] ? 'on' : 'blk';
+    b.onclick = () => { const mm = maskAbs(); mm[i] = mm[i] ? 0 : 1; S.custom = mm; setVal('scale', 'custom'); };
+    box.appendChild(b);
+  });
+}
+drawChips();
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('act', x === b));
+  document.querySelectorAll('section.tab').forEach(s => s.classList.toggle('act', s.id === b.dataset.t));
+  window.scrollTo(0, 0);
+});
+function msg(t, kind, el) { const m = el || $('#msg'); m.textContent = t; m.className = 'msg show' + (kind ? ' ' + kind : ''); if (!t) m.className = 'msg'; }
+
+/* ---------- audio ---------- */
+const PROC = `
+class ATProc extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.e = new AutoTuneEngine(sampleRate); this.t = new Float32Array(12); this.cnt = 0; this.sab = null;
+    this.port.onmessage = (ev) => { const d = ev.data;
+      if (d.type === 'params') this.e.setParams(d.p);
+      else if (d.type === 'measure') this.e.measureStart();
+      else if (d.type === 'sab') this.sab = new Float32Array(d.buf); };
+  }
+  process(inputs, outputs) {
+    const ich = inputs[0] && inputs[0][0] ? inputs[0][0] : null;
+    const o = outputs[0], L = o[0], R = o[1] || o[0];
+    if (!L) return true;
+    this.e.process(ich, L, R, L.length);
+    if (++this.cnt >= 10) { this.cnt = 0;
+      if (this.sab) { this.e.telemetry(this.sab); }       // zero-allocation path (needs cross-origin isolation)
+      else { this.e.telemetry(this.t); this.port.postMessage(this.t); } }
+    return true;
+  }
+}
+registerProcessor('autotune', ATProc);`;
+let sabView = null;
+async function buildGraph() {
+  const code = $('#dsp-src').textContent + '\n' + PROC;
+  const url = URL.createObjectURL(new Blob([code], { type:'application/javascript' }));
+  await ctx.audioWorklet.addModule(url);
+  node = new AudioWorkletNode(ctx, 'autotune', { numberOfInputs:1, numberOfOutputs:1, outputChannelCount:[2], channelCount:1, channelCountMode:'explicit', channelInterpretation:'speakers' });
+  node.port.onmessage = e => { telem = e.data; };
+  if (self.crossOriginIsolated && typeof SharedArrayBuffer !== 'undefined') {
+    const buf = new SharedArrayBuffer(12 * 4); sabView = new Float32Array(buf); node.port.postMessage({ type:'sab', buf });
+  }
+  outGain = ctx.createGain(); outGain.gain.value = muted ? 0 : 1;
+  node.connect(outGain).connect(ctx.destination);
+  node.port.postMessage({ type:'params', p: engineParams() });
+}
+function newCtx() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  ctx = new AC({ latencyHint:'interactive' });
+  return ctx.resume();
+}
+async function startMic() {
+  await stop();
+  msg('');
+  if (Native) {
+    const r = await Native.start();
+    if (!r.ok) {
+      if (r.err === 'perm') { msg('Mikrofon izni isteniyor…'); window.__canliPerm = g => g ? startMic() : msg('Mikrofon izni verilmedi. Ayarlar → Uygulamalar → CanlıTune → İzinler.', 'err'); return; }
+      msg('Yerel ses motoru başlatılamadı: ' + r.err, 'err'); return;
+    }
+    nativeActive = true; modeName = Native.name; inLat = r.inLat || 0; Native.params(nativeParams()); started(); return;
+  }
+  if (!window.isSecureContext) { msg('Mikrofon yalnızca HTTPS (veya localhost) üzerinde çalışır. Dosyayı HTTPS bir adreste aç.', 'err'); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { msg('Bu tarayıcı mikrofon erişimi sunmuyor.', 'err'); return; }
+  try {
+    const resumed = newCtx();
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false, channelCount:1, latency:0 } });
+    await resumed;
+    if (!ctx.audioWorklet) throw new Error('AudioWorklet desteklenmiyor (Chrome 66+, Safari 14.5+ gerekir).');
+    await buildGraph();
+    srcNode = ctx.createMediaStreamSource(stream); srcNode.connect(node);
+    const st = stream.getAudioTracks()[0].getSettings ? stream.getAudioTracks()[0].getSettings() : {};
+    inLat = st.latency ? st.latency * 1000 : 0;
+    modeName = 'mikrofon'; started();
+    if (st.echoCancellation) msg('Uyarı: tarayıcı yankı engellemeyi kapatmadı; gecikme ve ses kalitesi etkilenebilir.', '');
+  } catch (e) {
+    await stop();
+    const blocked = /Permission|NotAllowed|denied|policy|SecurityError/i.test(e.name + ' ' + e.message);
+    msg(blocked ? 'Mikrofon izni verilmedi ya da bu sayfa mikrofona erişemiyor (ör. Claude önizleme çerçevesi mikrofonu engeller). Sayfayı kendi HTTPS adresinde aç ya da “Dosya” ile bir vokal kaydı dene.' : ('Başlatılamadı: ' + e.message), 'err');
+  }
+}
+async function startFile(file) {
+  await stop(); msg('');
+  try {
+    await newCtx(); await buildGraph();
+    const buf = await ctx.decodeAudioData(await file.arrayBuffer());
+    srcNode = ctx.createBufferSource(); srcNode.buffer = buf; srcNode.loop = true; srcNode.connect(node); srcNode.start();
+    inLat = 0; modeName = 'dosya: ' + file.name; started();
+  } catch (e) { await stop(); msg('Dosya açılamadı: ' + e.message, 'err'); }
+}
+async function started() {
+  running = true; $('#stateDot').classList.add('on'); $('#stateTx').textContent = modeName;
+  $('#bStop').classList.remove('hide');
+  try { if (navigator.wakeLock) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+}
+async function stop() {
+  running = false;
+  if (nativeActive) { Native.stop(); nativeActive = false; nativeLast = null; }
+  try { if (srcNode) { srcNode.disconnect(); if (srcNode.stop) srcNode.stop(); } } catch (e) {}
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  if (ctx) { try { await ctx.close(); } catch (e) {} }
+  ctx = node = srcNode = stream = null; telem = null; sabView = null;
+  try { if (wakeLock) await wakeLock.release(); } catch (e) {} wakeLock = null;
+  $('#stateDot').classList.remove('on'); $('#stateTx').textContent = 'kapalı'; $('#bStop').classList.add('hide');
+}
+$('#bMic').onclick = startMic;
+$('#bFile').onclick = () => $('#fileIn').click();
+$('#fileIn').onchange = e => { const f = e.target.files[0]; if (f) startFile(f); e.target.value = ''; };
+$('#bStop').onclick = stop;
+$('#bBypass').onclick = () => { setVal('bypass', !S.bypass); $('#bBypass').classList.toggle('on', S.bypass); $('#bBypass').textContent = S.bypass ? 'Bypass AÇIK' : 'Bypass'; };
+$('#bMute').onclick = () => { muted = !muted; if (outGain) outGain.gain.value = muted ? 0 : 1; $('#bMute').textContent = muted ? 'Monitör sessiz' : 'Monitör açık'; $('#bMute').classList.toggle('on', muted); };
+$('#bMeasure').onclick = () => {
+  if (!nativeActive && (!node || modeName !== 'mikrofon')) { msg('Önce mikrofonla başlat.', 'err'); return; }
+  measuring = true; measSeen = false; $('#lMeas').textContent = 'ölçülüyor…';
+  if (nativeActive) Native.measure(); else node.port.postMessage({ type:'measure' });
+};
+document.addEventListener('visibilitychange', async () => { if (!document.hidden && running && ctx && ctx.state !== 'running') { try { await ctx.resume(); } catch (e) {} } });
+
+/* ---------- telemetry UI ---------- */
+const H = 300, hIn = new Float32Array(H).fill(-1), hTg = new Float32Array(H).fill(-1); let hI = 0;
+const cv = $('#graph'), g2 = cv.getContext('2d');
+const db = v => v > 1e-6 ? 20 * Math.log10(v) : -120;
+const nn = m => m < 0 ? '–' : NOTES[((Math.round(m) % 12) + 12) % 12] + (Math.floor(Math.round(m) / 12) - 1);
+let lastSeen = 0;
+function frame() {
+  requestAnimationFrame(frame);
+  const t = nativeActive ? Native.poll() : (sabView || telem); if (!t || !running) return;
+  const inD = db(t[0]), outD = db(t[1]);
+  $('#mIn').style.width = Math.max(0, Math.min(100, (inD + 60) / 60 * 100)) + '%'; $('#mInTx').textContent = inD < -99 ? '–∞' : inD.toFixed(0) + ' dB';
+  $('#mOut').style.width = Math.max(0, Math.min(100, (outD + 60) / 60 * 100)) + '%'; $('#mOutTx').textContent = outD < -99 ? '–∞' : outD.toFixed(0) + ' dB';
+  const voiced = t[4] >= 0;
+  $('#nIn').textContent = nn(t[4]); $('#nTg').textContent = nn(t[5]);
+  const devC = voiced ? Math.round((t[4] - Math.round(t[4])) * 100) : 0;
+  $('#nSub').textContent = voiced ? `${t[2].toFixed(1)} Hz · ${devC >= 0 ? '+' : ''}${devC} cent · güven ${(t[3] * 100).toFixed(0)}%` : 'ses yok / perdesiz';
+  const c = Math.max(-100, Math.min(100, t[6])), bar = $('#centBar');
+  bar.style.left = (50 + Math.min(0, c) / 2) + '%'; bar.style.width = Math.abs(c) / 2 + '%';
+  $('#centTx').textContent = `düzeltme ${t[6] >= 0 ? '+' : ''}${t[6].toFixed(0)} cent`;
+  $('#gateTx').textContent = (t[8] ? 'gate: açık' : 'gate: kapalı') + (t[9] ? ' · ⚠ GERİ BESLEME: çıkış kısıldı — kulaklık kullan' : '');
+  $('#gateTx').style.color = t[9] ? 'var(--bad)' : '';
+  // latency
+  const out = nativeActive ? (t[14] || 0) : ctx ? ((ctx.baseLatency || 0) + (ctx.outputLatency || 0)) * 1000 : 0;
+  if (nativeActive && t[15]) inLat = t[15];
+  $('#lAlg').textContent = (S.bypass ? 0 : t[7]).toFixed(1) + ' ms';
+  $('#lOut').textContent = out ? out.toFixed(1) + ' ms' : 'rapor yok';
+  $('#lIn').textContent = inLat ? inLat.toFixed(1) + ' ms' : 'rapor yok';
+  $('#lTot').textContent = (t[7] + out + inLat).toFixed(1) + ' ms';
+  $('#lSr').textContent = nativeActive ? `${t[12] || '?'} Hz / ${t[13] || '?'}` : ctx ? `${ctx.sampleRate} Hz / 128` : '–';
+  if (measuring && t[11] !== 0) measSeen = true;
+  if (measuring && measSeen && t[11] === 0 && t[10] !== -1) {
+    measuring = false;
+    if (t[10] < 0) { $('#lMeas').textContent = 'başarısız'; msg('Tık sesi mikrofona ulaşmadı: kulaklığı çıkar, sesi aç, tekrar dene.', 'err'); }
+    else { $('#lMeas').textContent = t[10].toFixed(1) + ' ms'; $('#lMeasTot').textContent = (t[10] + t[7]).toFixed(1) + ' ms'; }
+  }
+  // history graph
+  const now = performance.now(); if (now - lastSeen > 25) { lastSeen = now; hIn[hI] = t[4]; hTg[hI] = t[5]; hI = (hI + 1) % H; drawGraph(); }
+}
+function drawGraph() {
+  const W = cv.width, Hh = cv.height; g2.clearRect(0, 0, W, Hh);
+  let center = -1; for (let k = 1; k <= H; k++) { const v = hTg[(hI - k + H) % H]; if (v >= 0) { center = v; break; } }
+  if (center < 0) center = 57;
+  const span = 7, y = m => Hh / 2 - (m - center) / span * (Hh / 2);
+  const mask = maskAbs(); g2.font = '20px system-ui';
+  for (let m = Math.floor(center - span); m <= Math.ceil(center + span); m++) {
+    const on = mask[((m % 12) + 12) % 12]; g2.strokeStyle = on ? '#343c4b' : '#1c2028'; g2.lineWidth = on ? 2 : 1;
+    g2.beginPath(); g2.moveTo(56, y(m)); g2.lineTo(W, y(m)); g2.stroke();
+    if (on) { g2.fillStyle = '#6b7487'; g2.fillText(nn(m), 4, y(m) + 7); }
+  }
+  const line = (arr, col, w) => { g2.strokeStyle = col; g2.lineWidth = w; g2.beginPath(); let pen = false;
+    for (let k = 0; k < H; k++) { const v = arr[(hI + k) % H], x = 56 + k / (H - 1) * (W - 56);
+      if (v < 0) { pen = false; continue; } if (!pen) { g2.moveTo(x, y(v)); pen = true; } else g2.lineTo(x, y(v)); } g2.stroke(); };
+  line(hTg, '#ff6a3d', 5); line(hIn, '#3dd6c6', 3);
+}
+requestAnimationFrame(frame);
+
+/* ---------- presets ---------- */
+const LS = 'canlitune.presets.v1';
+let user = {};
+try { user = JSON.parse(localStorage.getItem(LS) || '{}'); } catch (e) { user = {}; }
+function persist() { try { localStorage.setItem(LS, JSON.stringify(user)); return true; } catch (e) { return false; } }
+function snapshot() { const o = {}; for (const k of PRESET_KEYS) o[k] = Array.isArray(S[k]) ? S[k].slice() : S[k]; return o; }
+function applyPreset(p, name, keepKey) {
+  for (const k of PRESET_KEYS) if (k in p && !(keepKey && k === 'key')) S[k] = Array.isArray(p[k]) ? p[k].slice() : p[k];
+  for (const k in reg) reg[k].forEach(f => f());
+  drawChips(); send(); activePreset = name; $('#activePreset').textContent = 'Preset: ' + name;
+}
+function refreshList() {
+  const l = $('#pList'); l.innerHTML = '';
+  const names = Object.keys(user).sort();
+  if (!names.length) { const o = document.createElement('option'); o.textContent = '(kayıtlı preset yok)'; o.value = ''; l.appendChild(o); }
+  for (const n of names) { const o = document.createElement('option'); o.value = n; o.textContent = n; l.appendChild(o); }
+}
+refreshList();
+const pm = (t, k) => msg(t, k, $('#pMsg'));
+let overArm = 0;
+$('#bSave').onclick = () => {
+  const n = $('#pName').value.trim(); if (!n) { pm('Bir ad yaz.', 'err'); return; }
+  if (user[n] && overArm !== 1) { overArm = 1; pm(`“${n}” zaten var. Üzerine yazmak için tekrar Kaydet'e bas.`); return; }
+  overArm = 0; user[n] = snapshot(); const ok = persist(); refreshList(); $('#pList').value = n;
+  pm(ok ? `“${n}” kaydedildi.` : `“${n}” bu oturum için tutuldu (tarayıcı kalıcı depolamaya izin vermedi — Dışa aktar ile yedekle).`, ok ? 'ok' : '');
+};
+$('#bOver').onclick = () => { const n = $('#pList').value; if (!n) return; user[n] = snapshot(); persist(); pm(`“${n}” güncellendi.`, 'ok'); };
+$('#bLoad').onclick = () => { const n = $('#pList').value; if (!n) return; applyPreset(user[n], n); $('#pName').value = n; pm(`“${n}” yüklendi.`, 'ok'); };
+let delArm = '';
+$('#bDel').onclick = () => { const n = $('#pList').value; if (!n) return;
+  if (delArm !== n) { delArm = n; pm(`“${n}” silinsin mi? Onay için Sil'e tekrar bas.`); return; }
+  delArm = ''; delete user[n]; persist(); refreshList(); pm(`“${n}” silindi.`, 'ok'); };
+$('#bReset').onclick = () => { applyPreset(DEF, 'varsayılan'); pm('Varsayılan ayarlar yüklendi.', 'ok'); };
+$('#bExp').onclick = () => { $('#ioBox').classList.remove('hide');
+  $('#ioTx').value = JSON.stringify({ schema:'canlitune-user-presets/v1', current: snapshot(), presets: user }, null, 1); pm('JSON hazır: kopyala ya da indir.'); };
+$('#bImp').onclick = () => { $('#ioBox').classList.remove('hide'); $('#ioTx').value = ''; $('#ioTx').focus(); pm('JSON yapıştır ve “İçe al”a bas, ya da “Dosyadan” seç.'); };
+$('#bCopy').onclick = async () => { try { await navigator.clipboard.writeText($('#ioTx').value); pm('Panoya kopyalandı.', 'ok'); } catch (e) { $('#ioTx').select(); pm('Otomatik kopyalama engellendi; metin seçildi, elle kopyala.'); } };
+$('#bDl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([$('#ioTx').value], { type:'application/json' })); a.download = 'canlitune-presets.json'; a.click(); pm('İndirme başlatıldı (bazı önizleme çerçeveleri engeller; o zaman Kopyala kullan).'); };
+function importText(txt) {
+  try {
+    const d = JSON.parse(txt); const src = d.presets || d; let c = 0;
+    for (const n in src) { const p = src[n]; if (p && typeof p === 'object' && ('retuneMs' in p || 'params' in p)) { user[n] = p.params ? p.params : p; c++; } }
+    persist(); refreshList(); pm(`${c} preset içe alındı.`, 'ok');
+  } catch (e) { pm('Geçersiz JSON: ' + e.message, 'err'); }
+}
+$('#bApplyImp').onclick = () => importText($('#ioTx').value);
+$('#bFileImp').onclick = () => $('#impFile').click();
+$('#impFile').onchange = async e => { const f = e.target.files[0]; if (f) importText(await f.text()); e.target.value = ''; };
+
+/* ---------- artist browser ---------- */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+function confClass(c) { return /^yüksek/.test(c) ? 'h' : /^orta/.test(c) ? 'm' : 'l'; }
+for (const a of ART.presets) {
+  const p = a.params, d = document.createElement('div'); d.className = 'art';
+  const why = Object.entries(a.why).map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('');
+  const src = a.sources.map(s => `<li><a href="${esc(s.u)}" target="_blank" rel="noopener">${esc(s.t)}</a></li>`).join('');
+  d.innerHTML = `<h3>${esc(a.name)}</h3><div class="era">${esc(a.era)}</div><span class="badge ${confClass(a.confidence)}">güven: ${esc(a.confidence)}</span>
+   <div class="pills"><span>Retune ${p.retuneMs} ms</span><span>Humanize ${p.humanize}</span><span>Flex ${p.flex}</span><span>${SCALE_TR[p.scale]}</span><span>Formant ${p.formant > 0 ? '+' : ''}${p.formant}</span><span>${p.mode ? 'PSOLA' : 'Düşük gecikme'}</span>${p.v2Level ? `<span>2. ses ${p.v2Interval} st</span>` : ''}<span>Delay ${DIVS[p.dlyDiv] || p.dlyDiv}</span><span>Reverb ${p.revTime}s</span></div>
+   <p class="small" style="margin:6px 0">${esc(a.performance)}</p>
+   <button class="pri" style="width:100%">Yükle</button>
+   <details><summary>Neden bu değerler?</summary><ul>${why}</ul></details>
+   <details><summary>Kaynaklar</summary><ul>${src}</ul></details>`;
+  d.querySelector('button').onclick = () => { applyPreset(p, a.name, true); msg(`“${a.name}” yüklendi — ton: ${NOTES[S.key]} ${SCALE_TR[S.scale]} (tonu şarkına göre ayarla).`, 'ok'); document.querySelector('nav button[data-t="t-live"]').click(); };
+  $('#artList').appendChild(d);
+}
+if (Native) {
+  $('#lOutLbl').textContent = 'Çıkış tamponu (sürücü raporu)';
+  $('#bMic').innerHTML = '🎤 Başlat (yerel motor)';
+  document.querySelector('header h1').insertAdjacentHTML('beforeend', ' <span class="small" style="color:var(--acc2)">APP</span>');
+}
+</script>
+</body>
+</html>
