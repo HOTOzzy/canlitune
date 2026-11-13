@@ -126,7 +126,12 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px
       <span>Ölçülen donanım RTL</span><span id="lMeas">–</span>
       <span>Ölçülen + algoritmik</span><span id="lMeasTot">–</span>
       <span>Örnekleme hızı / blok</span><span id="lSr">–</span>
+      <span class="nat hide">Mikrofon tamponu (saat eşitleme)</span><span class="nat hide" id="lFifo">–</span>
+      <span class="nat hide">Çıkış tamponu / MMAP</span><span class="nat hide" id="lBuf">–</span>
+      <span class="nat hide">Kopma (xrun) çıkış / mikrofon</span><span class="nat hide" id="lXr">–</span>
+      <span class="nat hide">Dinleme cihazı</span><span class="nat hide" id="lRoute">–</span>
     </div>
+    <div class="msg" id="btWarn"></div>
     <button style="margin-top:10px;width:100%" id="bMeasure">Gerçek gecikmeyi ölç (hoparlör → mikrofon)</button>
     <p class="small">Ölçüm için kulaklığı çıkar, sesi aç, sessiz ortamda telefonu masaya koy. Uygulama 3 kez “tık” sesi çalar ve mikrofona dönüş süresini ölçer.</p>
   </div>
@@ -430,10 +435,11 @@ const H = 300, hIn = new Float32Array(H).fill(-1), hTg = new Float32Array(H).fil
 const cv = $('#graph'), g2 = cv.getContext('2d');
 const db = v => v > 1e-6 ? 20 * Math.log10(v) : -120;
 const nn = m => m < 0 ? '–' : NOTES[((Math.round(m) % 12) + 12) % 12] + (Math.floor(Math.round(m) / 12) - 1);
-let lastSeen = 0;
+let lastSeen = 0, routeAt = 0, route = '';
 function frame() {
   requestAnimationFrame(frame);
   const t = nativeActive ? Native.poll() : (sabView || telem); if (!t || !running) return;
+  const now0 = performance.now();
   const inD = db(t[0]), outD = db(t[1]);
   $('#mIn').style.width = Math.max(0, Math.min(100, (inD + 60) / 60 * 100)) + '%'; $('#mInTx').textContent = inD < -99 ? '–∞' : inD.toFixed(0) + ' dB';
   $('#mOut').style.width = Math.max(0, Math.min(100, (outD + 60) / 60 * 100)) + '%'; $('#mOutTx').textContent = outD < -99 ? '–∞' : outD.toFixed(0) + ' dB';
@@ -452,7 +458,18 @@ function frame() {
   $('#lAlg').textContent = (S.bypass ? 0 : t[7]).toFixed(1) + ' ms';
   $('#lOut').textContent = out ? out.toFixed(1) + ' ms' : 'rapor yok';
   $('#lIn').textContent = inLat ? inLat.toFixed(1) + ' ms' : 'rapor yok';
-  $('#lTot').textContent = (t[7] + out + inLat).toFixed(1) + ' ms';
+  const fifoMs = nativeActive && t.length > 20 ? t[20] : 0;
+  $('#lTot').textContent = (t[7] + out + inLat + fifoMs).toFixed(1) + ' ms';
+  if (nativeActive && t.length > 20) {
+    $('#lFifo').textContent = fifoMs.toFixed(1) + ' ms';
+    $('#lBuf').textContent = `${t[17]} örnek / ${t[18] ? 'evet' : 'hayır'}`;
+    $('#lXr').textContent = `${t[16]} / ${t[19]}`;
+    if (now0 - routeAt > 1000) { routeAt = now0; route = window.CanliNative.route ? window.CanliNative.route() : '?';
+      $('#lRoute').textContent = { bluetooth:'Bluetooth', wired:'Kablolu kulaklık', usb:'USB', speaker:'Hoparlör' }[route] || route;
+      const w = $('#btWarn');
+      if (route === 'bluetooth') { w.textContent = 'Bluetooth kulaklık: Bluetooth ses kodlaması tek başına ~150–300 ms gecikme ekler (bu uygulamanın dışında). Kendi sesini hem kafandan doğrudan hem de geç duyduğun için “uzama / yankı” hissi oluşur. Canlı kullanım için kablolu (3.5 mm ya da USB-C) kulaklık kullan.'; w.className = 'msg show'; }
+      else w.className = 'msg'; }
+  }
   $('#lSr').textContent = nativeActive ? `${t[12] || '?'} Hz / ${t[13] || '?'}` : ctx ? `${ctx.sampleRate} Hz / 128` : '–';
   if (measuring && t[11] !== 0) measSeen = true;
   if (measuring && measSeen && t[11] === 0 && t[10] !== -1) {
@@ -547,6 +564,7 @@ for (const a of ART.presets) {
   $('#artList').appendChild(d);
 }
 if (Native) {
+  document.querySelectorAll('.nat').forEach(e => e.classList.remove('hide'));
   $('#lOutLbl').textContent = 'Çıkış tamponu (sürücü raporu)';
   $('#bMic').innerHTML = '🎤 Başlat (yerel motor)';
   document.querySelector('header h1').insertAdjacentHTML('beforeend', ' <span class="small" style="color:var(--acc2)">APP</span>');

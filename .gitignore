@@ -10,3 +10,4 @@ ios/*.xcodeproj
 ios/build/
 *.iml
 .DS_Store
+core/test/duplex_sim

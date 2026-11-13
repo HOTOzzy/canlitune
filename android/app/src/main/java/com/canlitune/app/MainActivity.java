@@ -4,6 +4,8 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.media.AudioDeviceInfo;
+import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -62,6 +64,14 @@ public class MainActivity extends Activity {
         web.evaluateJavascript("window.__canliPerm && window.__canliPerm(" + ok + ")", null);
     }
 
+    /** Id of the phone's built-in microphone (0 = let the system choose). */
+    private int builtInMicId() {
+        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
+        for (AudioDeviceInfo d : am.getDevices(AudioManager.GET_DEVICES_INPUTS))
+            if (d.getType() == AudioDeviceInfo.TYPE_BUILTIN_MIC) return d.getId();
+        return 0;
+    }
+
     /** Methods callable from JavaScript as window.CanliNative.* (they run on a WebView binder thread). */
     private final class Bridge {
         @JavascriptInterface
@@ -70,11 +80,26 @@ public class MainActivity extends Activity {
                 runOnUiThread(() -> requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQ_MIC));
                 return "{\"ok\":false,\"err\":\"perm\"}";
             }
-            return NativeAudio.nStart(Build.VERSION.SDK_INT);
+            return NativeAudio.nStart(Build.VERSION.SDK_INT, builtInMicId());
         }
 
         @JavascriptInterface
         public void stop() { NativeAudio.nStop(); }
+
+        /** "bluetooth" | "wired" | "usb" | "speaker" — what the user is listening on. */
+        @JavascriptInterface
+        public String route() {
+            AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
+            String r = "speaker";
+            for (AudioDeviceInfo d : am.getDevices(AudioManager.GET_DEVICES_OUTPUTS)) {
+                int t = d.getType();
+                if (t == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP || t == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
+                        || (Build.VERSION.SDK_INT >= 31 && (t == AudioDeviceInfo.TYPE_BLE_HEADSET || t == AudioDeviceInfo.TYPE_BLE_SPEAKER))) return "bluetooth";
+                if (t == AudioDeviceInfo.TYPE_WIRED_HEADPHONES || t == AudioDeviceInfo.TYPE_WIRED_HEADSET) r = "wired";
+                else if ((t == AudioDeviceInfo.TYPE_USB_HEADSET || t == AudioDeviceInfo.TYPE_USB_DEVICE) && !r.equals("wired")) r = "usb";
+            }
+            return r;
+        }
 
         @JavascriptInterface
         public void setParams(String json) {

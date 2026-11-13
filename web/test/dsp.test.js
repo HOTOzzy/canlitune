@@ -198,7 +198,7 @@ for (const [mode, f0] of [[0, 110], [0, 220], [1, 110], [1, 220]]) {
   const thr = 0.02; let k = on; while (k < out.length && Math.abs(out[k]) < thr) k++;
   let ki = on; while (Math.abs(s[ki]) < thr) ki++;
   const measured = (k - ki) * 1000 / FS;
-  const tm = telem.reduce((a, b) => a + b, 0) / telem.length * 1000 / FS;
+  const tm = (telem.reduce((a, b) => a + b, 0) / telem.length + e.LA) * 1000 / FS; // + 1 ms limiter look-ahead
   check(`[${mode ? 'PSOLA' : 'Splice'}] f0 ${target.toFixed(0)} Hz latency`, measured < (mode ? 30 : 15),
     `onset delay ${measured.toFixed(2)} ms, steady-state reported ${tm.toFixed(2)} ms (period ${(1000 / target).toFixed(2)} ms)`);
 }
@@ -252,12 +252,15 @@ for (const mode of [0, 1]) {
   }
   const total = Number(process.hrtime.bigint() - t0) / 1e6;
   const h1 = process.memoryUsage().heapUsed;
+  if (global.gc) global.gc();
+  const h2 = process.memoryUsage().heapUsed;
   const budget = BLOCK / FS * 1e6;
   const avg = total * 1000 / blocks;
   check(`[${mode ? 'PSOLA' : 'Splice'}] real-time factor`, avg < budget * 0.25,
     `avg ${avg.toFixed(1)} µs / ${budget.toFixed(0)} µs block (${(100 * avg / budget).toFixed(1)}% of one core), worst ${worst.toFixed(0)} µs, 10 s audio in ${total.toFixed(0)} ms`);
   // subarray() in this harness allocates view objects; engine itself must not grow the heap materially
-  check(`[${mode ? 'PSOLA' : 'Splice'}] heap growth over ${blocks} blocks`, (h1 - h0) < 2e6, `${((h1 - h0) / 1024).toFixed(0)} KiB (includes harness subarray views)`);
+  check(`[${mode ? 'PSOLA' : 'Splice'}] no retained heap growth (leak check) over ${blocks} blocks`, (h2 - h0) < 256 * 1024,
+    `retained ${((h2 - h0) / 1024).toFixed(0)} KiB after GC; short-lived churn ${((h1 - h0) / 1024).toFixed(0)} KiB (harness views + JIT number boxing; the native C++ engine is verified at 0 allocations)`);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

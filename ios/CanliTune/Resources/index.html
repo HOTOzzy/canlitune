@@ -126,7 +126,12 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px
       <span>Ölçülen donanım RTL</span><span id="lMeas">–</span>
       <span>Ölçülen + algoritmik</span><span id="lMeasTot">–</span>
       <span>Örnekleme hızı / blok</span><span id="lSr">–</span>
+      <span class="nat hide">Mikrofon tamponu (saat eşitleme)</span><span class="nat hide" id="lFifo">–</span>
+      <span class="nat hide">Çıkış tamponu / MMAP</span><span class="nat hide" id="lBuf">–</span>
+      <span class="nat hide">Kopma (xrun) çıkış / mikrofon</span><span class="nat hide" id="lXr">–</span>
+      <span class="nat hide">Dinleme cihazı</span><span class="nat hide" id="lRoute">–</span>
     </div>
+    <div class="msg" id="btWarn"></div>
     <button style="margin-top:10px;width:100%" id="bMeasure">Gerçek gecikmeyi ölç (hoparlör → mikrofon)</button>
     <p class="small">Ölçüm için kulaklığı çıkar, sesi aç, sessiz ortamda telefonu masaya koy. Uygulama 3 kez “tık” sesi çalar ve mikrofona dönüş süresini ölçer.</p>
   </div>
@@ -203,7 +208,7 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px
 <li>Getiri: echoCancellation / noiseSuppression / autoGainControl kapalı istenir (bunlar gecikme ve bozulma ekler).</li>
 <li>Geri besleme: kulaklık önerilir; çıkış 0.6 s boyunca −4 dBFS üzerinde kalırsa 2 s boyunca −24 dB kısılır.</li></ul>
 <h3>Testler (Node, 48 kHz)</h3>
-<table><tr><td>✅ sine 82.4 Hz<br><span class="small">detected 82.40 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 110 Hz<br><span class="small">detected 110.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 146.8 Hz<br><span class="small">detected 146.80 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 196 Hz<br><span class="small">detected 196.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 261.6 Hz<br><span class="small">detected 261.60 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 392 Hz<br><span class="small">detected 392.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 523.3 Hz<br><span class="small">detected 523.30 Hz, err 0.01 cents</span></td><td></td></tr><tr><td>✅ sine 659.3 Hz<br><span class="small">detected 659.30 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 830 Hz<br><span class="small">detected 830.00 Hz, err 0.01 cents</span></td><td></td></tr><tr><td>✅ sweep median error &lt; 5 cents<br><span class="small">median 1.18 c, p95 2.12 c, frames 1425</span></td><td></td></tr><tr><td>✅ vowel f0=98 Hz<br><span class="small">detected 98.00 Hz (0.00 c), YIN conf 0.982</span></td><td></td></tr><tr><td>✅ vowel f0=180 Hz<br><span class="small">detected 180.00 Hz (0.01 c), YIN conf 0.991</span></td><td></td></tr><tr><td>✅ vowel f0=262 Hz<br><span class="small">detected 262.00 Hz (0.00 c), YIN conf 0.996</span></td><td></td></tr><tr><td>✅ [Splice] chromatic, 446 Hz (+23c) -> A4 440<br><span class="small">out 440.00 Hz (-0.00 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] C major,<br><span class="small">455 Hz (+58c) -> A4 440 (A# not in scale)  out 440.00 Hz (0.00 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] chromatic, 459 Hz (+74c) -> A#4 466.16<br><span class="small">out 466.16 Hz (0.01 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] C major, vowel 151 Hz -> D3 146.83<br><span class="small">out 146.83 Hz (0.03 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] chromatic, 446 Hz (+23c) -> A4 440<br><span class="small">out 439.94 Hz (-0.23 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] C major,<br><span class="small">455 Hz (+58c) -> A4 440 (A# not in scale)  out 439.94 Hz (-0.25 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] chromatic, 459 Hz (+74c) -> A#4 466.16<br><span class="small">out 466.02 Hz (-0.52 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] C major, vowel 151 Hz -> D3 146.83<br><span class="small">out 146.79 Hz (-0.48 c from target)</span></td><td></td></tr><tr><td>✅ retune 0 ms: 90% of correction reached<br><span class="small">after 0.0 ms of voiced signal</span></td><td></td></tr><tr><td>✅ retune 25 ms: 90% of correction reached<br><span class="small">after 21.3 ms of voiced signal</span></td><td></td></tr><tr><td>✅ retune 100 ms: 90% of correction reached<br><span class="small">after 90.7 ms of voiced signal</span></td><td></td></tr><tr><td>✅ PSOLA keeps formant envelope while pitch moves +5 st<br><span class="small">pitch 246.9 Hz (0.0 c), LPC F1 740 Hz (x0.95), envelope corr: preserved 0.902 vs shifted 0.761</span></td><td></td></tr><tr><td>✅ Splice mode moves formants with pitch (expected x1.33)<br><span class="small">pitch 246.9 Hz (0.0 c), LPC F1 1015 Hz (x1.30), envelope corr: preserved 0.679 vs shifted 1.000</span></td><td></td></tr><tr><td>✅ PSOLA formant +4 st raises F1 (expected ~x1.26)<br><span class="small">F1 935 Hz (x1.20), pitch 185.0 Hz</span></td><td></td></tr><tr><td>✅ [Splice] f0 110 Hz latency<br><span class="small">onset delay 3.52 ms, steady-state reported 3.53 ms (period 9.09 ms)</span></td><td></td></tr><tr><td>✅ [Splice] f0 220 Hz latency<br><span class="small">onset delay 3.77 ms, steady-state reported 3.76 ms (period 4.55 ms)</span></td><td></td></tr><tr><td>✅ [PSOLA] f0 110 Hz latency<br><span class="small">onset delay 17.54 ms, steady-state reported 20.63 ms (period 9.09 ms)</span></td><td></td></tr><tr><td>✅ [PSOLA] f0 220 Hz latency<br><span class="small">onset delay 16.15 ms, steady-state reported 10.18 ms (period 4.55 ms)</span></td><td></td></tr><tr><td>✅ noise: output finite &amp; limited<br><span class="small">peak 0.890</span></td><td></td></tr><tr><td>✅ noise: mostly classified unvoiced<br><span class="small">0.0% voiced frames</span></td><td></td></tr><tr><td>✅ silence -> silence<br><span class="small"></span></td><td></td></tr><tr><td>✅ measured RTL matches simulated<br><span class="small">measured 25.813 ms, true 25.708 ms</span></td><td></td></tr><tr><td>✅ [Splice] real-time factor<br><span class="small">avg 67.5 µs / 2667 µs block (2.5% of one core), worst 369 µs, 10 s audio in 253 ms</span></td><td></td></tr><tr><td>✅ [Splice] heap growth over 3750 blocks<br><span class="small">447 KiB (includes harness subarray views)</span></td><td></td></tr><tr><td>✅ [PSOLA] real-time factor<br><span class="small">avg 60.2 µs / 2667 µs block (2.3% of one core), worst 294 µs, 10 s audio in 226 ms</span></td><td></td></tr><tr><td>✅ [PSOLA] heap growth over 3750 blocks<br><span class="small">1025 KiB (includes harness subarray views)</span></td><td></td></tr></table>
+<table><tr><td>✅ sine 82.4 Hz<br><span class="small">detected 82.40 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 110 Hz<br><span class="small">detected 110.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 146.8 Hz<br><span class="small">detected 146.80 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 196 Hz<br><span class="small">detected 196.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 261.6 Hz<br><span class="small">detected 261.60 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 392 Hz<br><span class="small">detected 392.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 523.3 Hz<br><span class="small">detected 523.30 Hz, err 0.01 cents</span></td><td></td></tr><tr><td>✅ sine 659.3 Hz<br><span class="small">detected 659.30 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 830 Hz<br><span class="small">detected 830.00 Hz, err 0.01 cents</span></td><td></td></tr><tr><td>✅ sweep median error &lt; 5 cents<br><span class="small">median 1.18 c, p95 2.12 c, frames 1425</span></td><td></td></tr><tr><td>✅ vowel f0=98 Hz<br><span class="small">detected 98.00 Hz (0.00 c), YIN conf 0.982</span></td><td></td></tr><tr><td>✅ vowel f0=180 Hz<br><span class="small">detected 180.00 Hz (0.01 c), YIN conf 0.991</span></td><td></td></tr><tr><td>✅ vowel f0=262 Hz<br><span class="small">detected 262.00 Hz (0.00 c), YIN conf 0.996</span></td><td></td></tr><tr><td>✅ [Splice] chromatic, 446 Hz (+23c) -> A4 440<br><span class="small">out 440.00 Hz (-0.00 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] C major,<br><span class="small">455 Hz (+58c) -> A4 440 (A# not in scale)  out 440.00 Hz (0.00 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] chromatic, 459 Hz (+74c) -> A#4 466.16<br><span class="small">out 466.16 Hz (0.01 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] C major, vowel 151 Hz -> D3 146.83<br><span class="small">out 146.83 Hz (0.03 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] chromatic, 446 Hz (+23c) -> A4 440<br><span class="small">out 439.94 Hz (-0.23 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] C major,<br><span class="small">455 Hz (+58c) -> A4 440 (A# not in scale)  out 439.94 Hz (-0.24 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] chromatic, 459 Hz (+74c) -> A#4 466.16<br><span class="small">out 466.02 Hz (-0.52 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] C major, vowel 151 Hz -> D3 146.83<br><span class="small">out 146.79 Hz (-0.48 c from target)</span></td><td></td></tr><tr><td>✅ retune 0 ms: 90% of correction reached<br><span class="small">after 0.0 ms of voiced signal</span></td><td></td></tr><tr><td>✅ retune 25 ms: 90% of correction reached<br><span class="small">after 21.3 ms of voiced signal</span></td><td></td></tr><tr><td>✅ retune 100 ms: 90% of correction reached<br><span class="small">after 90.7 ms of voiced signal</span></td><td></td></tr><tr><td>✅ PSOLA keeps formant envelope while pitch moves +5 st<br><span class="small">pitch 246.9 Hz (-0.1 c), LPC F1 740 Hz (x0.95), envelope corr: preserved 0.902 vs shifted 0.761</span></td><td></td></tr><tr><td>✅ Splice mode moves formants with pitch (expected x1.33)<br><span class="small">pitch 246.9 Hz (0.0 c), LPC F1 1010 Hz (x1.29), envelope corr: preserved 0.679 vs shifted 1.000</span></td><td></td></tr><tr><td>✅ PSOLA formant +4 st raises F1 (expected ~x1.26)<br><span class="small">F1 935 Hz (x1.20), pitch 185.0 Hz</span></td><td></td></tr><tr><td>✅ [Splice] f0 110 Hz latency<br><span class="small">onset delay 4.52 ms, steady-state reported 4.53 ms (period 9.09 ms)</span></td><td></td></tr><tr><td>✅ [Splice] f0 220 Hz latency<br><span class="small">onset delay 4.77 ms, steady-state reported 4.76 ms (period 4.55 ms)</span></td><td></td></tr><tr><td>✅ [PSOLA] f0 110 Hz latency<br><span class="small">onset delay 18.54 ms, steady-state reported 21.63 ms (period 9.09 ms)</span></td><td></td></tr><tr><td>✅ [PSOLA] f0 220 Hz latency<br><span class="small">onset delay 17.15 ms, steady-state reported 11.18 ms (period 4.55 ms)</span></td><td></td></tr><tr><td>✅ noise: output finite &amp; limited<br><span class="small">peak 0.893</span></td><td></td></tr><tr><td>✅ noise: mostly classified unvoiced<br><span class="small">0.0% voiced frames</span></td><td></td></tr><tr><td>✅ silence -> silence<br><span class="small"></span></td><td></td></tr><tr><td>✅ measured RTL matches simulated<br><span class="small">measured 25.813 ms, true 25.708 ms</span></td><td></td></tr><tr><td>✅ [Splice] real-time factor<br><span class="small">avg 89.7 µs / 2667 µs block (3.4% of one core), worst 1881 µs, 10 s audio in 337 ms</span></td><td></td></tr><tr><td>✅ [Splice] no retained heap growth (leak check) over 3750 blocks<br><span class="small">retained 17 KiB after GC; short-lived churn 738 KiB (harness views + JIT number boxing; the native C++ engine is verified at 0 allocations)</span></td><td></td></tr><tr><td>✅ [PSOLA] real-time factor<br><span class="small">avg 78.1 µs / 2667 µs block (2.9% of one core), worst 485 µs, 10 s audio in 293 ms</span></td><td></td></tr><tr><td>✅ [PSOLA] no retained heap growth (leak check) over 3750 blocks<br><span class="small">retained -0 KiB after GC; short-lived churn 1025 KiB (harness views + JIT number boxing; the native C++ engine is verified at 0 allocations)</span></td><td></td></tr></table>
 <h3>Kaynaklar</h3>
 <ul>
 <li><a href="https://cagnazzo.wp.imt.fr/files/2013/05/2002_JASA_YIN.pdf" target="_blank">de Cheveigné &amp; Kawahara — YIN (JASA 2002)</a></li>
@@ -253,6 +258,7 @@ class Biquad {
   run(x) { const y = this.b0 * x + this.z1; this.z1 = this.b1 * x - this.a1 * y + this.z2; this.z2 = this.b2 * x - this.a2 * y; return y; }
 }
 
+function lcosh(z) { const a = Math.abs(z); return a + Math.log1p(Math.exp(-2 * a)) - Math.LN2; } // log(cosh z), overflow-safe
 function lin(buf, mask, pos) {
   const i = Math.floor(pos), fr = pos - i;
   const a = buf[i & mask];
@@ -409,7 +415,7 @@ class AutoTuneEngine {
     this.hpf = new Biquad(); this.gEnv = 0; this.gGain = 0; this.gOpen = false; this.gHold = 0;
     this.inPk = 0; this.outPk = 0;
     // comp
-    this.cEnv = 0; this.cGr = 0;
+    this.cEnv = 0; this.cGr = 0; this.satX1 = 0;
     // delay
     this.dly = new Float32Array(Math.ceil(fs * 2.1)); this.dI = 0; this.dLp = 0;
     // reverb
@@ -419,7 +425,10 @@ class AutoTuneEngine {
     this.aL = al.map(v => new Allpass(Math.round(v * sc))); this.aR = al.map(v => new Allpass(Math.round(v * sc) + sp));
     this.pre = new Float32Array(Math.ceil(fs * 0.25)); this.preI = 0;
     // limiter / howl guard
-    this.limG = 1; this.howlEnv = 0; this.howlT = 0; this.duck = 1; this.duckT = 0; this.howl = false;
+    this.LA = Math.round(0.001 * fs); this.laL = new Float32Array(this.LA + 1); this.laR = new Float32Array(this.LA + 1); this.laI = 0;
+    this.limG = 1; this.limHold = 1; this.limHT = 0;
+    this.limAtk = 1 - Math.exp(-1 / (this.LA / 4)); this.limRel = 1 - Math.exp(-1 / (fs * 0.08));
+    this.howlEnv = 0; this.howlT = 0; this.duck = 1; this.duckT = 0; this.howl = false;
     // loopback measurement
     this.meas = { state: 0, t: 0, noise: 0, start: 0, result: -1, tries: 0, r: new Float64Array(5), env: 0 };
     this.measDone = false; this.measMs = -1;
@@ -594,7 +603,7 @@ class AutoTuneEngine {
 
   process(inp, outL, outR, len) {
     const p = this.p, fs = this.fs, x = this.x, m = this.mask;
-    const gAt = Math.exp(-1 / (fs * 0.001)), gRe = Math.exp(-1 / (fs * 0.08));
+    const gAt = Math.exp(-1 / (fs * 0.002)), gRe = Math.exp(-1 / (fs * 0.15));
     for (let i = 0; i < len; i++) {
       const raw = inp ? inp[i] : 0;
       this.n++;
@@ -608,7 +617,7 @@ class AutoTuneEngine {
       const a = Math.abs(s);
       if (a > this.inPk) this.inPk = a;
       this.gEnv = a > this.gEnv ? a : this.gEnv * 0.9995;
-      if (this.gEnv > this.gateThr * 1.4) { this.gOpen = true; this.gHold = fs * 0.12; }
+      if (this.gEnv > this.gateThr * 2) { this.gOpen = true; this.gHold = fs * 0.2; } // 6 dB hysteresis, 200 ms hold
       else if (this.gEnv < this.gateThr) { if (this.gHold > 0) this.gHold--; else this.gOpen = false; }
       const gt = this.gOpen ? 1 : 0;
       this.gGain = gt > this.gGain ? gt + (this.gGain - gt) * gAt : gt + (this.gGain - gt) * gRe;
@@ -649,7 +658,15 @@ class AutoTuneEngine {
         else if (over > -3) { const o = over + 3; gr = (1 - 1 / p.compRatio) * o * o / 12; }
         y *= Math.pow(10, -gr / 20) * this.cMake;
       }
-      if (p.satMix > 0) y += p.satMix * (Math.tanh(this.satG * y) * this.satK - y);
+      if (p.satMix > 0) {
+        // ADAA1: y = (F(x) - F(x1)) / (x - x1), F = antiderivative of k*tanh(g x) → far less aliasing ("fizz")
+        const g = this.satG, k = this.satK, x1 = this.satX1, dxs = y - x1;
+        let ws;
+        if (Math.abs(dxs) > 1e-5) ws = k * (lcosh(g * y) - lcosh(g * x1)) / (g * dxs);
+        else ws = k * Math.tanh(g * 0.5 * (y + x1));
+        this.satX1 = y;
+        y += p.satMix * (ws - y);
+      }
       // delay
       if (p.dlyMix > 0) {
         const L = this.dly.length;
@@ -686,12 +703,18 @@ class AutoTuneEngine {
         else { this.duck += (1 - this.duck) * 0.0005; this.howl = false; }
         yl *= this.duck; yr *= this.duck;
       }
-      const pk2 = Math.max(Math.abs(yl), Math.abs(yr)) * this.limG;
-      if (pk2 > 0.89) this.limG = 0.89 / Math.max(Math.abs(yl), Math.abs(yr));
-      else this.limG += (1 - this.limG) * 0.0003;
-      yl *= this.limG; yr *= this.limG;
-      outL[i] = yl > 1 ? 1 : yl < -1 ? -1 : yl;
-      outR[i] = yr > 1 ? 1 : yr < -1 ? -1 : yr;
+      // look-ahead peak limiter: gain reaches its target before the delayed peak arrives
+      const mx = Math.max(Math.abs(yl), Math.abs(yr)), lgt = mx > 0.89 ? 0.89 / mx : 1;
+      if (lgt <= this.limHold) { this.limHold = lgt; this.limHT = 4 * this.LA; } // hold 4 ms > look-ahead: no period-2 limit cycle
+      else if (this.limHT > 0) this.limHT--;
+      else this.limHold = lgt;
+      this.limG += (this.limHold - this.limG) * (this.limHold < this.limG ? this.limAtk : this.limRel);
+      const LA1 = this.LA + 1, ri = (this.laI + 1) % LA1;
+      this.laL[this.laI] = yl; this.laR[this.laI] = yr; this.laI = ri;
+      let ol = this.laL[ri] * this.limG, or = this.laR[ri] * this.limG;
+      if (ol > 0.95 || ol < -0.95) ol = Math.sign(ol) * (0.95 + 0.05 * Math.tanh((Math.abs(ol) - 0.95) / 0.05));
+      if (or > 0.95 || or < -0.95) or = Math.sign(or) * (0.95 + 0.05 * Math.tanh((Math.abs(or) - 0.95) / 0.05));
+      outL[i] = ol; outR[i] = or;
     }
   }
 
@@ -700,7 +723,7 @@ class AutoTuneEngine {
     t[2] = this.voiced ? this.f0 : 0; t[3] = this.conf;
     t[4] = this.voiced ? this.inMidi : -1; t[5] = this.voiced ? this.targetMidi : -1;
     t[6] = this.voiced ? (this.semis - this.p.transpose) * 100 : 0;
-    t[7] = this.latency * 1000 / this.fs; t[8] = this.gOpen ? 1 : 0; t[9] = this.howl ? 1 : 0;
+    t[7] = (this.latency + this.LA) * 1000 / this.fs; t[8] = this.gOpen ? 1 : 0; t[9] = this.howl ? 1 : 0;
     t[10] = this.measMs; // latched: -1 none, -2 failed, else ms
     t[11] = this.meas.state;
   }
@@ -1167,10 +1190,11 @@ const H = 300, hIn = new Float32Array(H).fill(-1), hTg = new Float32Array(H).fil
 const cv = $('#graph'), g2 = cv.getContext('2d');
 const db = v => v > 1e-6 ? 20 * Math.log10(v) : -120;
 const nn = m => m < 0 ? '–' : NOTES[((Math.round(m) % 12) + 12) % 12] + (Math.floor(Math.round(m) / 12) - 1);
-let lastSeen = 0;
+let lastSeen = 0, routeAt = 0, route = '';
 function frame() {
   requestAnimationFrame(frame);
   const t = nativeActive ? Native.poll() : (sabView || telem); if (!t || !running) return;
+  const now0 = performance.now();
   const inD = db(t[0]), outD = db(t[1]);
   $('#mIn').style.width = Math.max(0, Math.min(100, (inD + 60) / 60 * 100)) + '%'; $('#mInTx').textContent = inD < -99 ? '–∞' : inD.toFixed(0) + ' dB';
   $('#mOut').style.width = Math.max(0, Math.min(100, (outD + 60) / 60 * 100)) + '%'; $('#mOutTx').textContent = outD < -99 ? '–∞' : outD.toFixed(0) + ' dB';
@@ -1189,7 +1213,18 @@ function frame() {
   $('#lAlg').textContent = (S.bypass ? 0 : t[7]).toFixed(1) + ' ms';
   $('#lOut').textContent = out ? out.toFixed(1) + ' ms' : 'rapor yok';
   $('#lIn').textContent = inLat ? inLat.toFixed(1) + ' ms' : 'rapor yok';
-  $('#lTot').textContent = (t[7] + out + inLat).toFixed(1) + ' ms';
+  const fifoMs = nativeActive && t.length > 20 ? t[20] : 0;
+  $('#lTot').textContent = (t[7] + out + inLat + fifoMs).toFixed(1) + ' ms';
+  if (nativeActive && t.length > 20) {
+    $('#lFifo').textContent = fifoMs.toFixed(1) + ' ms';
+    $('#lBuf').textContent = `${t[17]} örnek / ${t[18] ? 'evet' : 'hayır'}`;
+    $('#lXr').textContent = `${t[16]} / ${t[19]}`;
+    if (now0 - routeAt > 1000) { routeAt = now0; route = window.CanliNative.route ? window.CanliNative.route() : '?';
+      $('#lRoute').textContent = { bluetooth:'Bluetooth', wired:'Kablolu kulaklık', usb:'USB', speaker:'Hoparlör' }[route] || route;
+      const w = $('#btWarn');
+      if (route === 'bluetooth') { w.textContent = 'Bluetooth kulaklık: Bluetooth ses kodlaması tek başına ~150–300 ms gecikme ekler (bu uygulamanın dışında). Kendi sesini hem kafandan doğrudan hem de geç duyduğun için “uzama / yankı” hissi oluşur. Canlı kullanım için kablolu (3.5 mm ya da USB-C) kulaklık kullan.'; w.className = 'msg show'; }
+      else w.className = 'msg'; }
+  }
   $('#lSr').textContent = nativeActive ? `${t[12] || '?'} Hz / ${t[13] || '?'}` : ctx ? `${ctx.sampleRate} Hz / 128` : '–';
   if (measuring && t[11] !== 0) measSeen = true;
   if (measuring && measSeen && t[11] === 0 && t[10] !== -1) {
@@ -1284,6 +1319,7 @@ for (const a of ART.presets) {
   $('#artList').appendChild(d);
 }
 if (Native) {
+  document.querySelectorAll('.nat').forEach(e => e.classList.remove('hide'));
   $('#lOutLbl').textContent = 'Çıkış tamponu (sürücü raporu)';
   $('#bMic').innerHTML = '🎤 Başlat (yerel motor)';
   document.querySelector('header h1').insertAdjacentHTML('beforeend', ' <span class="small" style="color:var(--acc2)">APP</span>');

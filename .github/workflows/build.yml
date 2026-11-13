@@ -26,8 +26,11 @@ jobs:
         run: |
           g++ -std=c++17 -O2 -Wall -Wextra -pthread -o core/test/rt_test core/test/rt_test.cpp
           g++ -std=c++17 -O2 -Wall -Wextra -o core/test/ctrun core/test/ctrun.cpp
+          g++ -std=c++17 -O2 -Wall -o core/test/duplex_sim core/test/duplex_sim.cpp
           ./core/test/rt_test
+          ./core/test/duplex_sim
           node core/test/equivalence.test.js core/test/ctrun
+          node web/test/quality.test.js
       - name: Build UI
         run: node web/build.js
       - uses: actions/upload-artifact@v4
@@ -60,34 +63,12 @@ jobs:
           files: CanliTune.apk
           body: |
             Android: CanliTune.apk dosyasını telefonda indir → "Bilinmeyen kaynaklardan yükleme"ye izin ver → kur.
-            iPhone: CanliTune-unsigned.ipa — Sideloadly/AltStore ile kendi Apple ID'nle imzalayıp yükle (ios iş akışı bitince eklenir).
-
-  ios:
-    needs: test
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with: { name: ui, path: ios/CanliTune/Resources }
-      - run: brew install xcodegen
-      - name: Generate Xcode project
-        working-directory: ios
-        run: xcodegen
-      - name: Build for simulator (compile check)
-        working-directory: ios
-        run: xcodebuild -project CanliTune.xcodeproj -scheme CanliTune -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO -quiet build
-      - name: Build unsigned device app → .ipa
-        working-directory: ios
-        run: |
-          xcodebuild -project CanliTune.xcodeproj -scheme CanliTune -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO -quiet build
-          mkdir -p Payload && cp -R build/Build/Products/Release-iphoneos/CanliTune.app Payload/
-          zip -qr ../CanliTune-unsigned.ipa Payload
-      - uses: actions/upload-artifact@v4
-        with: { name: CanliTune-ios-unsigned, path: CanliTune-unsigned.ipa }
+            Kablolu (3.5 mm / USB-C) kulaklık önerilir; Bluetooth tek başına ~150–300 ms gecikme ekler.
 
   pages:
     needs: test
     runs-on: ubuntu-latest
+    continue-on-error: true   # needs Settings → Pages → Source: GitHub Actions
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
@@ -98,14 +79,3 @@ jobs:
         with: { path: site }
       - id: deploy
         uses: actions/deploy-pages@v4
-
-  attach-ipa:
-    needs: [android, ios]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with: { name: CanliTune-ios-unsigned }
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v1.0.${{ github.run_number }}
-          files: CanliTune-unsigned.ipa

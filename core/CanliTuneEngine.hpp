@@ -23,6 +23,7 @@ struct Biquad {
   inline double run(double x) { double y = b0 * x + z1; z1 = b1 * x - a1 * y + z2; z2 = b2 * x - a2 * y; return y; }
 };
 
+static inline double lcosh(double z) { double a = std::fabs(z); return a + std::log1p(std::exp(-2 * a)) - 0.69314718055994530942; }
 static inline double lin(const float* buf, int64_t mask, double pos) {
   double fl = std::floor(pos); int64_t i = (int64_t)fl; double fr = pos - fl;
   double a = buf[i & mask];
@@ -150,6 +151,8 @@ class Engine {
     for (int k = 0; k < 4; k++) { cL.emplace_back((size_t)std::round(cl[k] * sc)); cR.emplace_back((size_t)std::round(cl[k] * sc) + sp); }
     for (int k = 0; k < 2; k++) { aL.emplace_back((size_t)std::round(al[k] * sc)); aR.emplace_back((size_t)std::round(al[k] * sc) + sp); }
     pre.assign((size_t)std::ceil(fs * 0.25), 0.f);
+    LA = (int)std::round(0.001 * fs); laL.assign((size_t)LA + 1, 0.f); laR.assign((size_t)LA + 1, 0.f);
+    limAtk = 1 - std::exp(-1 / (LA / 4.0)); limRel = 1 - std::exp(-1 / (fs * 0.08));
     defaults();
     recompute();
     s1.reset(0); s2.reset(0);
@@ -186,12 +189,12 @@ class Engine {
     t[2] = voiced ? (float)f0 : 0.f; t[3] = (float)conf;
     t[4] = voiced ? (float)inMidi : -1.f; t[5] = voiced ? (float)targetMidi : -1.f;
     t[6] = voiced ? (float)((semis - transpose) * 100) : 0.f;
-    t[7] = (float)(latency * 1000 / fs); t[8] = gOpen ? 1.f : 0.f; t[9] = howl ? 1.f : 0.f;
+    t[7] = (float)((latency + LA) * 1000 / fs); t[8] = gOpen ? 1.f : 0.f; t[9] = howl ? 1.f : 0.f;
     t[10] = (float)measMs; t[11] = (float)meas.state;
   }
 
   void process(const float* inp, float* outL, float* outR, int len) {
-    const double gAt = std::exp(-1 / (fs * 0.001)), gRe = std::exp(-1 / (fs * 0.08));
+    const double gAt = std::exp(-1 / (fs * 0.002)), gRe = std::exp(-1 / (fs * 0.15));
     float* xb = x.data();
     for (int i = 0; i < len; i++) {
       double raw = inp ? inp[i] : 0.0;
@@ -205,7 +208,7 @@ class Engine {
       double a = std::fabs(s);
       if (a > inPk) inPk = a;
       gEnv = a > gEnv ? a : gEnv * 0.9995;
-      if (gEnv > gateThr * 1.4) { gOpen = true; gHold = fs * 0.12; }
+      if (gEnv > gateThr * 2) { gOpen = true; gHold = fs * 0.2; }
       else if (gEnv < gateThr) { if (gHold > 0) gHold--; else gOpen = false; }
       double gt = gOpen ? 1 : 0;
       gGain = gt > gGain ? gt + (gGain - gt) * gAt : gt + (gGain - gt) * gRe;
@@ -244,7 +247,13 @@ class Engine {
         else if (over > -3) { double o = over + 3; gr = (1 - 1 / compRatio) * o * o / 12; }
         y *= std::pow(10.0, -gr / 20) * cMake;
       }
-      if (satMix > 0) y += satMix * (std::tanh(satG * y) * satK - y);
+      if (satMix > 0) {  // ADAA1 tanh (anti-aliased)
+        double g = satG, k = satK, x1 = satX1, dxs = y - x1, ws;
+        if (std::fabs(dxs) > 1e-5) ws = k * (lcosh(g * y) - lcosh(g * x1)) / (g * dxs);
+        else ws = k * std::tanh(g * 0.5 * (y + x1));
+        satX1 = y;
+        y += satMix * (ws - y);
+      }
       if (dlyMix > 0) {
         size_t L = dly.size(); int64_t ri = (int64_t)dI - dlyN; if (ri < 0) ri += (int64_t)L;
         double dv = dly[(size_t)ri];
@@ -276,11 +285,18 @@ class Engine {
         else { duck += (1 - duck) * 0.0005; howl = false; }
         yl *= duck; yr *= duck;
       }
-      double mx = std::max(std::fabs(yl), std::fabs(yr));
-      if (mx * limG > 0.89) limG = 0.89 / mx; else limG += (1 - limG) * 0.0003;
-      yl *= limG; yr *= limG;
-      outL[i] = (float)(yl > 1 ? 1 : yl < -1 ? -1 : yl);
-      if (outR) outR[i] = (float)(yr > 1 ? 1 : yr < -1 ? -1 : yr);
+      double mx = std::max(std::fabs(yl), std::fabs(yr)), lgt = mx > 0.89 ? 0.89 / mx : 1;
+      if (lgt <= limHold) { limHold = lgt; limHT = 4 * LA; }
+      else if (limHT > 0) limHT--;
+      else limHold = lgt;
+      limG += (limHold - limG) * (limHold < limG ? limAtk : limRel);
+      int LA1 = LA + 1, ri = (laI + 1) % LA1;
+      laL[(size_t)laI] = (float)yl; laR[(size_t)laI] = (float)yr; laI = ri;
+      double ol = laL[(size_t)ri] * limG, orr = laR[(size_t)ri] * limG;
+      if (ol > 0.95 || ol < -0.95) ol = (ol > 0 ? 1 : -1) * (0.95 + 0.05 * std::tanh((std::fabs(ol) - 0.95) / 0.05));
+      if (orr > 0.95 || orr < -0.95) orr = (orr > 0 ? 1 : -1) * (0.95 + 0.05 * std::tanh((std::fabs(orr) - 0.95) / 0.05));
+      outL[i] = (float)ol;
+      if (outR) outR[i] = (float)orr;
     }
   }
 
@@ -445,7 +461,8 @@ class Engine {
   SpliceVoice s1, s2; PsolaVoice p1, p2; double dryD = 0;
   // input
   double gEnv = 0, gGain = 0, gHold = 0, inPk = 0, outPk = 0; bool gOpen = false;
-  double cEnv = 0;
+  double cEnv = 0, satX1 = 0;
+  int LA = 48, laI = 0; std::vector<float> laL, laR; double limHold = 1, limHT = 0, limAtk = 0.1, limRel = 0.001;
   std::vector<float> dly; size_t dI = 0; double dLp = 0; int64_t dlyN = 1; double dlyDampC = 0.4;
   std::vector<Comb> cL, cR; std::vector<Allpass> aL, aR; std::vector<float> pre; size_t preI = 0; int64_t preN = 1;
   double limG = 1, howlEnv = 0, howlT = 0, duck = 1, duckT = 0; bool howl = false;

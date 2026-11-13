@@ -25,6 +25,7 @@ class Biquad {
   run(x) { const y = this.b0 * x + this.z1; this.z1 = this.b1 * x - this.a1 * y + this.z2; this.z2 = this.b2 * x - this.a2 * y; return y; }
 }
 
+function lcosh(z) { const a = Math.abs(z); return a + Math.log1p(Math.exp(-2 * a)) - Math.LN2; } // log(cosh z), overflow-safe
 function lin(buf, mask, pos) {
   const i = Math.floor(pos), fr = pos - i;
   const a = buf[i & mask];
@@ -181,7 +182,7 @@ class AutoTuneEngine {
     this.hpf = new Biquad(); this.gEnv = 0; this.gGain = 0; this.gOpen = false; this.gHold = 0;
     this.inPk = 0; this.outPk = 0;
     // comp
-    this.cEnv = 0; this.cGr = 0;
+    this.cEnv = 0; this.cGr = 0; this.satX1 = 0;
     // delay
     this.dly = new Float32Array(Math.ceil(fs * 2.1)); this.dI = 0; this.dLp = 0;
     // reverb
@@ -191,7 +192,10 @@ class AutoTuneEngine {
     this.aL = al.map(v => new Allpass(Math.round(v * sc))); this.aR = al.map(v => new Allpass(Math.round(v * sc) + sp));
     this.pre = new Float32Array(Math.ceil(fs * 0.25)); this.preI = 0;
     // limiter / howl guard
-    this.limG = 1; this.howlEnv = 0; this.howlT = 0; this.duck = 1; this.duckT = 0; this.howl = false;
+    this.LA = Math.round(0.001 * fs); this.laL = new Float32Array(this.LA + 1); this.laR = new Float32Array(this.LA + 1); this.laI = 0;
+    this.limG = 1; this.limHold = 1; this.limHT = 0;
+    this.limAtk = 1 - Math.exp(-1 / (this.LA / 4)); this.limRel = 1 - Math.exp(-1 / (fs * 0.08));
+    this.howlEnv = 0; this.howlT = 0; this.duck = 1; this.duckT = 0; this.howl = false;
     // loopback measurement
     this.meas = { state: 0, t: 0, noise: 0, start: 0, result: -1, tries: 0, r: new Float64Array(5), env: 0 };
     this.measDone = false; this.measMs = -1;
@@ -366,7 +370,7 @@ class AutoTuneEngine {
 
   process(inp, outL, outR, len) {
     const p = this.p, fs = this.fs, x = this.x, m = this.mask;
-    const gAt = Math.exp(-1 / (fs * 0.001)), gRe = Math.exp(-1 / (fs * 0.08));
+    const gAt = Math.exp(-1 / (fs * 0.002)), gRe = Math.exp(-1 / (fs * 0.15));
     for (let i = 0; i < len; i++) {
       const raw = inp ? inp[i] : 0;
       this.n++;
@@ -380,7 +384,7 @@ class AutoTuneEngine {
       const a = Math.abs(s);
       if (a > this.inPk) this.inPk = a;
       this.gEnv = a > this.gEnv ? a : this.gEnv * 0.9995;
-      if (this.gEnv > this.gateThr * 1.4) { this.gOpen = true; this.gHold = fs * 0.12; }
+      if (this.gEnv > this.gateThr * 2) { this.gOpen = true; this.gHold = fs * 0.2; } // 6 dB hysteresis, 200 ms hold
       else if (this.gEnv < this.gateThr) { if (this.gHold > 0) this.gHold--; else this.gOpen = false; }
       const gt = this.gOpen ? 1 : 0;
       this.gGain = gt > this.gGain ? gt + (this.gGain - gt) * gAt : gt + (this.gGain - gt) * gRe;
@@ -421,7 +425,15 @@ class AutoTuneEngine {
         else if (over > -3) { const o = over + 3; gr = (1 - 1 / p.compRatio) * o * o / 12; }
         y *= Math.pow(10, -gr / 20) * this.cMake;
       }
-      if (p.satMix > 0) y += p.satMix * (Math.tanh(this.satG * y) * this.satK - y);
+      if (p.satMix > 0) {
+        // ADAA1: y = (F(x) - F(x1)) / (x - x1), F = antiderivative of k*tanh(g x) → far less aliasing ("fizz")
+        const g = this.satG, k = this.satK, x1 = this.satX1, dxs = y - x1;
+        let ws;
+        if (Math.abs(dxs) > 1e-5) ws = k * (lcosh(g * y) - lcosh(g * x1)) / (g * dxs);
+        else ws = k * Math.tanh(g * 0.5 * (y + x1));
+        this.satX1 = y;
+        y += p.satMix * (ws - y);
+      }
       // delay
       if (p.dlyMix > 0) {
         const L = this.dly.length;
@@ -458,12 +470,18 @@ class AutoTuneEngine {
         else { this.duck += (1 - this.duck) * 0.0005; this.howl = false; }
         yl *= this.duck; yr *= this.duck;
       }
-      const pk2 = Math.max(Math.abs(yl), Math.abs(yr)) * this.limG;
-      if (pk2 > 0.89) this.limG = 0.89 / Math.max(Math.abs(yl), Math.abs(yr));
-      else this.limG += (1 - this.limG) * 0.0003;
-      yl *= this.limG; yr *= this.limG;
-      outL[i] = yl > 1 ? 1 : yl < -1 ? -1 : yl;
-      outR[i] = yr > 1 ? 1 : yr < -1 ? -1 : yr;
+      // look-ahead peak limiter: gain reaches its target before the delayed peak arrives
+      const mx = Math.max(Math.abs(yl), Math.abs(yr)), lgt = mx > 0.89 ? 0.89 / mx : 1;
+      if (lgt <= this.limHold) { this.limHold = lgt; this.limHT = 4 * this.LA; } // hold 4 ms > look-ahead: no period-2 limit cycle
+      else if (this.limHT > 0) this.limHT--;
+      else this.limHold = lgt;
+      this.limG += (this.limHold - this.limG) * (this.limHold < this.limG ? this.limAtk : this.limRel);
+      const LA1 = this.LA + 1, ri = (this.laI + 1) % LA1;
+      this.laL[this.laI] = yl; this.laR[this.laI] = yr; this.laI = ri;
+      let ol = this.laL[ri] * this.limG, or = this.laR[ri] * this.limG;
+      if (ol > 0.95 || ol < -0.95) ol = Math.sign(ol) * (0.95 + 0.05 * Math.tanh((Math.abs(ol) - 0.95) / 0.05));
+      if (or > 0.95 || or < -0.95) or = Math.sign(or) * (0.95 + 0.05 * Math.tanh((Math.abs(or) - 0.95) / 0.05));
+      outL[i] = ol; outR[i] = or;
     }
   }
 
@@ -472,7 +490,7 @@ class AutoTuneEngine {
     t[2] = this.voiced ? this.f0 : 0; t[3] = this.conf;
     t[4] = this.voiced ? this.inMidi : -1; t[5] = this.voiced ? this.targetMidi : -1;
     t[6] = this.voiced ? (this.semis - this.p.transpose) * 100 : 0;
-    t[7] = this.latency * 1000 / this.fs; t[8] = this.gOpen ? 1 : 0; t[9] = this.howl ? 1 : 0;
+    t[7] = (this.latency + this.LA) * 1000 / this.fs; t[8] = this.gOpen ? 1 : 0; t[9] = this.howl ? 1 : 0;
     t[10] = this.measMs; // latched: -1 none, -2 failed, else ms
     t[11] = this.meas.state;
   }

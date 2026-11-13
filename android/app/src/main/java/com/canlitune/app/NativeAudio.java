@@ -5,7 +5,7 @@ final class NativeAudio {
     static { System.loadLibrary("canlitune"); }
     private NativeAudio() {}
 
-    static native String nStart(int sdkInt);
+    static native String nStart(int sdkInt, int micDeviceId);
     static native void nStop();
     static native void nSetParams(String[] keys, double[] values);
     static native void nMeasure();
