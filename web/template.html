@@ -9,195 +9,264 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>VoxPulse — Live Vocal Tuner</title>
 <style>
-:root{--bg:#0d0f14;--card:#161a22;--card2:#1d222c;--line:#2a303c;--tx:#e9edf3;--mut:#8b94a5;--acc:#ff6a3d;--acc2:#3dd6c6;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--r:14px}
+/* VoxPulse "System 01" — quiet surfaces, live energy. Tokens follow the Figma component sheet. */
+@font-face{font-family:"Space Grotesk";font-style:normal;font-weight:300 700;font-display:swap;src:url(data:font/woff2;base64,__FONT_EXT__) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Space Grotesk";font-style:normal;font-weight:300 700;font-display:swap;src:url(data:font/woff2;base64,__FONT_LATIN__) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+:root{--bg:#07060d;--nav:#0d0b14;--glass:#211b2a;--card:rgba(25,21,34,.8);--card2:#17131f;--line:rgba(143,131,159,.18);--line2:#322a3c;--tx:#efede7;--mut:#9691a6;--lav:#c7b1d3;--acc:#f13ca7;--acc2:#6de5ec;--gold:#f3d597;--vio:#a17bdc;--ok:#8fe3c0;--warn:#f3d597;--bad:#ff7d93;--r:18px;--lvl:0;
+  --grad:linear-gradient(90deg,#f13ca7,#a17bdc 50%,#6de5ec)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.4 "Space Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none}
 body{padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 6px}
-header h1{font-size:19px;margin:0;letter-spacing:.2px}
-header h1 b{color:var(--acc)}
-#stateDot{font-size:12px;color:var(--mut);display:flex;align-items:center;gap:6px}
-#stateDot i{width:9px;height:9px;border-radius:50%;background:#555;display:inline-block}
-#stateDot.on i{background:var(--ok);box-shadow:0 0 8px var(--ok)}
-main{padding:4px 12px calc(84px + env(safe-area-inset-bottom))}
-section.tab{display:none}section.tab.act{display:block}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:10px 0}
-.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);margin:0 0 10px;font-weight:600}
-.row{display:flex;gap:8px;flex-wrap:wrap}
-button{font:inherit;color:var(--tx);background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-height:46px;cursor:pointer}
-button:active{transform:scale(.98)}
-button.pri{background:var(--acc);border-color:var(--acc);color:#111;font-weight:700}
-button.sec{background:#123c3a;border-color:#1f6b66}
-button.on{background:var(--acc2);border-color:var(--acc2);color:#062724;font-weight:700}
-button.grow{flex:1}
-select,input[type=text],textarea{font:inherit;color:var(--tx);background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px;min-height:44px;width:100%}
-textarea{min-height:110px;font:12px/1.35 ui-monospace,monospace}
-.note{display:flex;align-items:center;justify-content:center;gap:14px;padding:6px 0 2px}
-.note .big{font-size:52px;font-weight:800;min-width:2.2em;text-align:center;font-variant-numeric:tabular-nums}
-.note .arrow{color:var(--mut);font-size:26px}
-.note .tgt{color:var(--acc)}
-.sub{color:var(--mut);font-size:12px;text-align:center}
-.meter{height:10px;background:var(--card2);border-radius:6px;overflow:hidden;position:relative}
-.meter>i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--ok),var(--warn) 75%,var(--bad));width:0}
-.cent{height:26px;background:var(--card2);border-radius:8px;position:relative;margin:8px 0 2px}
-.cent:before{content:"";position:absolute;left:50%;top:3px;bottom:3px;width:2px;background:var(--mut)}
-.cent>i{position:absolute;top:3px;bottom:3px;background:var(--acc);border-radius:4px}
-canvas{width:100%;height:150px;display:block;background:var(--card2);border-radius:10px}
-.kv{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:14px}
-.kv span:nth-child(even){font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
-.ctl{margin:12px 0}
-.ctl label{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px}
-.ctl label em{font-style:normal;color:var(--acc2);font-variant-numeric:tabular-nums}
-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:34px;background:transparent;margin:0}
-input[type=range]::-webkit-slider-runnable-track{height:8px;background:var(--line);border-radius:5px}
-input[type=range]::-moz-range-track{height:8px;background:var(--line);border-radius:5px}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:var(--acc);margin-top:-10px;border:3px solid #fff2}
-input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:var(--acc);border:3px solid #fff2}
-.chips{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
-.chips button{padding:8px 0;min-height:42px;font-size:14px}
-.chips button.blk{background:#0b0d11}
-nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#0b0d12f2;border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));backdrop-filter:blur(10px);z-index:5}
-nav button{flex:1;border:0;background:none;color:var(--mut);font-size:12px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:54px}
-nav button b{font-size:21px;font-weight:400}
-nav button.act{color:var(--acc)}
-.msg{font-size:13px;border-radius:10px;padding:10px 12px;margin:8px 0;background:#2a2410;border:1px solid #5b4a14;color:#fde68a;display:none}
-.msg.show{display:block}.msg.err{background:#2c1214;border-color:#6b2226;color:#fecaca}.msg.ok{background:#0f2a1c;border-color:#1f5c3a;color:#bbf7d0}
-.art{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;background:var(--card2)}
-.art h3{margin:0;font-size:17px}.art .era{color:var(--mut);font-size:12px;margin:2px 0 8px}
-.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--mut);margin-bottom:6px}
-.badge.h{color:var(--ok);border-color:#1f5c3a}.badge.m{color:var(--warn);border-color:#5b4a14}.badge.l{color:var(--bad);border-color:#6b2226}
-.art details{margin-top:6px;font-size:13px;color:#c9d1dd}.art summary{cursor:pointer;color:var(--acc2)}
-.art ul{padding-left:18px;margin:6px 0}.art a{color:#93c5fd;word-break:break-word}
-.pills{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}.pills span{font-size:12px;background:#0b0d11;border:1px solid var(--line);border-radius:8px;padding:3px 7px}
-.info p,.info li{font-size:14px;color:#cdd5e0}.info h3{font-size:15px;margin:14px 0 6px}.info a{color:#93c5fd}
-table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid var(--line);padding:6px 4px;text-align:left}td:last-child{text-align:right;font-variant-numeric:tabular-nums}
-.small{font-size:12px;color:var(--mut)}
-.lyr{height:36vh;min-height:180px;overflow-y:auto;scroll-behavior:smooth;text-align:center;font-size:17px;background:var(--card2);border-radius:10px;padding:14vh 8px}
-.lyr div{padding:7px 4px;color:var(--mut);transition:color .15s,font-size .15s}
-.lyr div.cur{color:#fff;font-size:23px;font-weight:700}.lyr div.past{opacity:.4}
-.lyr.plain{padding:12px 8px;text-align:left}.lyr.plain div{color:var(--tx);padding:3px 4px}
-.gchips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:none}
-.gchips button{white-space:nowrap;min-height:38px;padding:6px 13px;border-radius:20px;font-size:13px}
-.songs button{display:block;width:100%;text-align:left;margin:5px 0;min-height:42px;padding:8px 10px;font-size:14px}
-.songs button em{float:right;font-style:normal;color:var(--mut);font-size:12px}
-.rec{display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--line);padding:8px 0;flex-wrap:wrap}
-.rec span{flex:1 1 100%;font-size:13px;word-break:break-all}.rec button{min-height:40px;padding:8px 12px;flex:1}
-.rec audio{width:100%}
-#bRec.on{background:var(--bad);border-color:var(--bad);color:#fff}
-.hide{display:none!important}
-/* ===== VoxPulse stage theme: dark hall, neon magenta/violet/cyan light, gold for the target note ===== */
-:root{--bg:#07060d;--card:rgba(22,19,40,.74);--card2:rgba(38,33,66,.72);--line:rgba(140,120,255,.2);--tx:#f1eefc;--mut:#9a93b8;--acc:#ff2bd6;--acc2:#19e3ff;--gold:#ffc23d;--vio:#7a5cff;--r:18px;--lvl:0;
-  --grad:linear-gradient(100deg,#ff2bd6 0%,#7a5cff 52%,#19e3ff 100%)}
-html,body{background:var(--bg)}
-#stage{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:radial-gradient(120% 60% at 50% -10%,rgba(122,92,255,.24),transparent 60%),radial-gradient(90% 50% at 50% 112%,rgba(255,43,214,.2),transparent 62%)}
-#stage .beam{position:absolute;top:-22vh;width:46vw;height:130vh;transform-origin:50% 0;filter:blur(16px);opacity:calc(.1 + var(--lvl)*.26);will-change:transform}
-#stage .b1{left:2vw;background:linear-gradient(180deg,rgba(255,43,214,.9),transparent 72%);clip-path:polygon(46% 0,54% 0,100% 100%,0 100%);animation:sweepA 9s ease-in-out infinite alternate}
-#stage .b2{right:2vw;background:linear-gradient(180deg,rgba(25,227,255,.9),transparent 72%);clip-path:polygon(46% 0,54% 0,100% 100%,0 100%);animation:sweepB 11s ease-in-out infinite alternate}
-#stage .grid{position:absolute;left:-50%;right:-50%;bottom:-6vh;height:38vh;transform:perspective(320px) rotateX(64deg);transform-origin:50% 100%;opacity:.3;
-  background-image:linear-gradient(rgba(122,92,255,.75) 1px,transparent 1px),linear-gradient(90deg,rgba(122,92,255,.75) 1px,transparent 1px);background-size:44px 44px;
-  -webkit-mask-image:linear-gradient(transparent,#000 75%);mask-image:linear-gradient(transparent,#000 75%);animation:gridMove 2.4s linear infinite}
-@keyframes sweepA{from{transform:rotate(-16deg)}to{transform:rotate(12deg)}}
-@keyframes sweepB{from{transform:rotate(15deg)}to{transform:rotate(-13deg)}}
-@keyframes gridMove{from{background-position:0 0}to{background-position:0 44px}}
-header,main{position:relative;z-index:1}
-header{padding:14px 16px 8px}
-header h1{font-size:20px;font-weight:800;letter-spacing:3.5px;display:flex;align-items:center;gap:9px}
-header h1 b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-.eq{display:inline-flex;align-items:flex-end;gap:3px;height:20px}
-.eq i{width:4px;height:100%;border-radius:2px;background:var(--grad);transform-origin:50% 100%;transform:scaleY(.25);transition:transform .09s linear}
-#stateDot{background:var(--card2);border:1px solid var(--line);border-radius:20px;padding:5px 11px;letter-spacing:.4px}
-#stateDot.on{border-color:rgba(25,227,255,.6);color:var(--tx);box-shadow:0 0 14px rgba(25,227,255,.3)}
-#stateDot.on i{background:var(--acc2);box-shadow:0 0 10px var(--acc2);animation:blink 1.6s ease-in-out infinite}
+#stage{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(110% 46% at 78% 0%,rgba(161,123,220,calc(.07 + var(--lvl)*.1)),transparent 62%)}
+header,main,.eyebrow{position:relative;z-index:1}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px 0;height:52px}
+header h1{font-size:22px;font-weight:700;letter-spacing:1.3px;margin:0;line-height:28px}
+header h1 .small{font-size:9px;letter-spacing:1.5px;font-weight:500;vertical-align:middle;margin-left:6px}
+.eq{display:flex;align-items:center;gap:4px;height:28px}
+.eq i{width:2px;border-radius:1px;background:#d4a8ce;transition:transform .09s linear}
+.eq i:nth-child(even){background:var(--acc2)}
+.eq i:nth-child(1){height:8px}.eq i:nth-child(2){height:18px}.eq i:nth-child(3){height:12px}.eq i:nth-child(4){height:24px}.eq i:nth-child(5){height:14px}
+.eyebrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:22px 24px 0}
+.lbl,.eyebrow>span{font-size:10px;font-weight:500;letter-spacing:2px;color:var(--mut);text-transform:uppercase;white-space:nowrap}
+.lbl.s{font-size:9px;letter-spacing:1px;font-weight:400}
+#stateDot{font-size:10px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--mut);display:flex;align-items:center;gap:7px;min-width:0;max-width:56vw}
+#stateDot i{width:5px;height:5px;border-radius:50%;background:#5b526b;flex:none}
+#stateDot.on{color:var(--acc2)}
+#stateDot.on i{background:var(--acc2);box-shadow:0 0 8px var(--acc2);animation:blink 1.6s ease-in-out infinite}
+#stateTx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @keyframes blink{50%{opacity:.35}}
-.card{backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.05)}
-.card h2{letter-spacing:2.2px;font-size:11.5px;color:#b9b1dc;display:flex;align-items:center;gap:8px}
-.card h2:before{content:"";width:16px;height:3px;border-radius:2px;background:var(--grad)}
-button{border-radius:14px;transition:transform .12s ease,box-shadow .2s ease,background .2s ease,border-color .2s ease;position:relative;overflow:hidden}
-button:active{transform:scale(.96)}
-button.pri{background:var(--grad);border-color:transparent;color:#0b0716;letter-spacing:.3px;box-shadow:0 6px 22px rgba(255,43,214,.35)}
-button.sec{background:rgba(25,227,255,.12);border-color:rgba(25,227,255,.45);color:#c9f7ff}
-button.on{background:var(--acc2);border-color:var(--acc2);color:#04232a;box-shadow:0 0 18px rgba(25,227,255,.45)}
-button .rip{position:absolute;border-radius:50%;background:rgba(255,255,255,.35);transform:scale(0);animation:rip .5s ease-out forwards;pointer-events:none}
-@keyframes rip{to{transform:scale(2.6);opacity:0}}
-select,input[type=text],textarea{border-radius:12px}
-select:focus,input[type=text]:focus,textarea:focus{outline:none;border-color:var(--acc2);box-shadow:0 0 0 3px rgba(25,227,255,.18)}
-.note .big{font-size:58px;letter-spacing:-1px;text-shadow:0 0 calc(10px + var(--lvl)*26px) rgba(25,227,255,.55)}
-.note .tgt{color:var(--gold);text-shadow:0 0 calc(12px + var(--lvl)*30px) rgba(255,194,61,.6)}
-.note .big.pop{animation:pop .22s ease-out}
-@keyframes pop{0%{transform:scale(1.22)}100%{transform:scale(1)}}
-.note .arrow{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-.meter{height:9px}.meter>i{background:linear-gradient(90deg,#19e3ff,#7a5cff 55%,#ff2bd6 85%,#ff5a5a);box-shadow:0 0 12px rgba(122,92,255,.6);transition:width .06s linear}
-.cent>i{background:var(--grad);box-shadow:0 0 12px rgba(255,43,214,.5)}
-canvas{background:rgba(10,8,22,.7);border:1px solid var(--line)}
-.ctl label em{color:var(--acc2)}
-input[type=range]::-webkit-slider-runnable-track{height:6px;background:linear-gradient(90deg,rgba(255,43,214,.55),rgba(25,227,255,.55))}
-input[type=range]::-moz-range-track{height:6px;background:linear-gradient(90deg,rgba(255,43,214,.55),rgba(25,227,255,.55))}
-input[type=range]::-webkit-slider-thumb{width:26px;height:26px;margin-top:-10px;background:#fff;border:0;box-shadow:0 0 0 4px rgba(255,43,214,.35),0 0 16px rgba(255,43,214,.7)}
-input[type=range]::-moz-range-thumb{width:24px;height:24px;background:#fff;border:0;box-shadow:0 0 0 4px rgba(255,43,214,.35),0 0 16px rgba(255,43,214,.7)}
-.chips button.blk{background:rgba(8,6,18,.8);color:var(--mut)}
-nav{background:rgba(9,7,20,.82);border-top:1px solid var(--line);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);z-index:6}
-nav .ind{position:absolute;top:0;left:0;height:3px;border-radius:0 0 4px 4px;background:var(--grad);box-shadow:0 0 16px rgba(255,43,214,.8);transition:transform .32s cubic-bezier(.3,1.3,.5,1),width .32s ease;pointer-events:none}
-nav button{transition:color .2s ease,transform .12s ease;overflow:visible;letter-spacing:.3px}
-nav button b{transition:transform .28s cubic-bezier(.3,1.5,.5,1),text-shadow .2s ease}
-nav button.act{color:#fff}
-nav button.act b{transform:translateY(-3px) scale(1.18);text-shadow:0 0 14px rgba(255,43,214,.9)}
-section.tab.act{animation:tabIn .28s cubic-bezier(.2,.8,.2,1) both}
+main{padding:10px 24px calc(96px + env(safe-area-inset-bottom))}
+@media (max-width:359px){main{padding-left:16px;padding-right:16px}header,.eyebrow{padding-left:16px;padding-right:16px}}
+section.tab{display:none}section.tab.act{display:block;animation:tabIn .28s cubic-bezier(.2,.8,.2,1) both}
 section.tab.act.fromL{animation-name:tabInL}
-@keyframes tabIn{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
-@keyframes tabInL{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
-section.tab.act>.card,section.tab.act>#groups>.card{animation:rise .36s cubic-bezier(.2,.8,.2,1) both}
-section.tab.act>.card:nth-child(2){animation-delay:.04s}section.tab.act>.card:nth-child(3){animation-delay:.08s}section.tab.act>.card:nth-child(4){animation-delay:.12s}section.tab.act>.card:nth-child(n+5){animation-delay:.16s}
-@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-.msg{backdrop-filter:blur(10px);animation:rise .25s ease both}
-.art{background:var(--card);backdrop-filter:blur(10px);border-radius:16px;transition:border-color .2s ease,box-shadow .2s ease}
-.art:active{border-color:rgba(255,43,214,.5)}
-.art h3{letter-spacing:.2px}.art summary{color:var(--acc2)}
-.pills span{background:rgba(8,6,18,.7)}
-.gchips button.on{background:var(--grad);border-color:transparent;color:#0b0716;box-shadow:0 0 16px rgba(255,43,214,.4)}
-.lyr{background:rgba(10,8,22,.7);border:1px solid var(--line)}
-.lyr div.cur{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 10px rgba(255,43,214,.45))}
-#activePreset{color:var(--gold)}
+@keyframes tabIn{from{opacity:0;transform:translateX(22px)}to{opacity:1;transform:none}}
+@keyframes tabInL{from{opacity:0;transform:translateX(-22px)}to{opacity:1;transform:none}}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+section.tab.act>*{animation:rise .34s cubic-bezier(.2,.8,.2,1) both}
+section.tab.act>:nth-child(2){animation-delay:.04s}section.tab.act>:nth-child(3){animation-delay:.08s}section.tab.act>:nth-child(4){animation-delay:.12s}section.tab.act>:nth-child(5){animation-delay:.16s}section.tab.act>:nth-child(n+6){animation-delay:.2s}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin:16px 0;position:relative}
+.card h2{font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:1.5px;color:var(--mut);margin:0 0 12px}
+.chead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.row{display:flex;gap:9px;flex-wrap:wrap}
+button{font:500 13px/1.2 "Space Grotesk",system-ui,sans-serif;color:#d9c9e2;background:var(--glass);border:1px solid #48374f;border-radius:13px;padding:11px 14px;min-height:44px;cursor:pointer;position:relative;overflow:hidden;transition:transform .12s ease,background .2s ease,border-color .2s ease,color .2s ease}
+button:active{transform:scale(.97)}
+button.pri{background:var(--grad);border-color:transparent;color:#160d20;font-weight:700}
+button.sec{background:var(--glass);border-color:#48374f;color:#d9c9e2}
+button.on{background:#3d2c45;border-color:transparent;color:#f0cdea}
+button.grow{flex:1}
+button .rip{position:absolute;border-radius:50%;background:rgba(255,255,255,.28);transform:scale(0);animation:rip .5s ease-out forwards;pointer-events:none}
+@keyframes rip{to{transform:scale(2.6);opacity:0}}
+select,input[type=text],textarea{font:inherit;font-size:13px;color:var(--tx);background:var(--card2);border:1px solid var(--line2);border-radius:13px;padding:10px 12px;min-height:44px;width:100%}
+select:focus,input[type=text]:focus,textarea:focus{outline:none;border-color:rgba(109,229,236,.6)}
+::placeholder{color:var(--mut)}
+textarea{min-height:110px;font:12px/1.35 ui-monospace,monospace}
+.small{font-size:11.5px;color:var(--mut);line-height:1.45}
+.sub{color:var(--mut);font-size:11px}
+/* live: pitch hero */
+.hero{padding:17px 19px 14px;overflow:hidden}
+.hero .light{position:absolute;right:-40px;top:-10px;width:230px;height:180px;border-radius:50%;background:radial-gradient(closest-side,rgba(243,213,151,.2),transparent);opacity:calc(.45 + var(--lvl)*.55);pointer-events:none}
+.hero-grid{display:grid;grid-template-columns:1fr 34px 1fr;align-items:start;position:relative}
+.hero .lbl{font-size:9px;letter-spacing:1.7px;display:block}
+.big{font-size:clamp(56px,20vw,78px);font-weight:500;line-height:1.18;white-space:nowrap;letter-spacing:-1px;font-variant-numeric:tabular-nums;transform-origin:0 60%}
+.big sup{font-size:.35em;font-weight:400;color:var(--mut);vertical-align:baseline;position:relative;top:-1.05em;margin-left:5px;letter-spacing:0}
+.big.tgt{color:var(--gold);text-shadow:0 0 24px rgba(243,213,151,calc(.12 + var(--lvl)*.3))}
+.big.tgt sup{color:var(--gold)}
+.big.pop{animation:pop .16s ease-out}
+@keyframes pop{0%{transform:scale(1.1)}100%{transform:scale(1)}}
+.hero .arrow{color:#766f84;font-size:25px;padding-top:44px;text-align:center}
+.hz{font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums;margin-top:-4px}
+.rail{position:relative;height:16px;margin:24px 1px 0}
+.rail:before{content:"";position:absolute;left:0;right:0;top:8px;height:1px;background:#4b4357}
+.rail u{position:absolute;top:4px;width:1px;height:5px;background:#5b526b}
+.rail u.t{height:9px}.rail u.c{background:var(--acc2);height:9px}
+#centBar{position:absolute;top:0;left:50%;width:3px;height:16px;margin-left:-1px;border-radius:2px;background:var(--acc2);box-shadow:0 0 8px rgba(109,229,236,.5);transition:left .08s linear,opacity .2s}
+#centBar.off{opacity:.25}
+.rail-tx{display:flex;justify-content:space-between;align-items:baseline;font-size:9px;color:var(--mut);margin-top:9px;gap:8px}
+#nSub{font-size:10px;color:#c8b7d0;text-align:center;font-variant-numeric:tabular-nums}
+/* live: trace */
+.trace{padding:14px 15px 12px}
+.trace .lbl{font-size:9px;letter-spacing:1.5px}
+canvas{width:100%;height:96px;display:block;margin:14px 0 6px}
+.trace .foot{font-size:8px;color:var(--mut)}
+.preset{display:flex;align-items:center;gap:12px;padding:10px 15px;min-height:62px;cursor:pointer}
+.preset .bar{width:3px;height:28px;border-radius:2px;background:#b69acb;flex:none}
+.preset>span{flex:1;min-width:0}
+.preset b{display:block;font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.preset small{display:block;font-size:9px;letter-spacing:.7px;color:var(--mut);text-transform:uppercase;margin-top:5px}
+.preset em{font-style:normal;font-size:11px;color:#cbb7df;white-space:nowrap}
 #activePreset.flash{animation:flash .7s ease}
-@keyframes flash{0%{text-shadow:0 0 18px var(--gold);transform:scale(1.06)}100%{text-shadow:none;transform:none}}
-#bRec.on{box-shadow:0 0 20px rgba(248,113,113,.6);animation:blink 1.2s ease-in-out infinite}
-@media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}#stage .beam{opacity:.12}}
-.gchips button{flex:none}
-#stateDot{max-width:46vw}#stateTx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@keyframes flash{0%{color:var(--gold)}100%{color:var(--tx)}}
+.lvl{margin:14px 0 0}
+.lvl .lbl{font-size:9px;letter-spacing:1.5px}
+.lvl .chead>span:last-child{font-size:10px;font-variant-numeric:tabular-nums}
+.segs{display:flex;gap:3px;margin-top:11px}
+.segs i{flex:1;height:5px;border-radius:2px;background:#282230;transition:background .08s linear}
+.segs i.a{background:#5aa7b0}.segs i.b{background:#b2a0cb}.segs i.c{background:var(--acc)}
+.status{font-size:10px;color:var(--mut);margin:14px 0 0;min-height:14px}
+.actbar{position:sticky;bottom:calc(76px + env(safe-area-inset-bottom));z-index:3;display:flex;gap:9px;margin:14px 0 6px;padding:6px 0;background:linear-gradient(transparent,var(--bg) 40%)}
+.actbar button{min-height:48px;border-radius:14px;font-size:14px}
+body.run #bMic,body.run #bFile{display:none}
+.kv{display:grid;grid-template-columns:1fr auto;gap:6px 10px;font-size:12px;color:#cfc8d6}
+.kv span:nth-child(even){font-variant-numeric:tabular-nums;text-align:right;font-weight:500;color:var(--tx)}
+/* sliders: 3 px track, gradient up to the thumb, soft bloom */
+.ctl{margin:14px 0}
+.ctl+.ctl{border-top:1px solid #2c2334;padding-top:14px}
+.ctl label{display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-bottom:2px}
+.ctl label em{font-style:normal;font-weight:500;font-size:11px;color:var(--lav);font-variant-numeric:tabular-nums;white-space:nowrap}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:34px;background:transparent;margin:0;--p:0%}
+input[type=range]::-webkit-slider-runnable-track{height:3px;border-radius:2px;background:linear-gradient(90deg,#f13ca7,#a17bdc calc(var(--p)/2),#6de5ec var(--p),#3d3248 var(--p))}
+input[type=range]::-moz-range-track{height:3px;border-radius:2px;background:#3d3248}
+input[type=range]::-moz-range-progress{height:3px;border-radius:2px;background:var(--grad)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;margin-top:-7px;background:#efe5f6;border:0;box-shadow:0 0 10px rgba(182,156,227,.5),0 0 0 6px rgba(182,156,227,.12)}
+input[type=range]::-moz-range-thumb{width:17px;height:17px;border-radius:50%;background:#efe5f6;border:0;box-shadow:0 0 10px rgba(182,156,227,.5),0 0 0 6px rgba(182,156,227,.12)}
+input[type=checkbox]{accent-color:#a17bdc}
+.chips{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.chips button{padding:8px 0;min-height:40px;border:0;border-radius:10px;font-size:12px}
+.chips button.on{background:#3a293f;color:#f1c1e2}.chips button.blk{background:#19151f;color:#6e697c}
+.seg3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.seg3 button{border:0;border-radius:10px;min-height:38px;font-size:11px;background:#19141f;color:var(--mut)}
+.seg3 button.on{background:#3d2c45;color:#f0cdea}
+/* nav */
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:rgba(13,11,20,.94);border-top:1px solid #24202e;padding:6px 0 calc(8px + env(safe-area-inset-bottom));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);z-index:6}
+nav .ind{position:absolute;top:-1px;left:0;width:24px;height:2px;border-radius:1px;background:var(--acc2);box-shadow:0 0 8px rgba(109,229,236,.6);transition:transform .28s cubic-bezier(.3,1.2,.5,1);pointer-events:none}
+nav button{flex:1;border:0;background:none;color:#8d8b9e;font-size:10px;font-weight:400;padding:9px 2px 4px;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:58px;overflow:visible;border-radius:0}
+nav button svg{width:24px;height:24px;transition:transform .28s cubic-bezier(.3,1.4,.5,1)}
+nav button.act{color:var(--tx);font-weight:500}
+nav button.act svg{transform:translateY(-1px)}
+svg.ic{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.msg{font-size:12px;border-radius:13px;padding:10px 12px;margin:8px 0;background:var(--glass);border:1px solid #5a4b47;color:var(--gold);display:none}
+.msg.show{display:block;animation:rise .25s ease both}.msg.err{border-color:rgba(241,60,167,.55);color:#f6bfdc}.msg.ok{border-color:rgba(109,229,236,.4);color:#b2dee0}
+/* karaoke */
+.now{display:flex;align-items:center;gap:14px;padding:11px;min-height:73px}
+.wav{width:49px;height:49px;border-radius:12px;background:#25202f;display:flex;align-items:center;justify-content:center;gap:4px;flex:none}
+.wav i{width:2px;border-radius:1px;background:#6aafb8}.wav i:nth-child(even){background:#ac9cbd}
+.wav i:nth-child(1){height:13px}.wav i:nth-child(2){height:23px}.wav i:nth-child(3){height:32px}.wav i:nth-child(4){height:18px}.wav i:nth-child(5){height:25px}
+#kSong{font-size:10.5px;color:var(--mut);line-height:1.5;min-width:0}
+#kSong b{color:var(--tx);font-weight:500}#kSong b.t{display:block;font-size:17px;line-height:1.3}
+.lyr{height:257px;overflow-y:auto;scroll-behavior:smooth;scrollbar-width:none;padding:100px 0 100px 12px;margin:14px 0 8px -12px;font-size:20px;-webkit-mask-image:linear-gradient(transparent,#000 18%,#000 82%,transparent);mask-image:linear-gradient(transparent,#000 18%,#000 82%,transparent)}
+.lyr::-webkit-scrollbar{display:none}
+.lyr div{padding:6px 0;color:#a09aa9;position:relative;transition:color .2s,font-size .2s}
+.lyr div.past{color:#777080}
+.lyr div.cur{color:var(--tx);font-size:26px;font-weight:500;line-height:1.3}
+.lyr div.cur:before{content:"";position:absolute;left:-10px;top:8px;bottom:8px;width:2px;border-radius:1px;background:var(--acc2)}
+.lyr.plain{height:auto;max-height:257px;padding:4px 0 4px 12px;font-size:14px;-webkit-mask-image:none;mask-image:none}.lyr.plain div{color:var(--tx);padding:3px 0}
+.guide{display:flex;align-items:center;gap:18px;padding:11px 15px;margin:8px 0 14px}
+.guide .lbl{display:block;font-size:8px}
+.guide b{font-size:26px;font-weight:500;line-height:1.25;display:block;min-width:44px}
+.guide b.tgt{color:var(--gold)}
+.dashes{flex:1;height:8px;position:relative;margin-top:14px;background:repeating-linear-gradient(90deg,#55425d 0 5px,transparent 5px 8px) 0 3px/100% 2px no-repeat}
+#kDot{position:absolute;top:0;left:50%;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:var(--acc2);transition:left .08s linear,opacity .2s}
+#kDot.off{opacity:.25}
+.prog{display:flex;justify-content:space-between;align-items:flex-end}
+.prog b{font-size:32px;font-weight:500;line-height:1.2;font-variant-numeric:tabular-nums}
+.prog span{font-size:10px;color:var(--mut);padding-bottom:8px;font-variant-numeric:tabular-nums}
+input[type=range].thin{height:22px}
+input[type=range].thin::-webkit-slider-runnable-track{height:2px;background:linear-gradient(90deg,#bca7cc var(--p),#302735 var(--p))}
+input[type=range].thin::-moz-range-progress{background:#bca7cc}
+input[type=range].thin::-webkit-slider-thumb{width:10px;height:10px;margin-top:-4px;background:var(--tx);box-shadow:none}
+input[type=range].thin::-moz-range-thumb{width:10px;height:10px;background:var(--tx);box-shadow:none}
+.transport{display:flex;align-items:center;justify-content:space-between;padding:10px 22px 0}
+.transport button{border:0;background:none;color:var(--tx);min-height:48px;min-width:48px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.transport svg{width:24px;height:24px}
+#bPlay{width:56px;height:56px;background:var(--tx);color:#160d20}
+#bPlay .pa{display:none}#bPlay.playing .pa{display:block}#bPlay.playing .pl{display:none}
+.recrow{display:flex;justify-content:center;margin:6px 0 4px}
+#bRec{border:0;background:none;color:#c6b6ca;font-size:11px;font-weight:400;display:flex;align-items:center;gap:9px;min-height:40px}
+#bRec i{width:8px;height:8px;border-radius:50%;background:var(--acc);flex:none}
+#bRec.on{color:var(--tx)}#bRec.on i{box-shadow:0 0 10px var(--acc);animation:blink 1.1s ease-in-out infinite}
+#recTime{font-variant-numeric:tabular-nums}
+.rec{display:flex;align-items:center;gap:6px;border-bottom:1px solid #2c2334;padding:8px 0;flex-wrap:wrap}
+.rec span{flex:1 1 100%;font-size:12px;word-break:break-all}.rec button{min-height:38px;padding:8px 10px;flex:1;font-size:12px}
+.rec audio{width:100%}
+/* artists */
+.arthero{display:flex;justify-content:space-between;align-items:flex-start;margin-top:8px}
+.disp{font-size:38px;font-weight:500;line-height:1.26;margin:0;letter-spacing:-.3px}
+.disp.s{font-size:29px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cnt{text-align:center;padding-top:3px}.cnt b{display:block;font-size:48px;font-weight:500;line-height:1.2;color:#7b6d87;font-variant-numeric:tabular-nums}
+.cnt .lbl{font-size:8px;letter-spacing:1.5px;font-weight:500}
+.tag{font-size:12px;color:var(--mut);margin:5px 0 21px}
+.search{display:flex;align-items:center;gap:11px;height:44px;padding:0 13px;background:var(--card2);border:1px solid var(--line2);border-radius:13px;color:var(--mut)}
+.search svg{width:20px;height:20px;flex:none}
+.search input{border:0;background:none;padding:0;min-height:0;height:100%;font-size:12px}
+.search input:focus{box-shadow:none}
+.gchips{display:flex;gap:8px;overflow-x:auto;padding:14px 24px 0 0;margin-right:-24px;scrollbar-width:none}
+.gchips::-webkit-scrollbar{display:none}
+.gchips button{flex:none;white-space:nowrap;min-height:30px;padding:6px 13px;border:0;border-radius:15px;font-size:10.5px;background:#19151f;color:var(--mut)}
+.gchips button.on{background:#3a293f;color:#f1c1e2}
+#t-art .chead{margin:25px 0 2px}
+.art{background:var(--card2);border:1px solid rgba(48,40,55,.65);border-radius:18px;margin:14px 0;transition:border-color .2s ease}
+.art.stg{animation:rise .34s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d)}
+.art:active,.art[open]{border-color:rgba(91,65,95,.8)}
+.art-top{display:flex;gap:14px;padding:12px 13px 12px 11px;cursor:pointer;position:relative;min-height:94px}
+.sig{width:52px;height:70px;border-radius:12px;background:#211a2a;display:flex;align-items:center;justify-content:center;gap:2.4px;flex:none}
+.sig i{width:1.4px;border-radius:1px;background:var(--c,#c9a5d2)}
+.art-m{flex:1;min-width:0;padding-right:64px}
+.art h3{margin:0;font-size:18px;font-weight:500;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.art .era{color:var(--mut);font-size:10px;margin:3px 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.art .tg{display:inline-block;font-size:9px;line-height:22px;height:22px;padding:0 9px;border-radius:7px;background:#292231;color:#cbb9d4}
+.badge{display:inline-block;font-size:9px;line-height:23px;height:23px;padding:0 8px;border-radius:7px;background:#223036;color:#b2dee0;white-space:nowrap}
+.art-top .badge{position:absolute;right:13px;top:13px}
+.badge.m{background:#223036;color:#b2dee0}.badge.h{background:#2f2a20;color:var(--gold)}.badge.l{background:#272030;color:#cab2d6}
+.badge.c{font-size:8px;font-weight:500;letter-spacing:1px;background:#272030;color:#cab2d6;line-height:22px;height:22px;padding:0 9px;flex:none}
+.art .go{position:absolute;right:15px;bottom:9px;font-size:18px;color:var(--mut)}
+.art details{border-top:1px solid rgba(48,40,55,.65);padding:0 13px;font-size:12px;color:#cfc8d6}
+.art summary{cursor:pointer;color:var(--lav);font-size:11px;padding:11px 0;list-style:none}
+.art summary::-webkit-details-marker{display:none}
+.art summary:after{content:"  ↓";color:var(--mut)}.art details[open]>summary:after{content:"  ↑"}
+.art details details{border:0;padding:0}
+.art ul{padding-left:18px;margin:4px 0 10px}.art a{color:var(--acc2);word-break:break-word}
+.pills{display:flex;flex-wrap:wrap;gap:5px;margin:2px 0 8px}.pills span{font-size:10px;background:#292231;color:#cbb9d4;border-radius:7px;padding:4px 8px}
+.songs{padding-bottom:10px}
+.songs button{display:block;width:100%;text-align:left;margin:5px 0;min-height:40px;padding:8px 11px;font-size:12px;background:#19151f;border:0}
+.songs button em{float:right;font-style:normal;color:var(--mut);font-size:10px}
+/* editor */
+.edhead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:6px}
+.corr{padding:16px 18px 6px}
+.corr-row{display:flex;align-items:baseline;gap:4px}
+.corr-row>b{font-size:64px;font-weight:500;line-height:1.2;font-variant-numeric:tabular-nums;letter-spacing:-1px}
+.corr-row>i{font-style:normal;font-size:23px;color:#b3a3be}
+.corr-d{margin-left:auto;text-align:right;align-self:center}
+.corr-d span{display:block;font-size:12px;color:#d4bee0}.corr-d small{font-size:10px;color:var(--mut)}
+.corr .ctl{margin:0}.corr .ctl label{display:none}
+.info p,.info li{font-size:13px;color:#cfc8d6}.info h3{font-size:14px;font-weight:500;margin:16px 0 6px}.info a{color:var(--acc2)}
+table{border-collapse:collapse;width:100%;font-size:12px}td,th{border-bottom:1px solid #2c2334;padding:6px 4px;text-align:left}td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
 .hide{display:none!important}
 </style>
 </head>
 <body>
-<div id="stage" aria-hidden="true"><i class="beam b1"></i><i class="beam b2"></i><i class="grid"></i></div>
-<header><h1><span class="eq" id="eq"><i></i><i></i><i></i><i></i></span>VOX<b>PULSE</b></h1><div id="stateDot"><i></i><span id="stateTx">kapalı</span></div></header>
+<div id="stage" aria-hidden="true"></div>
+<header><h1>VOXPULSE</h1><span class="eq" id="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></header>
+<div class="eyebrow"><span id="tabTitle">Canlı tuner</span><div id="stateDot"><i></i><span id="stateTx">kapalı</span></div></div>
 <main>
 <!-- ===================== CANLI ===================== -->
 <section class="tab act" id="t-live">
   <div class="msg" id="msg"></div>
-  <div class="card">
-    <div class="row">
-      <button class="pri grow" id="bMic">🎤 Mikrofonla başlat</button>
-      <button class="sec" id="bFile">📁 Dosya</button>
-      <button id="bStop" class="hide">■ Durdur</button>
+  <div class="card hero">
+    <i class="light"></i>
+    <div class="hero-grid">
+      <div><span class="lbl">Algılanan</span><div class="big" id="nIn">–</div><div class="hz" id="hzIn">– Hz</div></div>
+      <div class="arrow">→</div>
+      <div><span class="lbl">Hedef</span><div class="big tgt" id="nTg">–</div><div class="hz" id="hzTg">– Hz</div></div>
     </div>
-    <input type="file" id="fileIn" accept="audio/*" class="hide">
-    <p class="small" style="margin:8px 0 0">🎧 Kulaklık kullan: hoparlörden dinlersen ses mikrofona geri döner ve uğultu (howl) yapar. Kablolu kulaklık Bluetooth’tan çok daha az gecikir.</p>
+    <div class="rail" id="rail"><i id="centBar" class="off"></i></div>
+    <div class="rail-tx"><span>−50</span><span id="nSub">ses bekleniyor</span><span>+50</span></div>
   </div>
-  <div class="card">
-    <div class="note"><div class="big" id="nIn">–</div><div class="arrow">→</div><div class="big tgt" id="nTg">–</div></div>
-    <div class="sub" id="nSub">algılanan → hedef nota</div>
-    <div class="cent"><i id="centBar"></i></div>
-    <div class="sub" id="centTx">düzeltme 0 cent</div>
-    <canvas id="graph" width="700" height="300"></canvas>
+  <div class="card trace">
+    <div class="chead"><span class="lbl">Perde izi</span><span class="lbl s">Son 8 sn</span></div>
+    <canvas id="graph" width="620" height="192"></canvas>
+    <div class="chead foot"><span>−8s</span><span>ŞİMDİ</span></div>
   </div>
-  <div class="card">
-    <div class="row" style="align-items:center;gap:10px">
-      <span class="small" style="width:44px">Giriş</span><div class="meter" style="flex:1"><i id="mIn"></i></div><span class="small" id="mInTx" style="width:52px;text-align:right">–∞</span>
-    </div>
-    <div class="row" style="align-items:center;gap:10px;margin-top:8px">
-      <span class="small" style="width:44px">Çıkış</span><div class="meter" style="flex:1"><i id="mOut"></i></div><span class="small" id="mOutTx" style="width:52px;text-align:right">–∞</span>
-    </div>
-    <div class="sub" id="gateTx" style="margin-top:6px">gate: –</div>
+  <div class="card preset" id="bEditGo" role="button"><i class="bar"></i><span><b id="activePreset">Varsayılan</b><small id="presetSub"></small></span><em>Düzenle  ↗</em></div>
+  <div class="lvl"><div class="chead"><span class="lbl">Giriş</span><span id="mInTx">–∞</span></div><div class="segs" id="mIn"></div></div>
+  <div class="lvl"><div class="chead"><span class="lbl">Çıkış</span><span id="mOutTx">–∞</span></div><div class="segs" id="mOut"></div></div>
+  <p class="status" id="gateTx">Kulaklık kullan: hoparlörden dinlersen ses mikrofona geri döner.</p>
+  <div class="actbar">
+    <button class="pri grow" id="bMic">Mikrofonla başlat</button>
+    <button class="sec" id="bFile">Dosya</button>
+    <button class="pri grow hide" id="bStop">Ⅱ   Oturumu durdur</button>
   </div>
+  <input type="file" id="fileIn" accept="audio/*" class="hide">
   <div class="card">
     <h2>Hızlı ayar</h2>
     <div class="row"><div style="flex:1" id="qKey"></div><div style="flex:1.4" id="qScale"></div></div>
@@ -206,7 +275,7 @@ section.tab.act>.card:nth-child(2){animation-delay:.04s}section.tab.act>.card:nt
       <button class="grow" id="bBypass">Bypass</button>
       <button class="grow" id="bMute">Monitör açık</button>
     </div>
-    <p class="small" id="activePreset" style="margin:10px 0 0">Preset: varsayılan</p>
+    <p class="small" style="margin:12px 0 0">Kablolu kulaklık Bluetooth’tan çok daha az gecikir.</p>
   </div>
   <div class="card">
     <h2>Gecikme (latency)</h2>
@@ -224,49 +293,55 @@ section.tab.act>.card:nth-child(2){animation-delay:.04s}section.tab.act>.card:nt
       <span class="nat hide">Dinleme cihazı</span><span class="nat hide" id="lRoute">–</span>
     </div>
     <div class="msg" id="btWarn"></div>
-    <button style="margin-top:10px;width:100%" id="bMeasure">Gerçek gecikmeyi ölç (hoparlör → mikrofon)</button>
-    <p class="small">Ölçüm için kulaklığı çıkar, sesi aç, sessiz ortamda telefonu masaya koy. Uygulama 3 kez “tık” sesi çalar ve mikrofona dönüş süresini ölçer.</p>
+    <button style="margin-top:12px;width:100%" id="bMeasure">Gerçek gecikmeyi ölç (hoparlör → mikrofon)</button>
+    <p class="small" style="margin:10px 0 0">Ölçüm için kulaklığı çıkar, sesi aç, sessiz ortamda telefonu masaya koy. Uygulama 3 kez “tık” sesi çalar ve mikrofona dönüş süresini ölçer.</p>
   </div>
 </section>
 
 <!-- ===================== KARAOKE ===================== -->
 <section class="tab" id="t-kar">
   <div class="msg" id="kMsg"></div>
+  <div class="card now"><div class="wav" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><div id="kSong"></div></div>
+  <div class="lyr plain" id="lyr"><div class="small" style="color:var(--mut)">Söz yüklenmedi.</div></div>
+  <div class="card guide"><div><span class="lbl">Senin notan</span><b id="kNIn">–</b></div><div class="dashes"><i id="kDot" class="off"></i></div><div><span class="lbl">Hedef</span><b id="kNTg" class="tgt">–</b></div></div>
+  <div class="prog"><b id="kTime">0:00</b><span id="kDur">0:00</span></div>
+  <input type="range" class="thin" id="kSeek" min="0" max="1000" value="0">
+  <div class="transport">
+    <button id="bRestart" aria-label="Başa sar"><svg class="ic" viewBox="0 0 24 24"><path d="M17.971 4.285A2 2 0 0 1 21 6v12a2 2 0 0 1-3.029 1.715l-9.997-5.998a2 2 0 0 1-.003-3.432z"/><path d="M3 20V4"/></svg></button>
+    <button id="bPlay" aria-label="Çal / duraklat"><svg class="ic pl" viewBox="0 0 24 24"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg><svg class="ic pa" viewBox="0 0 24 24"><rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/></svg></button>
+    <button id="bSkip" aria-label="10 saniye ileri"><svg class="ic" viewBox="0 0 24 24"><path d="M21 4v16"/><path d="M6.029 4.285A2 2 0 0 0 3 6v12a2 2 0 0 0 3.029 1.715l9.997-5.998a2 2 0 0 0 .003-3.432z"/></svg></button>
+  </div>
+  <div class="recrow"><button id="bRec"><i></i><span id="recLbl">Bu kaydı al</span><span id="recTime"></span></button></div>
+  <div class="card"><h2>Dosyalar</h2>
+    <div class="row"><button class="sec grow" id="bBeat">Beat yükle</button><button class="grow" id="bLyr">Söz dosyası (.lrc)</button></div>
+    <div class="row" style="margin-top:9px"><button class="grow" id="bPaste">Sözleri yapıştır</button><button class="grow" id="bKClear">Temizle</button></div>
+    <input type="file" id="beatIn" accept="audio/*" class="hide"><input type="file" id="lyrIn" accept=".lrc,.txt,text/plain" class="hide">
+    <div id="pasteBox" class="hide" style="margin-top:9px"><textarea id="pasteTx" placeholder="[00:12.50] satır …  (zaman damgalı .lrc metni akar; düz metin sabit durur)" spellcheck="false"></textarea><button style="width:100%;margin-top:6px" id="bPasteOk">Sözleri uygula</button></div>
+    <p class="small" style="margin:12px 0 0">Enstrümantal ve söz dosyalarını sen sağlarsın (telif nedeniyle uygulamada şarkı sözü ya da beat yok). Beat yüklenince ton ve tempo dosyadan tahmin edilip otomatik ayarlanır.</p>
+  </div>
+  <div class="card"><h2>Denge</h2>
+    <div class="ctl"><label><span>Beat seviyesi</span><em id="kGainTx">30%</em></label><input type="range" id="kGain" min="0" max="100" value="30"></div>
+    <div id="kVoc"></div>
+  </div>
   <div class="card nat hide"><h2>Başka uygulamayla söyle (YouTube vb.)</h2>
     <p class="small" style="margin:0 0 8px">Dosya indirmene gerek yok: VoxPulse arka planda çalışmaya devam eder, sesin diğer uygulamanın sesiyle birlikte çıkar.</p>
-    <ol class="small" style="margin:0 0 10px;padding-left:18px"><li>Kulaklığı tak ve aşağıdaki düğmeye bas.</li><li>YouTube'da şarkının karaoke sürümünü aç.</li><li>Söyle. Kapatmak için bildirimdeki “Durdur”a bas ya da uygulamaya dön.</li></ol>
-    <button class="pri" style="width:100%" id="bBg">▶ Arka plan modunu başlat (vokal öne)</button>
-    <p class="small" style="margin:8px 0 0">Bu düğme motoru başlatır ve vokalini yükseltir (+10 dB, daha sıkı kompresör). Diğer uygulamanın sesini VoxPulse kısamaz; dengeyi “Vokal seviyesi” kaydırıcısıyla kur. Hoparlörden dinlersen mikrofon müziği de duyar ve Auto-Tune şaşırır: kulaklık kullan.</p>
-  </div>
-  <div class="card"><h2>Şarkı</h2>
-    <div id="kSong" class="small">Şarkı seçilmedi. “Sanatçılar” sekmesinden bir şarkıya dokun ya da doğrudan kendi dosyalarını yükle.</div>
-    <div class="row" style="margin-top:10px"><button class="sec grow" id="bBeat">🎵 Beat yükle</button><button class="grow" id="bLyr">📝 Söz dosyası (.lrc / .txt)</button></div>
-    <div class="row" style="margin-top:8px"><button class="grow" id="bPaste">Sözleri yapıştır</button><button class="grow" id="bKClear">Temizle</button></div>
-    <input type="file" id="beatIn" accept="audio/*" class="hide"><input type="file" id="lyrIn" accept=".lrc,.txt,text/plain" class="hide">
-    <div id="pasteBox" class="hide" style="margin-top:8px"><textarea id="pasteTx" placeholder="[00:12.50] satır …  (zaman damgalı .lrc metni akar; düz metin sabit durur)" spellcheck="false"></textarea><button style="width:100%;margin-top:6px" id="bPasteOk">Sözleri uygula</button></div>
-    <p class="small" style="margin:10px 0 0">Enstrümantal ve söz dosyalarını sen sağlarsın (telif nedeniyle uygulamada şarkı sözü ya da beat yok). Beat yüklenince ton ve tempo dosyadan tahmin edilip otomatik ayarlanır.</p>
+    <ol class="small" style="margin:0 0 12px;padding-left:18px"><li>Kulaklığı tak ve aşağıdaki düğmeye bas.</li><li>YouTube'da şarkının karaoke sürümünü aç.</li><li>Söyle. Kapatmak için bildirimdeki “Durdur”a bas ya da uygulamaya dön.</li></ol>
+    <button class="pri" style="width:100%" id="bBg">Arka plan modunu başlat (vokal öne)</button>
+    <p class="small" style="margin:10px 0 0">Bu düğme motoru başlatır ve vokalini yükseltir (+10 dB, daha sıkı kompresör). Diğer uygulamanın sesini VoxPulse kısamaz; dengeyi “Vokal seviyesi” kaydırıcısıyla kur. Hoparlörden dinlersen mikrofon müziği de duyar ve Auto-Tune şaşırır: kulaklık kullan.</p>
   </div>
   <div class="card"><h2>Beat üret (özgün)</h2>
     <div class="row"><select id="gStyle" style="flex:1.3"></select><select id="gLen" style="flex:1"><option value="1">1 dk</option><option value="2">2 dk</option><option value="3" selected>3 dk</option><option value="4">4 dk</option></select></div>
-    <input type="text" id="gChords" placeholder="Akorlar: Fm C# G# D#   (her akor 1 ölçü, “-” = tekrar)" autocomplete="off" autocapitalize="off" spellcheck="false" style="margin-top:8px">
-    <div class="row" style="margin-top:8px"><button class="grow" id="bGSug">Tona göre öner</button><button class="grow" id="bGDet">Akorları dosyadan algıla</button></div>
+    <input type="text" id="gChords" placeholder="Akorlar: Fm C# G# D#   (her akor 1 ölçü, “-” = tekrar)" autocomplete="off" autocapitalize="off" spellcheck="false" style="margin-top:9px">
+    <div class="row" style="margin-top:9px"><button class="grow" id="bGSug">Tona göre öner</button><button class="grow" id="bGDet">Akorları dosyadan algıla</button></div>
     <div id="gBpm"></div>
     <div class="row"><button class="pri grow" id="bGen">Beat üret</button><button class="grow" id="bGenAgain">Farklı desen</button></div>
-    <div class="row" style="margin-top:8px"><select id="gSaved" style="flex:1"></select><button id="bGSave">Kaydet</button><button id="bGDel">Sil</button></div>
+    <div class="row" style="margin-top:9px"><select id="gSaved" style="flex:1"></select><button id="bGSave">Kaydet</button><button id="bGDel">Sil</button></div>
     <input type="file" id="chordIn" accept="audio/*" class="hide">
-    <p class="small" style="margin:8px 0 0">Girdiğin akorların üzerine davul, bas ve eşlik sıfırdan sentezlenir; hiçbir şarkının melodisi ya da kaydı kullanılmaz. “Farklı desen” aynı akorlarla yeni bir ritim üretir. “Akorları dosyadan algıla” telefonundaki bir ses dosyasını analiz eder (tahmindir; yalnız majör/minör akorları tanır, kontrol et).</p>
+    <p class="small" style="margin:12px 0 0">Girdiğin akorların üzerine davul, bas ve eşlik sıfırdan sentezlenir; hiçbir şarkının melodisi ya da kaydı kullanılmaz. “Farklı desen” aynı akorlarla yeni bir ritim üretir. “Akorları dosyadan algıla” telefonundaki bir ses dosyasını analiz eder (tahmindir; yalnız majör/minör akorları tanır, kontrol et).</p>
   </div>
-  <div class="card"><h2>Çalar</h2>
-    <div class="row" style="align-items:center"><button class="pri" id="bPlay" style="min-width:92px">▶ Çal</button><button id="bRestart">⏮</button><span id="kTime" class="small" style="flex:1;text-align:right">0:00 / 0:00</span></div>
-    <input type="range" id="kSeek" min="0" max="1000" value="0" style="margin-top:6px">
-    <div class="ctl"><label><span>Beat seviyesi</span><em id="kGainTx">30%</em></label><input type="range" id="kGain" min="0" max="100" value="30"></div>
-    <div id="kVoc"></div>
-    <div class="lyr plain" id="lyr"><div class="small" style="color:var(--mut)">Söz yüklenmedi.</div></div>
-  </div>
-  <div class="card"><h2>Kayıt</h2>
-    <div class="row" style="align-items:center"><button id="bRec" class="grow">● Kaydı başlat</button><span id="recTime" class="small" style="min-width:60px;text-align:right">–</span></div>
+  <div class="card"><h2>Kayıtlar</h2>
     <div class="ctl nat hide"><label><span>Kayıt senkronu (ses beat'e göre erken/geç ise)</span><em id="trimTx">0 ms</em></label><input type="range" id="kTrim" min="-250" max="250" step="5" value="0"></div>
-    <p class="small" style="margin:6px 0">Kayıt = işlenmiş sesin + beat. Uygulamada kayıtta beat, ölçülen gecikme kadar kaydırılır; böylece Bluetooth'ta bile sesin beat'e oturur.</p>
+    <p class="small" style="margin:0 0 6px">Kayıt = işlenmiş sesin + beat. Uygulamada kayıtta beat, ölçülen gecikme kadar kaydırılır; böylece Bluetooth'ta bile sesin beat'e oturur.</p>
     <div id="recList"></div>
   </div>
   <div class="card"><h2>Hoparlör / soundbar çıkışı</h2>
@@ -278,18 +353,28 @@ section.tab.act>.card:nth-child(2){animation-delay:.04s}section.tab.act>.card:nt
 
 <!-- ===================== EDİTÖR ===================== -->
 <section class="tab" id="t-edit">
+  <div class="edhead"><h2 class="disp s" id="edName">Varsayılan</h2><span class="badge c">AKTİF</span></div>
+  <p class="tag">Biraz cila. Hâlâ tamamen sen.</p>
+  <div class="card corr">
+    <span class="lbl" style="font-size:9px;letter-spacing:1.5px">Retune hızı</span>
+    <div class="corr-row"><b id="corrV">20</b><i>ms</i><div class="corr-d"><span id="corrA">Doğal</span><small id="corrB">robotik değil</small></div></div>
+    <div id="corrS"></div>
+  </div>
   <div class="card"><h2>Ton &amp; gam</h2>
     <div class="row"><div style="flex:1" id="eKey"></div><div style="flex:1.4" id="eScale"></div></div>
-    <p class="small" style="margin:10px 0 6px">Notalara dokunarak özel gam oluştur (koyu = kapalı):</p>
+    <p class="small" style="margin:12px 0 8px">Notalara dokunarak özel gam oluştur (koyu = kapalı):</p>
     <div class="chips" id="chips"></div>
+  </div>
+  <div class="card"><h2>Vokal alanı</h2>
+    <div class="seg3" id="space"><button data-s="0">Kuru</button><button data-s="1">Stüdyo</button><button data-s="2">Geniş</button></div>
   </div>
   <div id="groups"></div>
   <div class="card"><h2>Presetlerim</h2>
-    <div class="row"><input type="text" id="pName" placeholder="Preset adı" style="flex:1"><button class="pri" id="bSave">Kaydet</button></div>
-    <div class="row" style="margin-top:8px"><select id="pList" style="flex:1"></select></div>
-    <div class="row" style="margin-top:8px"><button class="grow" id="bLoad">Yükle</button><button class="grow" id="bOver">Üzerine yaz</button><button class="grow" id="bDel">Sil</button></div>
-    <div class="row" style="margin-top:8px"><button class="grow" id="bExp">Dışa aktar</button><button class="grow" id="bImp">İçe aktar</button><button class="grow" id="bReset">Sıfırla</button></div>
-    <div id="ioBox" class="hide" style="margin-top:8px">
+    <div class="row"><input type="text" id="pName" placeholder="Preset adı" style="flex:1"><button class="pri" id="bSave">Preseti kaydet</button></div>
+    <div class="row" style="margin-top:9px"><select id="pList" style="flex:1"></select></div>
+    <div class="row" style="margin-top:9px"><button class="grow" id="bLoad">Yükle</button><button class="grow" id="bOver">Üzerine yaz</button><button class="grow" id="bDel">Sil</button></div>
+    <div class="row" style="margin-top:9px"><button class="grow" id="bExp">Dışa aktar</button><button class="grow" id="bImp">İçe aktar</button><button class="grow" id="bReset">Sıfırla</button></div>
+    <div id="ioBox" class="hide" style="margin-top:9px">
       <textarea id="ioTx" spellcheck="false"></textarea>
       <div class="row" style="margin-top:6px"><button class="grow" id="bCopy">Kopyala</button><button class="grow" id="bDl">.json indir</button><button class="grow" id="bApplyImp">İçe al</button><button class="grow" id="bFileImp">Dosyadan</button></div>
       <input type="file" id="impFile" accept="application/json,.json" class="hide">
@@ -300,12 +385,15 @@ section.tab.act>.card:nth-child(2){animation-delay:.04s}section.tab.act>.card:nt
 
 <!-- ===================== SANATÇILAR ===================== -->
 <section class="tab" id="t-art">
-  <div class="card"><h2>Sanatçı presetleri <span id="artCount"></span></h2>
-    <input type="text" id="artQ" placeholder="Sanatçı ya da şarkı ara…" autocomplete="off">
+  <div>
+    <div class="arthero"><h2 class="disp">Sesini<br>bul.</h2><div class="cnt"><b id="artCount">0</b><span class="lbl">Ses</span></div></div>
+    <p class="tag">İmza tınılar. Seninki olsun diye.</p>
+    <label class="search"><svg class="ic" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg><input type="text" id="artQ" placeholder="Sanatçı ya da şarkı ara" autocomplete="off"></label>
     <div class="gchips" id="gchips"></div>
-    <p class="small" style="margin:6px 0 0"><b style="color:var(--ok)">yüksek/orta</b>: mühendis ya da sanatçı kaynağı var. <b style="color:var(--bad)">stil yaklaşımı</b>: yayımlanmış ayar yok; değerler sanatçının bilinen tınısına göre seçildi. Şarkıya dokununca preset yüklenir ve Karaoke sekmesi açılır. Listelerdeki ton/BPM doğrulanmadı; beat yükleyince dosyadan algılanan değer kullanılır.</p>
+    <div class="chead"><span class="lbl" style="font-size:9px;letter-spacing:1.5px">Sesler</span><span class="lbl s" id="artN"></span></div>
   </div>
   <div id="artList"></div>
+  <p class="small"><b style="color:var(--gold)">Kaynaklı</b>: mühendis ya da sanatçı kaynağı var. <b style="color:#cab2d6">Stil</b>: yayımlanmış ayar yok; değerler sanatçının bilinen tınısına göre seçildi. Karta dokununca preset yüklenir; şarkıya dokununca Karaoke sekmesi açılır. Listelerdeki ton/BPM doğrulanmadı; beat yükleyince dosyadan algılanan değer kullanılır.</p>
 </section>
 
 <!-- ===================== BİLGİ ===================== -->
@@ -314,11 +402,11 @@ section.tab.act>.card:nth-child(2){animation-delay:.04s}section.tab.act>.card:nt
 </section>
 </main>
 <nav><i class="ind" id="navInd"></i>
-  <button class="act" data-t="t-live"><b>◉</b>Canlı</button>
-  <button data-t="t-kar"><b>♪</b>Karaoke</button>
-  <button data-t="t-art"><b>★</b>Sanatçılar</button>
-  <button data-t="t-edit"><b>⚙</b>Editör</button>
-  <button data-t="t-info"><b>ⓘ</b>Teknik</button>
+  <button class="act" data-t="t-live" data-h="Canlı tuner"><svg class="ic" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg>Canlı</button>
+  <button data-t="t-kar" data-h="Karaoke"><svg class="ic" viewBox="0 0 24 24"><path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/></svg>Karaoke</button>
+  <button data-t="t-art" data-h="Sanatçı kitaplığı"><svg class="ic" viewBox="0 0 24 24"><path d="M5 21v-6"/><path d="M12 21V3"/><path d="M19 21V9"/></svg>Sanatçılar</button>
+  <button data-t="t-edit" data-h="Preset editörü"><svg class="ic" viewBox="0 0 24 24"><path d="M10 5H3"/><path d="M12 19H3"/><path d="M14 3v4"/><path d="M16 17v4"/><path d="M21 12h-9"/><path d="M21 19h-5"/><path d="M21 5h-7"/><path d="M8 10v4"/><path d="M8 12H3"/></svg>Editör</button>
+  <button data-t="t-info" data-h="Teknik bilgi"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>Teknik</button>
 </nav>
 
 <script id="dsp-src" type="text/plain">__DSP__</script>
@@ -399,12 +487,14 @@ const reg = {};
 function bind(k, el, upd) { (reg[k] = reg[k] || []).push(upd); upd(); }
 function setVal(k, v, silent) { S[k] = v; (reg[k] || []).forEach(f => f()); if (k === 'key' || k === 'scale' || k === 'custom') drawChips(); if (!silent) send(); }
 function fmt(v, step) { const d = step < 0.1 ? 2 : step < 1 ? 1 : 0; return (+v).toFixed(d); }
+function paint(r) { const a = +r.min || 0, b = r.max === '' ? 100 : +r.max; r.style.setProperty('--p', ((+r.value - a) / (b - a || 1) * 100).toFixed(1) + '%'); }
+document.addEventListener('input', e => { if (e.target.type === 'range') paint(e.target); });
 function slider(k, label, min, max, step, unit) {
   const w = document.createElement('div'); w.className = 'ctl';
   w.innerHTML = `<label><span>${label}</span><em></em></label><input type="range" min="${min}" max="${max}" step="${step}">`;
   const r = w.querySelector('input'), em = w.querySelector('em');
   r.addEventListener('input', () => setVal(k, +r.value));
-  bind(k, r, () => { r.value = S[k]; em.textContent = fmt(S[k], step) + (unit ? ' ' + unit : ''); });
+  bind(k, r, () => { r.value = S[k]; paint(r); em.textContent = fmt(S[k], step) + (unit ? ' ' + unit : ''); });
   return w;
 }
 function select(k, label, opts, num) {
@@ -463,11 +553,11 @@ drawChips();
 
 /* ---------- tabs ---------- */
 const navBtns = Array.from(document.querySelectorAll('nav button')); let tabIdx = 0;
-function moveInd() { const b = navBtns[tabIdx], ind = $('#navInd'); if (!b) return; ind.style.width = (b.offsetWidth * 0.5) + 'px'; ind.style.transform = `translateX(${b.offsetLeft + b.offsetWidth * 0.25}px)`; }
+function moveInd() { const b = navBtns[tabIdx], ind = $('#navInd'); if (!b) return; ind.style.transform = `translateX(${b.offsetLeft + (b.offsetWidth - 24) / 2}px)`; }
 window.addEventListener('resize', moveInd); setTimeout(moveInd, 60);
 navBtns.forEach((b, i) => b.onclick = () => {
   const fromL = i < tabIdx; tabIdx = i; moveInd();
-  navBtns.forEach(x => x.classList.toggle('act', x === b));
+  navBtns.forEach(x => x.classList.toggle('act', x === b)); $('#tabTitle').textContent = b.dataset.h;
   document.querySelectorAll('section.tab').forEach(s => { const on = s.id === b.dataset.t; s.classList.toggle('act', on); s.classList.toggle('fromL', on && fromL); });
   window.scrollTo(0, 0);
 });
@@ -562,7 +652,7 @@ async function startFile(file) {
 }
 async function started() {
   running = true; $('#stateDot').classList.add('on'); $('#stateTx').textContent = modeName;
-  $('#bStop').classList.remove('hide');
+  $('#bStop').classList.remove('hide'); document.body.classList.add('run');
   try { if (navigator.wakeLock) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
 }
 async function stop() {
@@ -575,7 +665,8 @@ async function stop() {
   if (ctx) { try { await ctx.close(); } catch (e) {} }
   ctx = node = srcNode = stream = null; telem = null; sabView = null;
   try { if (wakeLock) await wakeLock.release(); } catch (e) {} wakeLock = null;
-  $('#stateDot').classList.remove('on'); $('#stateTx').textContent = 'kapalı'; lvlS = 0; document.documentElement.style.setProperty('--lvl', '0'); eqBars.forEach(e => { e.style.transform = ''; }); $('#bStop').classList.add('hide');
+  $('#stateDot').classList.remove('on'); $('#stateTx').textContent = 'kapalı'; lvlS = 0; document.documentElement.style.setProperty('--lvl', '0'); eqBars.forEach(e => { e.style.transform = ''; }); $('#bStop').classList.add('hide'); document.body.classList.remove('run');
+  seg($('#mIn'), 0); seg($('#mOut'), 0); $('#centBar').classList.add('off'); $('#kDot').classList.add('off');
 }
 $('#bMic').onclick = startMic;
 $('#bFile').onclick = () => $('#fileIn').click();
@@ -597,28 +688,30 @@ const db = v => v > 1e-6 ? 20 * Math.log10(v) : -120;
 const nn = m => m < 0 ? '–' : NOTES[((Math.round(m) % 12) + 12) % 12] + (Math.floor(Math.round(m) / 12) - 1);
 let lastSeen = 0, routeAt = 0, route = '', lastT = null, lvlS = 0;
 const eqBars = Array.from(document.querySelectorAll('#eq i'));
+function seg(el, f) { const c = el.children, n = Math.round(Math.max(0, Math.min(1, f)) * c.length); if (el._n === n) return; el._n = n; for (let i = 0; i < c.length; i++) c[i].className = i < n ? (i < 15 ? 'a' : i < 28 ? 'b' : 'c') : ''; }
+function setNote(el, v) { if (el.dataset.v === v) return false; el.dataset.v = v; const m = /^([A-G]#?)(-?\d+)$/.exec(v); if (m) el.innerHTML = m[1] + '<sup>' + m[2] + '</sup>'; else el.textContent = v; return true; }
+for (const id of ['#mIn', '#mOut']) $(id).innerHTML = '<i></i>'.repeat(34);
+{ let h = ''; for (let i = 0; i <= 12; i++) h += `<u class="${i === 6 ? 'c' : i % 3 === 0 ? 't' : ''}" style="left:${(i / 12 * 100).toFixed(2)}%"></u>`; $('#rail').insertAdjacentHTML('afterbegin', h); }
 function frame() {
   requestAnimationFrame(frame);
   const t = nativeActive ? Native.poll() : (sabView || telem); if (!t || !running) return;
   const now0 = performance.now(); lastT = t;
   const inD = db(t[0]), outD = db(t[1]);
-  $('#mIn').style.width = Math.max(0, Math.min(100, (inD + 60) / 60 * 100)) + '%'; $('#mInTx').textContent = inD < -99 ? '–∞' : inD.toFixed(0) + ' dB';
-  $('#mOut').style.width = Math.max(0, Math.min(100, (outD + 60) / 60 * 100)) + '%'; $('#mOutTx').textContent = outD < -99 ? '–∞' : outD.toFixed(0) + ' dB';
+  seg($('#mIn'), (inD + 60) / 60); $('#mInTx').textContent = inD < -99 ? '–∞' : inD.toFixed(0) + ' dB';
+  seg($('#mOut'), (outD + 60) / 60); $('#mOutTx').textContent = outD < -99 ? '–∞' : outD.toFixed(0) + ' dB';
   const voiced = t[4] >= 0;
   { const a = nn(t[4]), b = nn(t[5]), ei = $('#nIn'), et = $('#nTg');
-    if (ei.textContent !== a) ei.textContent = a;
-    if (et.textContent !== b) { et.textContent = b; if (b !== '–') { et.classList.remove('pop'); void et.offsetWidth; et.classList.add('pop'); } } }
+    setNote(ei, a); $('#kNIn').textContent = a; $('#kNTg').textContent = b;
+    if (setNote(et, b) && b !== '–') { et.classList.remove('pop'); void et.offsetWidth; et.classList.add('pop'); } }
   // stage lights and the logo equaliser follow the input level
   lvlS += (Math.max(0, Math.min(1, (inD + 48) / 42)) - lvlS) * 0.25;
   document.documentElement.style.setProperty('--lvl', lvlS.toFixed(3));
-  for (let k = 0; k < 4; k++) eqBars[k].style.transform = `scaleY(${(0.2 + lvlS * (0.55 + 0.45 * Math.abs(Math.sin(now0 / (90 + k * 37) + k)))).toFixed(3)})`;
-  const devC = voiced ? Math.round((t[4] - Math.round(t[4])) * 100) : 0;
-  $('#nSub').textContent = voiced ? `${t[2].toFixed(1)} Hz · ${devC >= 0 ? '+' : ''}${devC} cent · güven ${(t[3] * 100).toFixed(0)}%` : 'ses yok / perdesiz';
-  const c = Math.max(-100, Math.min(100, t[6])), bar = $('#centBar');
-  bar.style.left = (50 + Math.min(0, c) / 2) + '%'; bar.style.width = Math.abs(c) / 2 + '%';
-  $('#centTx').textContent = `düzeltme ${t[6] >= 0 ? '+' : ''}${t[6].toFixed(0)} cent`;
-  $('#gateTx').textContent = (t[8] ? 'gate: açık' : 'gate: kapalı') + (t[9] ? ' · ⚠ GERİ BESLEME: çıkış kısıldı — kulaklık kullan' : '');
-  $('#gateTx').style.color = t[9] ? 'var(--bad)' : '';
+  for (let k = 0; k < eqBars.length; k++) eqBars[k].style.transform = `scaleY(${(0.3 + lvlS * (0.5 + 0.5 * Math.abs(Math.sin(now0 / (90 + k * 37) + k)))).toFixed(3)})`;
+  const hasT = voiced && t[5] >= 0, devC = hasT ? Math.max(-50, Math.min(50, Math.round((t[4] - t[5]) * 100))) : 0, ad = Math.abs(devC);
+  $('#hzIn').textContent = voiced ? t[2].toFixed(1) + ' Hz' : '– Hz';
+  $('#hzTg').textContent = t[5] >= 0 ? (440 * Math.pow(2, (t[5] - 69) / 12)).toFixed(1) + ' Hz' : '– Hz';
+  $('#nSub').textContent = hasT ? `${devC > 0 ? '+' : devC < 0 ? '−' : ''}${ad} cent · ${ad < 6 ? 'tam üstünde' : (ad < 25 ? 'biraz ' : '') + (devC < 0 ? 'pes' : 'tiz')}` : 'ses yok / perdesiz';
+  { const bar = $('#centBar'), dot = $('#kDot'); bar.classList.toggle('off', !hasT); dot.classList.toggle('off', !hasT); bar.style.left = dot.style.left = (50 + devC) + '%'; }
   // latency
   const out = nativeActive ? (t[14] || 0) : ctx ? ((ctx.baseLatency || 0) + (ctx.outputLatency || 0)) * 1000 : 0;
   if (nativeActive && t[15]) inLat = t[15];
@@ -627,6 +720,7 @@ function frame() {
   $('#lIn').textContent = inLat ? inLat.toFixed(1) + ' ms' : 'rapor yok';
   const fifoMs = nativeActive && t.length > 20 ? t[20] : 0;
   $('#lTot').textContent = (t[7] + out + inLat + fifoMs).toFixed(1) + ' ms';
+  { const g = $('#gateTx'); g.textContent = t[9] ? '⚠ Geri besleme: çıkış kısıldı — kulaklık kullan' : `${t[8] ? 'Gate açık' : 'Gate kapalı'} · düzeltme ${t[6] >= 0 ? '+' : '−'}${Math.abs(t[6]).toFixed(0)} cent · ~${(t[7] + out + inLat + fifoMs).toFixed(0)} ms gecikme`; g.style.color = t[9] ? 'var(--bad)' : ''; }
   if (nativeActive && t.length > 20) {
     $('#lFifo').textContent = fifoMs.toFixed(1) + ' ms';
     $('#lBuf').textContent = `${t[17]} örnek / ${t[18] ? 'evet' : 'hayır'}`;
@@ -651,17 +745,17 @@ function drawGraph() {
   const W = cv.width, Hh = cv.height; g2.clearRect(0, 0, W, Hh);
   let center = -1; for (let k = 1; k <= H; k++) { const v = hTg[(hI - k + H) % H]; if (v >= 0) { center = v; break; } }
   if (center < 0) center = 57;
-  const span = 7, y = m => Hh / 2 - (m - center) / span * (Hh / 2);
-  const mask = maskAbs(); g2.font = '20px system-ui';
+  const span = 4, L = 40, y = m => Hh / 2 - (m - center) / span * (Hh / 2);
+  const mask = maskAbs(); g2.font = '18px "Space Grotesk",system-ui'; g2.lineWidth = 2; g2.shadowBlur = 0;
   for (let m = Math.floor(center - span); m <= Math.ceil(center + span); m++) {
-    const on = mask[((m % 12) + 12) % 12]; g2.strokeStyle = on ? 'rgba(140,120,255,.38)' : 'rgba(140,120,255,.1)'; g2.lineWidth = on ? 2 : 1;
-    g2.beginPath(); g2.moveTo(56, y(m)); g2.lineTo(W, y(m)); g2.stroke();
-    if (on) { g2.fillStyle = '#9a93b8'; g2.fillText(nn(m), 4, y(m) + 7); }
+    const on = mask[((m % 12) + 12) % 12], isC = Math.round(center) === m; g2.strokeStyle = isC ? '#5a4b47' : on ? '#2c2637' : '#17141e';
+    g2.beginPath(); g2.moveTo(L, y(m)); g2.lineTo(W, y(m)); g2.stroke();
+    if (on && y(m) > 12 && y(m) < Hh - 8) { g2.fillStyle = isC ? "#f3d597" : "#6e697c"; g2.fillText(nn(m), 0, y(m) + 6); }
   }
-  const line = (arr, col, w) => { g2.strokeStyle = col; g2.lineWidth = w; g2.beginPath(); let pen = false;
-    for (let k = 0; k < H; k++) { const v = arr[(hI + k) % H], x = 56 + k / (H - 1) * (W - 56);
+  const line = (arr, col, w) => { g2.strokeStyle = col; g2.lineWidth = w; g2.lineJoin = 'round'; g2.beginPath(); let pen = false;
+    for (let k = 0; k < H; k++) { const v = arr[(hI + k) % H], x = L + k / (H - 1) * (W - L);
       if (v < 0) { pen = false; continue; } if (!pen) { g2.moveTo(x, y(v)); pen = true; } else g2.lineTo(x, y(v)); } g2.stroke(); };
-  g2.shadowBlur = 14; g2.shadowColor = '#ffc23d'; line(hTg, '#ffc23d', 5); g2.shadowColor = '#19e3ff'; line(hIn, '#19e3ff', 3); g2.shadowBlur = 0;
+  line(hTg, 'rgba(243,213,151,.75)', 2); g2.shadowBlur = 8; g2.shadowColor = 'rgba(109,229,236,.55)'; line(hIn, '#6de5ec', 3); g2.shadowBlur = 0;
 }
 requestAnimationFrame(frame);
 
@@ -675,7 +769,7 @@ function applyPreset(p, name, keepKey) {
   for (const k of ['bodyDb', 'presDb', 'airDb', 'lpfHz']) if (!(k in p)) S[k] = DEF[k];   // presets without tone settings must not inherit the previous one's
   for (const k of PRESET_KEYS) if (k in p && !(keepKey && k === 'key')) S[k] = Array.isArray(p[k]) ? p[k].slice() : p[k];
   for (const k in reg) reg[k].forEach(f => f());
-  drawChips(); send(); activePreset = name; { const ap = $('#activePreset'); ap.textContent = 'Preset: ' + name; ap.classList.remove('flash'); void ap.offsetWidth; ap.classList.add('flash'); }
+  drawChips(); send(); activePreset = name; { const ap = $('#activePreset'); ap.textContent = name; $('#edName').textContent = name; ap.classList.remove('flash'); void ap.offsetWidth; ap.classList.add('flash'); }
 }
 function refreshList() {
   const l = $('#pList'); l.innerHTML = '';
@@ -731,29 +825,35 @@ for (const a of LIBSRC.artists) {
 LIB.forEach(x => { x.hay = (x.name + ' ' + x.songs.map(q => q.split('|')[0]).join(' ')).toLocaleLowerCase('tr'); });
 let artG = 'all';
 function songParts(q) { const a = q.split('|'); return { title: a[0], key: a[1] || '', bpm: a[2] ? +a[2] : 0 }; }
+const SIGC = ['#c9a5d2', '#8cced6', '#adb2da', '#f3d597', '#e7a9c8', '#9fd6b8'], GKEYS = Object.keys(LIBSRC.genres);
+function sigBars(name, g) { let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  let o = ''; for (let i = 0; i < 11; i++) o += `<i style="height:${(8 + 28 * Math.abs(Math.sin(h % 97 + i * (0.55 + (h % 13) / 20)))).toFixed(1)}px"></i>`;
+  return `<span class="sig" style="--c:${SIGC[Math.max(0, GKEYS.indexOf(g)) % SIGC.length]}">${o}</span>`; }
 function renderArt() {
   const q = $('#artQ').value.trim().toLocaleLowerCase('tr'); let n = 0, h = '';
   LIB.forEach((x, i) => {
     if (artG !== 'all' && x.g !== artG) return; if (q && !x.hay.includes(q)) return; n++;
-    const p = x.params;
+    const p = x.params, cc = confClass(x.conf), gname = LIBSRC.genres[x.g] || x.g;
     const songs = x.songs.map((sq, j) => { const sp = songParts(sq); return `<button data-i="${i}" data-song="${j}">${esc(sp.title)}<em>${sp.key ? esc(sp.key) : ''}${sp.bpm ? ' · ' + sp.bpm : ''}</em></button>`; }).join('');
-    h += `<div class="art"><h3>${esc(x.name)}</h3><div class="era">${esc(LIBSRC.genres[x.g] || x.g)} · ${esc(x.sub)}</div><span class="badge ${confClass(x.conf)}">${esc(x.conf)}</span>
+    h += `<div class="art${n <= 8 ? ' stg' : ''}" style="--d:${n * 40}ms"><div class="art-top" data-i="${i}" data-load="1">${sigBars(x.name, x.g)}
+      <div class="art-m"><h3>${esc(x.name)}</h3><div class="era">${esc(x.sub || gname)}</div><span class="tg">${esc(gname)}</span></div>
+      <span class="badge ${cc}">${cc === 'l' ? 'Stil' : cc === 'h' ? 'Kaynak: yüksek' : 'Kaynaklı'}</span><span class="go">↗</span></div>
+      <details><summary>Ayarlar${x.songs.length ? ` ve şarkılar (${x.songs.length})` : ''}</summary>
       <div class="pills"><span>Retune ${p.retuneMs} ms</span><span>Humanize ${p.humanize}</span><span>${SCALE_TR[p.scale]}</span>${p.formant ? `<span>Formant ${p.formant > 0 ? '+' : ''}${p.formant}</span>` : ''}<span>${p.mode ? 'PSOLA' : 'Düşük gecikme'}</span>${p.v2Level ? `<span>2. ses ${p.v2Interval} st</span>` : ''}<span>Reverb ${p.revTime}s</span></div>
-      ${x.note ? `<p class="small" style="margin:6px 0">${esc(x.note)}</p>` : ''}
-      <button class="pri" style="width:100%" data-i="${i}" data-load="1">Preseti yükle</button>
-      ${songs ? `<details><summary>Şarkılar (${x.songs.length})</summary><div class="songs">${songs}</div></details>` : ''}
+      <p class="small" style="margin:0 0 8px">Güven: ${esc(x.conf)}${x.note ? '<br>' + esc(x.note) : ''}</p>
+      ${songs ? `<div class="songs">${songs}</div>` : ''}
       ${x.why ? `<details><summary>Neden bu değerler?</summary><ul>${Object.entries(x.why).map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('')}</ul></details>` : ''}
-      ${x.src ? `<details><summary>Kaynaklar</summary><ul>${x.src.map(u => `<li><a href="${esc(u[1])}" target="_blank" rel="noopener">${esc(u[0])}</a></li>`).join('')}</ul></details>` : ''}</div>`;
+      ${x.src ? `<details><summary>Kaynaklar</summary><ul>${x.src.map(u => `<li><a href="${esc(u[1])}" target="_blank" rel="noopener">${esc(u[0])}</a></li>`).join('')}</ul></details>` : ''}</details></div>`;
   });
   $('#artList').innerHTML = h || '<p class="small" style="text-align:center">Sonuç yok.</p>';
-  $('#artCount').textContent = `(${n} / ${LIB.length})`;
+  $('#artCount').textContent = n < 10 ? '0' + n : n; $('#artN').textContent = `${n} / ${LIB.length} preset`;
 }
 { const gc = $('#gchips'); const mk = (id, label) => { const b = document.createElement('button'); b.textContent = label; b.dataset.g = id; if (id === artG) b.className = 'on';
     b.onclick = () => { artG = id; gc.querySelectorAll('button').forEach(z => z.classList.toggle('on', z === b)); renderArt(); }; gc.appendChild(b); };
   mk('all', 'Tümü'); for (const g in LIBSRC.genres) mk(g, LIBSRC.genres[g]); }
 $('#artQ').addEventListener('input', renderArt);
 $('#artList').addEventListener('click', e => {
-  const b = e.target.closest('button[data-i]'); if (!b) return; const x = LIB[+b.dataset.i];
+  const b = e.target.closest('[data-i]'); if (!b) return; const x = LIB[+b.dataset.i];
   applyPreset(x.params, x.name, true);
   if (b.dataset.song !== undefined) { pickSong(x, songParts(x.songs[+b.dataset.song])); return; }
   msg(`“${x.name}” yüklendi — ton: ${NOTES[S.key]} ${SCALE_TR[S.scale]} (tonu şarkına göre ayarla).`, 'ok'); goTab('t-live');
@@ -775,7 +875,7 @@ function pickSong(x, sp) {
   kmsg(`“${sp.title}” seçildi, “${x.name}” preseti yüklendi. Şimdi beat ve söz dosyanı yükle.`, 'ok');
 }
 function renderSong() {
-  let h = K.song ? `<b style="font-size:16px;color:var(--tx)">${esc(K.song.title)}</b> — ${esc(K.song.artist)}` : 'Şarkı seçilmedi. “Sanatçılar” sekmesinden bir şarkıya dokun ya da doğrudan kendi dosyalarını yükle.';
+  let h = K.song ? `<b class="t">${esc(K.song.title)}</b>${esc(K.song.artist)}` : '<b class="t">Şarkı seçilmedi</b>“Sanatçılar”dan bir şarkıya dokun ya da kendi dosyalarını yükle.';
   h += `<br>Ayarlı ton: <b>${NOTES[S.key]} ${SCALE_TR[S.scale]}</b> · ${S.bpm} BPM`;
   if (K.song && K.song.key) h += `<br>Listedeki: ${esc(K.song.key)}${K.song.bpm ? ' · ' + K.song.bpm + ' BPM' : ''} (doğrulanmadı)`;
   if (K.det) h += `<br>Beat'ten algılanan: <b>${MusicLib.keyLabel(K.det.k.key, K.det.k.scale)}</b>${K.det.b.bpm ? ' · ~' + K.det.b.bpm + ' BPM' : ''} (tahmin; yanlışsa Canlı sekmesinden değiştir)`;
@@ -861,6 +961,7 @@ $('#bPasteOk').onclick = () => { setLyrics($('#pasteTx').value); $('#pasteBox').
 $('#bKClear').onclick = () => { Beat.clear(); setLyrics(''); K.song = null; renderSong(); kmsg('Temizlendi.'); };
 $('#bPlay').onclick = () => { if (Beat.playing()) Beat.pause(); else Beat.play(); };
 $('#bRestart').onclick = () => Beat.seek(0);
+$('#bSkip').onclick = () => Beat.seek(Beat.pos() + 10);
 let seeking = false;
 $('#kSeek').addEventListener('input', () => { seeking = true; });
 $('#kSeek').addEventListener('change', e => { seeking = false; Beat.seek(+e.target.value / 1000 * K.len); });
@@ -939,7 +1040,7 @@ async function recToggle() {
     if (AND) { window.CanliNative.recStop(); kmsg('Kayıt dönüştürülüyor…'); }
     else { try { webRec.stop(); } catch (e) {} try { node.disconnect(recDest); } catch (e) {} recDest = null; kmsg('Kayıt tamamlandı.', 'ok'); }
   }
-  $('#bRec').classList.toggle('on', recOn); $('#bRec').textContent = recOn ? '■ Kaydı bitir' : '● Kaydı başlat';
+  $('#bRec').classList.toggle('on', recOn); $('#recLbl').textContent = recOn ? 'Kaydı bitir' : 'Bu kaydı al';
 }
 $('#bRec').onclick = recToggle;
 window.__canliStopped = () => { if (nativeActive) { nativeActive = false; stop(); msg('Bildirimden durduruldu.'); } };
@@ -991,15 +1092,27 @@ if (AND) {
   document.querySelector('nav button[data-t="t-kar"]').addEventListener('click', fillOutputs);
 }
 
+// --- System 01 UI glue: preset card, retune hero, vocal space ---
+$('#bEditGo').onclick = () => goTab('t-edit');
+{ const ps = () => { $('#presetSub').textContent = `${NOTES[S.key]} ${SCALE_TR[S.scale]}  /  retune ${S.retuneMs} ms`; };
+  for (const k of ['key', 'scale', 'retuneMs']) (reg[k] = reg[k] || []).push(ps); ps(); }
+$('#corrS').appendChild(slider('retuneMs', 'Retune hızı', 0, 400, 1, 'ms'));
+bind('retuneMs', null, () => { const v = S.retuneMs; $('#corrV').textContent = v;
+  const d = v <= 5 ? ['Sert efekt', 'robotik tını'] : v <= 25 ? ['Hızlı', 'modern, belirgin'] : v <= 90 ? ['Doğal', 'robotik değil'] : ['Serbest', 'çok hafif düzeltme'];
+  $('#corrA').textContent = d[0]; $('#corrB').textContent = d[1]; });
+{ const SP = [{ revMix: 0, dlyMix: 0 }, { revMix: 0.12, revTime: 1.2, revPre: 15 }, { revMix: 0.28, revTime: 2.6, revPre: 30 }], bs = Array.from(document.querySelectorAll('#space button'));
+  bs.forEach((b, i) => b.onclick = () => { for (const k in SP[i]) setVal(k, SP[i][k]); });
+  bind('revMix', null, () => { const i = S.revMix < 0.03 ? 0 : S.revMix < 0.2 ? 1 : 2; bs.forEach((b, j) => b.classList.toggle('on', i === j)); }); }
+document.querySelectorAll('input[type=range]').forEach(paint);
 // --- karaoke display loop ---
 function ktick() {
   requestAnimationFrame(ktick);
   const playing = Beat.playing(), pos = Beat.pos();
-  $('#bPlay').textContent = playing ? '❚❚ Duraklat' : '▶ Çal';
-  $('#kTime').textContent = fmtT(pos) + ' / ' + fmtT(K.len);
-  if (!seeking && K.len) $('#kSeek').value = Math.round(pos / K.len * 1000);
-  if (AND) $('#recTime').textContent = recOn && lastT && lastT[24] >= 0 ? '● ' + fmtT(lastT[24]) : '–';
-  else $('#recTime').textContent = recOn ? '● ' + fmtT((performance.now() - recT0) / 1000) : '–';
+  $('#bPlay').classList.toggle('playing', playing);
+  $('#kTime').textContent = fmtT(pos); $('#kDur').textContent = fmtT(K.len);
+  if (!seeking && K.len) { const ks = $('#kSeek'); ks.value = Math.round(pos / K.len * 1000); paint(ks); }
+  if (AND) $('#recTime').textContent = recOn && lastT && lastT[24] >= 0 ? fmtT(lastT[24]) : '';
+  else $('#recTime').textContent = recOn ? fmtT((performance.now() - recT0) / 1000) : '';
   if (K.lyr && K.lyr.synced) {
     // what is heard lags the engine position by the output latency (large on Bluetooth)
     const outMs = nativeActive && lastT ? (lastT[14] || 0) : ctx ? ((ctx.baseLatency || 0) + (ctx.outputLatency || 0)) * 1000 : 0;
@@ -1013,8 +1126,8 @@ requestAnimationFrame(ktick); renderSong();
 if (Native) {
   document.querySelectorAll('.nat').forEach(e => e.classList.remove('hide'));
   $('#lOutLbl').textContent = 'Çıkış tamponu (sürücü raporu)';
-  $('#bMic').innerHTML = '🎤 Başlat (yerel motor)';
-  document.querySelector('header h1').insertAdjacentHTML('beforeend', ' <span class="small" style="color:var(--acc2)">APP</span>');
+  $('#bMic').textContent = 'Mikrofonla başlat';
+  document.querySelector('header h1').insertAdjacentHTML('beforeend', '<span class="small" style="color:var(--acc2)">APP</span>');
 }
 </script>
 </body>

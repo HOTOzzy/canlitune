@@ -40,3 +40,7 @@ node web/build.js
 - iPhone: Mac'te `brew install xcodegen && cd ios && xcodegen && open CanliTune.xcodeproj` → kendi takımını seç → Run.
 
 Kulaklık kullanın: hoparlörden dinlemek mikrofona geri besleme yapar.
+
+## Arayüz
+
+"System 01" görünümü kullanıcının Figma tasarımından uyarlandı. Yazı tipi: Space Grotesk (SIL OFL 1.1, `web/assets/fonts/OFL.txt`). Simgeler: Lucide (ISC).

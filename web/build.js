@@ -18,6 +18,8 @@ try {
   }).join('');
 } catch (e) { throw new Error('tests failed, not building:\n' + (e.stdout || e.message)); }
 const html = rd('template.html')
+  .replace('__FONT_EXT__', () => fs.readFileSync(path.join(dir, 'assets/fonts/space-grotesk-latin-ext-wght-normal.woff2')).toString('base64'))
+  .replace('__FONT_LATIN__', () => fs.readFileSync(path.join(dir, 'assets/fonts/space-grotesk-latin-wght-normal.woff2')).toString('base64'))
   .replace('__INFO__', () => rd('info.html').replace('__TESTS__', () => tests))
   .replace('__DSP__', () => dsp)
   .replace('__PRESETS__', () => presets)
