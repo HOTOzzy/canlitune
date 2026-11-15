@@ -1,35 +1,36 @@
 # Generates web/artists.json. Each artist = style archetype + small overrides.
 # Song entries: "Title|Key|BPM" (key/BPM from general knowledge, NOT verified) or just "Title".
-import json
+import json, re
 BASE = dict(retuneMs=30, humanize=15, flex=20, vibrato=0, scale="major", formant=0, mode=1, transpose=0, v2Level=0, v2Interval=0, v2Detune=0, mix=1,
             hpfHz=90, gateDb=-52, compThr=-20, compRatio=3, compAtk=8, compRel=100, compMakeup=3, satDrive=0, satMix=0,
-            bpm=110, dlyDiv=1, dlyFb=0.2, dlyMix=0.08, dlyDamp=0.5, revTime=1.5, revDamp=0.5, revPre=20, revMix=0.18)
+            bpm=110, dlyDiv=1, dlyFb=0.2, dlyMix=0.08, dlyDamp=0.5, revTime=1.5, revDamp=0.5, revPre=20, revMix=0.18,
+            bodyDb=0, presDb=0, airDb=0, lpfHz=20000)
 STYLES = {
- "hard":   ("Sert efekt (retune 0)", dict(retuneMs=0, humanize=0, flex=0, mode=0, scale="minor", compRatio=4, dlyMix=0.12, revMix=0.2)),
- "trap":   ("Trap (hızlı retune)", dict(retuneMs=10, humanize=0, flex=0, mode=0, scale="minor", hpfHz=110, compThr=-22, compRatio=4, satDrive=4, satMix=0.2, bpm=140, dlyMix=0.15, revTime=1.8, revDamp=0.6, revMix=0.2)),
- "trapdark": ("Karanlık trap (sert + uzun reverb)", dict(retuneMs=4, humanize=0, flex=0, mode=0, scale="minor", hpfHz=110, compThr=-22, compRatio=4, satDrive=5, satMix=0.25, bpm=140, dlyMix=0.2, dlyDamp=0.6, revTime=2.6, revDamp=0.8, revPre=30, revMix=0.28)),
- "rage":   ("Rage / hyper-trap (sert + doygun)", dict(retuneMs=2, humanize=0, flex=0, mode=0, scale="minor", hpfHz=130, compThr=-24, compRatio=5, compAtk=3, satDrive=10, satMix=0.4, bpm=150, dlyDiv=0.5, dlyMix=0.1, revTime=1.8, revMix=0.3)),
- "melodic":("Melodik rap (orta retune)", dict(retuneMs=18, humanize=5, flex=0, mode=0, scale="minor", compRatio=3.5, satDrive=3, satMix=0.15, bpm=130, dlyMix=0.14, revTime=1.8, revMix=0.2)),
- "pop":    ("Pop (şeffaf düzeltme)", dict()),
- "poptune":("Pop (duyulur düzeltme)", dict(retuneMs=12, humanize=5, flex=0, mode=0, v2Level=0.12, v2Detune=8, bpm=120, dlyDiv=0.5, dlyMix=0.1, revMix=0.2)),
- "hyper":  ("Hyperpop (sert + formant)", dict(retuneMs=0, humanize=0, flex=0, mode=1, formant=2, compRatio=5, satDrive=8, satMix=0.35, bpm=150, dlyDiv=0.5, dlyMix=0.12, revMix=0.25)),
- "rnb":    ("R&B (yumuşak, formant koruma)", dict(retuneMs=35, humanize=25, flex=25, scale="minor", bpm=90, dlyDiv=0.5, dlyMix=0.08, revTime=1.7, revPre=30, revMix=0.25)),
- "rnbtune":("Trap-soul (duyulur R&B tune)", dict(retuneMs=14, humanize=8, flex=0, mode=0, scale="minor", bpm=85, dlyMix=0.14, dlyDamp=0.6, revTime=2.2, revDamp=0.7, revPre=30, revMix=0.3)),
- "soul":   ("Soul (neredeyse düzeltmesiz)", dict(retuneMs=70, humanize=45, flex=45, compRatio=2.5, bpm=90, dlyMix=0, revTime=1.3, revMix=0.14)),
- "afro":   ("Afrobeats (parlak, orta retune)", dict(retuneMs=15, humanize=5, flex=0, mode=0, bpm=105, dlyDiv=0.75, dlyMix=0.14, revTime=1.5, revMix=0.2)),
- "latin":  ("Reggaeton / latin trap", dict(retuneMs=10, humanize=0, flex=0, mode=0, scale="minor", compRatio=4, bpm=95, dlyMix=0.14, revTime=1.7, revMix=0.22)),
- "kpop":   ("K-pop (parlak, çiftlenmiş)", dict(retuneMs=22, humanize=10, flex=10, v2Level=0.15, v2Detune=8, compRatio=3.5, bpm=120, dlyDiv=0.5, dlyMix=0.08, revMix=0.18)),
- "dance":  ("Dance / house (sert + çift ses)", dict(retuneMs=5, humanize=0, flex=0, mode=0, v2Level=0.2, v2Detune=10, compRatio=4, bpm=124, dlyDiv=0.75, dlyMix=0.15, revTime=1.8, revMix=0.25)),
- "prism":  ("Harmonizer (sert tune + armoni sesi)", dict(retuneMs=0, humanize=0, flex=0, mode=0, v2Level=0.6, v2Interval=-5, bpm=80, dlyMix=0, revTime=2.4, revMix=0.3)),
- "arabesk":("Türk / arabesk (yavaş, kromatik)", dict(retuneMs=90, humanize=50, flex=50, scale="chromatic", bpm=90, dlyMix=0.06, revTime=1.8, revMix=0.22)),
+ "hard":   ("Sert efekt (retune 0)", dict(presDb=3, airDb=3, hpfHz=120, retuneMs=0, humanize=0, flex=0, mode=0, scale="minor", compRatio=4, dlyMix=0.12, revMix=0.2)),
+ "trap":   ("Trap (hızlı retune)", dict(airDb=3, presDb=1, retuneMs=10, humanize=0, flex=0, mode=0, scale="minor", hpfHz=110, compThr=-22, compRatio=4, satDrive=4, satMix=0.2, bpm=140, dlyMix=0.15, revTime=1.8, revDamp=0.6, revMix=0.2)),
+ "trapdark": ("Karanlık trap (sert + uzun reverb)", dict(airDb=-2, bodyDb=2, lpfHz=11000, retuneMs=4, humanize=0, flex=0, mode=0, scale="minor", hpfHz=110, compThr=-22, compRatio=4, satDrive=5, satMix=0.25, bpm=140, dlyMix=0.2, dlyDamp=0.6, revTime=2.6, revDamp=0.8, revPre=30, revMix=0.28)),
+ "rage":   ("Rage / hyper-trap (sert + doygun)", dict(presDb=4, lpfHz=9500, retuneMs=2, humanize=0, flex=0, mode=0, scale="minor", hpfHz=130, compThr=-24, compRatio=5, compAtk=3, satDrive=10, satMix=0.4, bpm=150, dlyDiv=0.5, dlyMix=0.1, revTime=1.8, revMix=0.3)),
+ "melodic":("Melodik rap (orta retune)", dict(airDb=2, bodyDb=1, retuneMs=18, humanize=5, flex=0, mode=0, scale="minor", compRatio=3.5, satDrive=3, satMix=0.15, bpm=130, dlyMix=0.14, revTime=1.8, revMix=0.2)),
+ "pop":    ("Pop (şeffaf düzeltme)", dict(airDb=3, presDb=1)),
+ "poptune":("Pop (duyulur düzeltme)", dict(airDb=5, presDb=2, hpfHz=115, retuneMs=12, humanize=5, flex=0, mode=0, v2Level=0.12, v2Detune=8, bpm=120, dlyDiv=0.5, dlyMix=0.1, revMix=0.2)),
+ "hyper":  ("Hyperpop (sert + formant)", dict(airDb=6, presDb=3, hpfHz=140, retuneMs=0, humanize=0, flex=0, mode=1, formant=2, compRatio=5, satDrive=8, satMix=0.35, bpm=150, dlyDiv=0.5, dlyMix=0.12, revMix=0.25)),
+ "rnb":    ("R&B (yumuşak, formant koruma)", dict(bodyDb=2, airDb=3, retuneMs=35, humanize=25, flex=25, scale="minor", bpm=90, dlyDiv=0.5, dlyMix=0.08, revTime=1.7, revPre=30, revMix=0.25)),
+ "rnbtune":("Trap-soul (duyulur R&B tune)", dict(bodyDb=2, airDb=-1, lpfHz=12000, retuneMs=14, humanize=8, flex=0, mode=0, scale="minor", bpm=85, dlyMix=0.14, dlyDamp=0.6, revTime=2.2, revDamp=0.7, revPre=30, revMix=0.3)),
+ "soul":   ("Soul (neredeyse düzeltmesiz)", dict(bodyDb=1, presDb=2, retuneMs=70, humanize=45, flex=45, compRatio=2.5, bpm=90, dlyMix=0, revTime=1.3, revMix=0.14)),
+ "afro":   ("Afrobeats (parlak, orta retune)", dict(airDb=4, bodyDb=1, retuneMs=15, humanize=5, flex=0, mode=0, bpm=105, dlyDiv=0.75, dlyMix=0.14, revTime=1.5, revMix=0.2)),
+ "latin":  ("Reggaeton / latin trap", dict(bodyDb=3, presDb=2, retuneMs=10, humanize=0, flex=0, mode=0, scale="minor", compRatio=4, bpm=95, dlyMix=0.14, revTime=1.7, revMix=0.22)),
+ "kpop":   ("K-pop (parlak, çiftlenmiş)", dict(airDb=5, presDb=2, hpfHz=120, retuneMs=22, humanize=10, flex=10, v2Level=0.15, v2Detune=8, compRatio=3.5, bpm=120, dlyDiv=0.5, dlyMix=0.08, revMix=0.18)),
+ "dance":  ("Dance / house (sert + çift ses)", dict(airDb=4, presDb=3, hpfHz=130, retuneMs=5, humanize=0, flex=0, mode=0, v2Level=0.2, v2Detune=10, compRatio=4, bpm=124, dlyDiv=0.75, dlyMix=0.15, revTime=1.8, revMix=0.25)),
+ "prism":  ("Harmonizer (sert tune + armoni sesi)", dict(airDb=2, bodyDb=2, retuneMs=0, humanize=0, flex=0, mode=0, v2Level=0.6, v2Interval=-5, bpm=80, dlyMix=0, revTime=2.4, revMix=0.3)),
+ "arabesk":("Türk / arabesk (yavaş, kromatik)", dict(bodyDb=2, presDb=2, retuneMs=90, humanize=50, flex=50, scale="chromatic", bpm=90, dlyMix=0.06, revTime=1.8, revMix=0.22)),
 }
 A = []
 def a(name, genre, style, songs, note="", **ov): A.append(dict(name=name, g=genre, s=style, o=ov, note=note, songs=songs.split(";")))
 
 # ---------- rap / trap ----------
-a("Drake","rap","melodic","Hotline Bling|Dm|135;One Dance|A#m|104;God's Plan;Passionfruit;Hold On, We're Going Home;In My Feelings","Yarı konuşur yarı söyler; karanlık, boğuk reverb.", retuneMs=22, revDamp=0.7)
+a("Drake","rap","melodic","Hotline Bling|Dm|135;One Dance|A#m|104;God's Plan;Passionfruit;Hold On, We're Going Home;In My Feelings","40 altyapının tizlerini kısar ki vokal üstte tek başına parlasın: bu yüzden vokal parlak ve önde, beat boğuk.", src="drake")
 a("Lil Wayne","rap","hard","Lollipop;How to Love;A Milli;Mirror;Love Me","2008 dönemi: sert, kırık vokal efekti.", satDrive=5, satMix=0.2)
-a("Young Thug","trap","trap","Best Friend;Hot;The London;Check;Go Crazy","Sıçrayan, esnek melodiler; kromatik dene.", retuneMs=8, scale="chromatic")
+a("Young Thug","trap","trap","Best Friend;Hot;The London;Check;Go Crazy","Auto-Tune kaymaları basamak basamak kırar ve titremeyi öne çıkarır: çok hızlı retune + vibrato.", scale="chromatic", src="thug")
 a("Gunna","trap","trap","Drip Too Hard;Pushin P;fukumean;Top Off;Skybox","Düz, akıcı melodik akış.", retuneMs=12)
 a("Lil Baby","trap","trap","Drip Too Hard;Yes Indeed;Woah;The Bigger Picture;Freestyle","Rap ağırlıklı; efekt cümle sonlarında duyulur.", retuneMs=15)
 a("Quavo / Migos","trap","trap","Bad and Boujee;Stir Fry;Walk It Talk It;MotorSport;T-Shirt","Nakaratlarda sert tune + ad-lib.", retuneMs=6, v2Level=0.15, v2Detune=10)
@@ -173,12 +174,70 @@ a("Cem Adrian","tr","arabesk","Sen Benim Şarkılarımsın;Yalnızlık;Ben Seni 
 a("Müslüm Gürses","tr","arabesk","Affet;İtirazım Var;Nilüfer;Sensiz Olmaz;Hangimiz Sevmedik","Arabesk: koma sesleri var, düzeltme neredeyse kapalı.", retuneMs=140, humanize=70, flex=70)
 a("Barış Manço","tr","arabesk","Gülpembe;Dağlar Dağlar;Sarı Çizmeli Mehmet Ağa;Dönence;Kara Sevda","Anadolu rock; doğal.", retuneMs=90)
 
+TOK = dict(b="bodyDb", p="presDb", a="airDb", lp="lpfHz", rm="revMix", rt="revTime", rd="revDamp", dm="dlyMix", dd="dlyDiv", df="dlyFb", sd="satDrive", sm="satMix",
+           fm="formant", t="retuneMs", cr="compRatio", hp="hpfHz", vb="vibrato", tr="transpose", m="mode", hu="humanize", fx="flex")
+def tweak(spec):
+    o = {}
+    for tok in spec.split():
+        m = re.match(r"^([a-z]+)([+-]?[0-9.]+)$", tok); assert m, tok
+        k, v = m.group(1), float(m.group(2)); v = int(v) if v == int(v) else v
+        if k == "dl": o.update(v2Level=v, v2Interval=0, v2Detune=10)       # double
+        elif k == "oc": o.update(v2Level=v, v2Interval=-12, v2Detune=0)    # octave below
+        elif k == "hm": o.update(v2Level=v, v2Interval=4, v2Detune=0)      # harmony (third)
+        elif k == "hf": o.update(v2Level=v, v2Interval=-5, v2Detune=0)     # harmony (fourth below)
+        elif k in ('b', 'p', 'a'): o[TOK[k]] = max(-9, min(9, round(v * 1.6 * 2) / 2))   # bold enough to hear
+        else: o[TOK[k]] = v
+    return o
+TW = {
+ "Drake": "a4 p2 b-1 rm.12 dm.1 t22", "Lil Wayne": "sd8 sm.35 p3 a1 rm.1", "Young Thug": "t3 a3 p2 dm.18 dd.5 vb25", "Gunna": "t12 b1 a2 rm.18 dl.15", "Lil Baby": "t15 p3 a2 rm.1 dm.08 cr5",
+ "Quavo / Migos": "t5 dl.2 a3 dm.2 dd.75", "21 Savage": "t25 b3 a-2 lp11000 rm.08 dm.05", "Juice WRLD": "t12 a3 rm.28 rt2.2 dm.15", "XXXTentacion": "lp5500 sd8 sm.35 b2 rm.12", "Lil Nas X": "cr8 a4 p2 dl.15",
+ "Roddy Ricch": "t8 a3 rm.22 dm.18 dd.75 vb15", "Polo G": "t18 b1 a2 rm.2", "Lil Durk": "t4 p3 a2 dm.12 rm.12", "A Boogie wit da Hoodie": "t12 a4 dl.2 rm.22", "Rod Wave": "t28 b3 p1 rm.25 rt2",
+ "Kid Cudi": "t35 b2 a-2 rm.35 rt2.8 oc.2", "Ty Dolla $ign": "hm.35 b2 rm.25", "Swae Lee": "a6 b-2 hp130 t12 rm.25", "Trippie Redd": "sd12 sm.45 p3 rm.25", "Yeat": "t2 m1 fm-1.5 sd10 sm.4 rm.3 rt2",
+ "Ken Carson": "sd16 sm.6 lp7000 cr6 rm.2", "Destroy Lonely": "rm.4 rt3 rd.8 a-2 sd6 sm.25 dm.2 lp10000", "Lil Yachty": "t3 a5 hp130 vb35", "NAV": "t0 lp10000 a-1 rm.25", "Chief Keef": "t0 sd8 sm.35 lp8000 rm.08",
+ "Akon": "t8 a5 p2 hp120 rm.15 dl.12", "Doja Cat": "t15 a4 dl.15 rm.18", "Nicki Minaj": "t18 p3 a3 rm.12 dm.1", "The Kid LAROI": "t12 a3 p2 sd4 sm.2 rm.2", "Central Cee": "t40 rm.06 dm0 p2 b1",
+ "Taylor Swift": "t40 a3 p1 rm.2 rt1.8 dl.1", "Ariana Grande": "t25 a6 b-1 dl.18 rm.25 rt2", "Billie Eilish": "b2 a2 rm.08 cr5 dl.15", "Billie Eilish — efekt (Bury a Friend)": "lp6000 sd8 sm.35 oc.3 rm.1",
+ "Dua Lipa": "b3 p1 a2 rm.2 dm.1 dd.5", "Ed Sheeran": "t40 b1 p1 rm.12 dm0", "Justin Bieber": "t18 a5 dl.15 rm.2 dm.1", "Harry Styles": "t45 rm.25 rt1.2 dm.15 dd.25 sd3 sm.15", "Olivia Rodrigo": "t35 p3 a2 rm.18 sd3 sm.15",
+ "Sabrina Carpenter": "t22 a6 hp120 dl.15 rm.22", "Lady Gaga": "t35 p3 b1 rm.25 rt2.2", "Katy Perry": "t15 a5 p3 dl.2 rm.2", "Rihanna": "t20 p3 a2 b1 rm.2 dm.12", "Britney Spears": "t6 m1 fm1 dl.25 a5 p2 hp130",
+ "Miley Cyrus": "t40 b3 sd4 sm.2 a1 rm.2", "Selena Gomez": "t20 a4 b1 cr4 rm.12", "Shawn Mendes": "t30 p2 rm.2 dm.08", "Charlie Puth": "t18 dl.2 a5 rm.12 dm.05", "Adele": "t70 b2 p2 rm.3 rt2.6",
+ "Sia": "t50 p4 sd3 sm.15 rm.28 rt2.4", "Bruno Mars": "t40 p2 a2 rm.2 rt1.4 dm.1 dd.25", "Coldplay": "t45 a3 rm.35 rt2.8 dm.2 dd.75", "Imagine Dragons": "sd6 sm.3 p3 rm.3 rt2.4 oc.2", "Maroon 5": "t20 a5 hp130 b-2 rm.15",
+ "Halsey": "t25 a3 sd3 sm.15 rm.25 dm.12", "Lana Del Rey": "t55 b3 a-1 rm.45 rt3.2 rd.6 dm.1", "Lorde": "t40 oc.25 rm.08 b2", "Tate McRae": "t18 a5 cr4 rm.15", "Chappell Roan": "t45 p2 a2 rm.28 rt2.2 dm.1",
+ "Benson Boone": "t45 p3 rm.25 rt2", "Sam Smith": "t50 a2 b1 rm.3 rt2.4", "Michael Jackson": "t60 p3 a2 rm.15 rt1 dm.12 dd.25",
+ "The Weeknd": "t28 a4 rm.35 rt2.6 rd.6 dm.15 dd.5 dl.1", "Frank Ocean": "t40 b1 a1 rm.15 dm.05", "SZA": "t45 b1 a3 rm.22 dm.1 dd.75 dl.12", "Bryson Tiller": "t14 a2 lp12000 rm.3 dm.18", "PARTYNEXTDOOR": "t8 lp8000 rm.4 rt2.8 b2",
+ "Chris Brown": "t18 a5 dl.2 p2 rm.18", "Usher": "t30 a3 p1 rm.2 dl.1", "Ne-Yo": "t28 a4 hp110 rm.18", "Beyoncé": "t55 p2 a3 rm.22 rt1.8 dl.12", "Khalid": "t35 b3 a1 rm.25 rt2",
+ "H.E.R.": "t35 b2 rm.2 dm.08", "Summer Walker": "t30 lp10000 sd3 sm.15 rm.25 b1", "Brent Faiyaz": "hm.3 a2 rm.12 lp13000", "Daniel Caesar": "t55 b1 a2 rm.28 rt2.4", "Giveon": "t35 b5 a-1 hp60 rm.22",
+ "Jhené Aiko": "t28 a6 b-2 hp130 rm.3 rt2.4 dm.15", "Kehlani": "t32 a3 p1 rm.18 dl.12", "6LACK": "t18 b3 lp9000 rm.25 dm.15", "Tinashe": "t18 a5 hp120 dl.15 rm.2", "Jeremih": "t12 a5 hp120 rm.25 dm.15 dd.75",
+ "Miguel": "t40 sd4 sm.2 p2 rm.28 dm.15 dd.25", "Alicia Keys": "t70 b1 p2 rm.2 rt1.6",
+ "Aretha Franklin": "p3 rm.2 rt1.2", "Stevie Wonder": "a2 dl.1 rm.15", "Whitney Houston": "p2 a3 rm.35 rt2.8", "Marvin Gaye": "dl.25 rm.2 a1", "Amy Winehouse": "sd4 sm.2 lp11000 rm.25 rt1.6 dm.1 dd.25",
+ "Sam Cooke": "lp9000 b1 rm.3 rt1.8", "Etta James": "lp9000 sd3 sm.15 p2 rm.25", "Al Green": "a2 b2 rm.1", "Leon Bridges": "lp10000 rm.25 dm.12 dd.25",
+ "Burna Boy": "b4 a1 rm.18 dm.12", "Wizkid": "a3 b1 rm.22 dm.15 t14", "Rema": "t8 a5 hp120 dl.12 dm.18", "Tems": "b4 a1 rm.25 rt2", "Davido": "sd4 sm.2 p3 t12 rm.15", "Tyla": "a6 hp120 cr4 rm.22 dl.12",
+ "Bad Bunny": "b4 a1 t8 lp13000 rm.2 dm.12", "J Balvin": "t14 a2 b1 rm.18 dl.1", "Rauw Alejandro": "t10 a5 dl.18 rm.22", "Karol G": "a4 p2 rm.2 dm.12", "Ozuna": "t5 a6 hp130 b-2 rm.25",
+ "Shakira": "vb20 p3 a2 rm.2", "ROSALÍA": "t20 a4 p2 sd3 sm.15 rm.15 dl.15", "Daddy Yankee": "t25 p4 a2 rm.08 dm.08 cr5",
+ "BTS": "dl.2 a4 rm.2", "BLACKPINK": "p4 a4 cr5 rm.12 sd3 sm.15", "NewJeans": "a5 b-1 cr2.5 rm.25 lp14000", "Jung Kook": "a5 dl.12 rm.22 dm.1",
+ "Daft Punk — One More Time": "sd4 sm.2 p3 lp9000", "Charli XCX": "a5 p2 sd5 sm.25 dl.2", "100 gecs": "lp12000", "Black Eyed Peas": "p3 lp9000 sd5 sm.3", "Calvin Harris": "a5 rm.3", "David Guetta": "a4 rm.35 rt2.6",
+ "Eiffel 65": "lp8000 p4 a2", "Tame Impala": "lp9000 dl.3 dm.25 rm.3 sd4 sm.2", "James Blake": "b2 lp12000 rm.35 rt3", "Imogen Heap — Hide and Seek": "a3 rm.15",
+ "Ezhel": "t14 b2 a2 rm.18 dm.15 dd.75", "Uzi": "t10 p3 sd4 sm.2 rm.15", "Murda": "t8 a4 dl.12 rm.25 dm.15", "Ben Fero": "p3 cr5 rm.1 dm0", "Semicenk": "t22 rm.3 rt2.4 a2 b1",
+ "Edis": "t20 a5 dl.15 rm.2", "Zeynep Bastık": "t30 a3 p1 rm.2", "Mabel Matiz": "t60 p2 rm.25 dm.1", "Tarkan": "t40 p3 a2 rm.22 rt1.6 dl.1", "Sezen Aksu": "t100 b1 p1 rm.3 rt2.4",
+ "Sertab Erener": "t45 a3 p2 rm.28 rt2.4", "Cem Adrian": "t80 rm.35 rt3 b1", "Müslüm Gürses": "t140 b3 lp10000 rm.3 rt2 dm.1", "Barış Manço": "t90 lp10000 b2 rm.2 dm.12 dd.25",
+}
+a("Roisee — Am I Dreaming","rnb","rnb","Am I Dreaming|Am","Havadar, katmanlı ve bol reverb'lü nakarat (Metro Boomin, Spider-Verse). Ton kaynağı: lisanslı karaoke sürümü 'orijinalle aynı ton: Am'.", retuneMs=20, humanize=10, flex=0, src="roisee")
+TW["Roisee — Am I Dreaming"] = "a6 b-1 hp120 dl.25 rm.45 rt3.2 rd.4 dm.15 dd.75"
+a("Frank Ocean — Nikes (perde +5)","rnb","hard","Nikes;Self Control;Futura Free","'Nikes'ta vokal 5 yarım ton yukarı kaydırılmış (Frank'in kendi '-5' canlı sürümü bunu doğruluyor). Formant da kaydığı için düşük gecikme modu.", src="nikes", scale="major")
+TW["Frank Ocean — Nikes (perde +5)"] = "tr5 m0 t10 rm.25 rt2 a2 dm.08"
+for x in A:
+    if x["name"] in TW: x["o"].update(tweak(TW[x["name"]]))
+missing = [x["name"] for x in A if x["name"] not in TW]
+print("artists without a signature tweak:", missing)
+
 SRC = {
  "lilnasx": [["Sound On Sound: Lil Nas X vokal zinciri (Auto-Tune EFX … L2)", "https://www.soundonsound.com/node/4920422?page=2"]],
  "billie": [["Sound On Sound: Finneas — Billie Eilish prodüksiyonu", "https://www.soundonsound.com/people/billie-eilish?page=2"], ["Tape Op: Finneas O'Connell", "https://new.tapeop.com/interviews/165/finneas-oconnell"]],
  "weeknd": [["Sound On Sound: Inside Track — The Weeknd (Illangelo)", "https://www.soundonsound.com/techniques/inside-track-weeknd"], ["Equipboard: The Weeknd vokal zinciri", "https://equipboard.com/pros/the-weeknd"]],
  "daftpunk": [["Wikipedia: One More Time (Daft Punk)", "https://en.wikipedia.org/wiki/One_More_Time_(Daft_Punk_song)"], ["Bjango: Daft Punk vokal efektleri", "https://bjango.com/articles/daftpunkvocaleffects/"]],
  "boniver": [["W Magazine: Chris Messina ve 'The Messina'", "https://www.wmagazine.com/story/the-engineer-behind-bon-ivers-22-a-million-clears-up-any-confusion-about-its-high-tech-sound/amp"], ["Antares: Bon Iver canlı vokal sesleri", "https://www.antarestech.com/blog/bon-iver-vocal-sounds-live"], ["Red Bull: Auto-Tune tarihi (Woods)", "https://www.redbull.com/us-en/history-of-auto-tune-in-seven-songs"]],
+ "roisee": [["Wikipedia: Am I Dreaming (Metro Boomin, A$AP Rocky & Roisee)", "https://en.wikipedia.org/wiki/Am_I_Dreaming_(Metro_Boomin,_ASAP_Rocky_and_Roisee_song)"], ["KaraFun: ton (Am)", "https://www.karafun.co.uk/karaoke/spider-man-across-the-spider-verse/am-i-dreaming/"]],
+ "nikes": [["Hypebeast: Frank Ocean 'Nikes' canlı stüdyo sürümü (“-5”)", "https://hypebeast.com/2017/9/frank-ocean-nikes-live-studio"]],
+ "drake": [["Rolling Stone: Noah '40' Shebib", "https://www.rollingstone.com/music/music-features/noah-40-shebib-profile-1011388/"], ["Sound On Sound: 40 — Drake 'Headlines'", "https://www.soundonsound.com/techniques/noah-40-shebib-recording-drakes-headlines"]],
+ "thug": [["Cambridge (Popular Music): Young Thug ve Auto-Tune", "https://www.cambridge.org/core/product/C5B160BE7E8AB29576E92CC7CD9D60B7"]],
  "charli": [["MusicRadar: Charli XCX ve Auto-Tune", "https://musicradar.com/news/charli-xcx-auto-tune-brat"], ["FADER: Charli XCX & A. G. Cook", "https://thefader.com/2017/12/15/charli-xcx-a-g-cook-pop-2-interview"]],
 }
 out = []
@@ -203,6 +262,6 @@ LEGACY = {
 GENRES = {"rap":"Rap","trap":"Trap","pop":"Pop","rnb":"R&B","soul":"Soul","afro":"Afrobeats","latin":"Latin","kpop":"K-pop","dance":"Dance","alt":"Alternatif","tr":"Türkçe"}
 json.dump(dict(base=BASE, styles={k: dict(label=v[0], o=v[1]) for k, v in STYLES.items()}, genres=GENRES, legacy=LEGACY, artists=out),
           open("artists.json", "w"), ensure_ascii=False, separators=(",", ":"))
-bad = [x["name"] for x in out if x["s"] not in STYLES or x["g"] not in GENRES or len(x["songs"]) < 3]
+bad = [x["name"] for x in out if x["s"] not in STYLES or x["g"] not in GENRES or len(x["songs"]) < 1]
 print(len(out), "artists +", len(LEGACY), "legacy =", len(out) + len(LEGACY), "| songs:", sum(len(x["songs"]) for x in out), "| bad:", bad)
 from collections import Counter; print(Counter(x["g"] for x in out))

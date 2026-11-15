@@ -251,7 +251,7 @@ const DIVS = { 0.25:'1/16', 0.5:'1/8', 0.75:'1/8 noktalı', 1:'1/4', 1.5:'1/4 no
 const DEF = { key:9, scale:'minor', custom:[1,1,1,1,1,1,1,1,1,1,1,1], voice:'wide', bypass:false,
   inGainDb:0, hpfHz:90, gateDb:-55, retuneMs:20, humanize:0, flex:0, vibrato:0, transpose:0, mode:0, formant:0,
   v2Level:0, v2Interval:0, v2Detune:0, mix:1, compThr:-18, compRatio:3, compAtk:5, compRel:80, compMakeup:3,
-  satDrive:0, satMix:0, bpm:120, dlyDiv:1, dlyFb:0.25, dlyMix:0, dlyDamp:0.4, revTime:1.2, revDamp:0.5, revPre:15, revMix:0.12, outDb:0, howlGuard:true, speaker:false };
+  satDrive:0, satMix:0, bpm:120, dlyDiv:1, dlyFb:0.25, dlyMix:0, dlyDamp:0.4, revTime:1.2, revDamp:0.5, revPre:15, revMix:0.12, bodyDb:0, presDb:0, airDb:0, lpfHz:20000, outDb:0, howlGuard:true, speaker:false };
 const PRESET_KEYS = Object.keys(DEF).filter(k => k !== 'bypass' && k !== 'speaker');
 let S = Object.assign({}, DEF);
 let ctx = null, node = null, outGain = null, stream = null, srcNode = null, wakeLock = null, running = false, modeName = '';
@@ -349,6 +349,7 @@ const GROUPS = [
   ['Ses motoru', [['sel','mode','Mod',[[0,'Ultra düşük gecikme (formant perdeyle kayar)'],[1,'Formant koruma — TD-PSOLA (daha fazla gecikme)']],true], ['s','formant','Formant / Throat (yalnız PSOLA)',-6,6,0.5,'yarım ton'], ['sel','voice','Ses aralığı (Input Type)',Object.keys(VOICES).map(k=>[k,VOICES[k][0]])]]],
   ['2. ses — double / oktav', [['s','v2Level','Seviye',0,1,0.01,''], ['s','v2Interval','Aralık',-12,12,1,'yarım ton'], ['s','v2Detune','Detune',-50,50,1,'cent']]],
   ['Giriş', [['s','inGainDb','Giriş kazancı',-12,24,0.5,'dB'], ['s','hpfHz','High-pass filtre',20,300,1,'Hz'], ['s','gateDb','Noise gate eşiği',-80,-20,1,'dBFS']]],
+  ['Ton (EQ)', [['s','bodyDb','Gövde (220 Hz)',-9,9,0.5,'dB'], ['s','presDb','Netlik (3 kHz)',-9,9,0.5,'dB'], ['s','airDb','Hava / parlaklık (9 kHz)',-9,9,0.5,'dB'], ['s','lpfHz','Tiz kesme (lo-fi; 20000 = kapalı)',2000,20000,100,'Hz']]],
   ['Kompresör', [['s','compThr','Eşik',-50,0,1,'dB'], ['s','compRatio','Oran (1 = kapalı)',1,20,0.1,':1'], ['s','compAtk','Atak',0.1,50,0.1,'ms'], ['s','compRel','Bırakma',10,500,1,'ms'], ['s','compMakeup','Makeup',0,18,0.5,'dB']]],
   ['Saturasyon / drive', [['s','satDrive','Drive',0,30,0.5,'dB'], ['s','satMix','Miktar',0,1,0.01,'']]],
   ['Delay', [['s','bpm','Tempo',60,200,1,'BPM'], ['sel','dlyDiv','Nota',Object.keys(DIVS).map(k=>[k,DIVS[k]]),true], ['s','dlyFb','Feedback',0,0.9,0.01,''], ['s','dlyMix','Seviye',0,1,0.01,''], ['s','dlyDamp','Karanlık (HF sönüm)',0,0.9,0.01,'']]],
@@ -568,6 +569,7 @@ try { user = JSON.parse(localStorage.getItem(LS) || '{}'); } catch (e) { user = 
 function persist() { try { localStorage.setItem(LS, JSON.stringify(user)); return true; } catch (e) { return false; } }
 function snapshot() { const o = {}; for (const k of PRESET_KEYS) o[k] = Array.isArray(S[k]) ? S[k].slice() : S[k]; return o; }
 function applyPreset(p, name, keepKey) {
+  for (const k of ['bodyDb', 'presDb', 'airDb', 'lpfHz']) if (!(k in p)) S[k] = DEF[k];   // presets without tone settings must not inherit the previous one's
   for (const k of PRESET_KEYS) if (k in p && !(keepKey && k === 'key')) S[k] = Array.isArray(p[k]) ? p[k].slice() : p[k];
   for (const k in reg) reg[k].forEach(f => f());
   drawChips(); send(); activePreset = name; $('#activePreset').textContent = 'Preset: ' + name;

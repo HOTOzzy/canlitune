@@ -20,6 +20,9 @@ struct Biquad {
   void set(double B0, double B1, double B2, double A0, double A1, double A2) { b0 = B0 / A0; b1 = B1 / A0; b2 = B2 / A0; a1 = A1 / A0; a2 = A2 / A0; }
   void hp(double fc, double fs, double q) { double w = kTwoPi * fc / fs, c = std::cos(w), al = std::sin(w) / (2 * q); set((1 + c) / 2, -(1 + c), (1 + c) / 2, 1 + al, -2 * c, 1 - al); }
   void lp(double fc, double fs, double q) { double w = kTwoPi * fc / fs, c = std::cos(w), al = std::sin(w) / (2 * q); set((1 - c) / 2, 1 - c, (1 - c) / 2, 1 + al, -2 * c, 1 - al); }
+  void peak(double fc, double fs, double q, double dB) { double A = std::pow(10.0, dB / 40), w = kTwoPi * fc / fs, c = std::cos(w), al = std::sin(w) / (2 * q); set(1 + al * A, -2 * c, 1 - al * A, 1 + al / A, -2 * c, 1 - al / A); }
+  void shelf(double fc, double fs, double dB, bool high) { double A = std::pow(10.0, dB / 40), w = kTwoPi * fc / fs, c = std::cos(w), k = 2 * std::sqrt(A) * std::sin(w) / 2 * 1.4142135623730951, g = high ? -1 : 1;
+    set(A * ((A + 1) - g * (A - 1) * c + k), g * 2 * A * ((A - 1) - g * (A + 1) * c), A * ((A + 1) - g * (A - 1) * c - k), (A + 1) + g * (A - 1) * c + k, -2 * g * ((A - 1) + g * (A + 1) * c), (A + 1) + g * (A - 1) * c - k); }
   inline double run(double x) { double y = b0 * x + z1; z1 = b1 * x - a1 * y + z2; z2 = b2 * x - a2 * y; return y; }
 };
 
@@ -114,7 +117,7 @@ enum ParamId : int {
   P_V2LEVEL, P_V2INTERVAL, P_V2DETUNE, P_MIX,
   P_COMPTHR, P_COMPRATIO, P_COMPATK, P_COMPREL, P_COMPMAKEUP,
   P_SATDRIVE, P_SATMIX, P_DLYMS, P_DLYFB, P_DLYMIX, P_DLYDAMP,
-  P_REVTIME, P_REVDAMP, P_REVPRE, P_REVMIX, P_OUTDB, P_HOWLGUARD, P_SPEAKER, P_COUNT
+  P_REVTIME, P_REVDAMP, P_REVPRE, P_REVMIX, P_OUTDB, P_HOWLGUARD, P_SPEAKER, P_BODY, P_PRES, P_AIR, P_LPF, P_COUNT
 };
 // Same names as the JS params object (used by bridges to map JSON keys -> ids)
 static const char* const kParamNames[P_COUNT] = {
@@ -123,7 +126,7 @@ static const char* const kParamNames[P_COUNT] = {
   "v2Level", "v2Interval", "v2Detune", "mix",
   "compThr", "compRatio", "compAtk", "compRel", "compMakeup",
   "satDrive", "satMix", "dlyMs", "dlyFb", "dlyMix", "dlyDamp",
-  "revTime", "revDamp", "revPre", "revMix", "outDb", "howlGuard", "speaker"
+  "revTime", "revDamp", "revPre", "revMix", "outDb", "howlGuard", "speaker", "bodyDb", "presDb", "airDb", "lpfHz"
 };
 static inline int paramIdFromName(const char* s) { for (int i = 0; i < P_COUNT; i++) if (std::strcmp(s, kParamNames[i]) == 0) return i; return -1; }
 
@@ -176,6 +179,7 @@ class Engine {
       case P_REVTIME: revTime = v; break; case P_REVDAMP: revDamp = v; break; case P_REVPRE: revPre = v; break; case P_REVMIX: revMix = v; break;
       case P_OUTDB: outDb = v; break; case P_HOWLGUARD: howlGuard = v != 0; break;
       case P_SPEAKER: speaker = v != 0; break;
+      case P_BODY: bodyDb = v; break; case P_PRES: presDb = v; break; case P_AIR: airDb = v; break; case P_LPF: lpfHz = v; break;
       default: return;
     }
     dirty = true;
@@ -240,6 +244,7 @@ class Engine {
         double dry = lin(xb, mask, (double)n - std::max(1.0, dryD));
         y = dry * (1 - mix) + (w1 + v2Level * w2) * mix;
       }
+      if (!bypass) { if (eqOn) y = eqA.run(eqP.run(eqB.run(y))); if (lpOn) y = eqL.run(y); }
       if (compRatio > 1.01) {
         double ay = std::fabs(y);
         cEnv = ay > cEnv ? ay + (cEnv - ay) * cAtk : ay + (cEnv - ay) * cRel;
@@ -333,6 +338,9 @@ class Engine {
     for (auto* v : {&cL, &cR}) for (auto& c : *v) { c.g = std::pow(10.0, -3.0 * (double)c.buf.size() / (fs * rt)); c.d = std::min(0.9, std::max(0.0, revDamp)) * 0.7; }
     preN = std::max<int64_t>(1, std::min<int64_t>((int64_t)pre.size() - 1, (int64_t)std::llround(revPre * fs / 1000)));
     outG = std::pow(10.0, outDb / 20);
+    eqB.shelf(220, fs, bodyDb, false); eqP.peak(3200, fs, 0.9, presDb); eqA.shelf(std::min(9000.0, fs * 0.4), fs, airDb, true);
+    eqOn = bodyDb != 0 || presDb != 0 || airDb != 0;
+    lpOn = lpfHz < std::min(19000.0, fs * 0.45); if (lpOn) eqL.lp(std::max(300.0, lpfHz), fs, 0.707);
     if (mode != lastMode) { lastMode = mode; s1.reset(n); s2.reset(n); p1.reset(n, T); p2.reset(n, T); }
   }
   int nearest(double m) const {
@@ -455,7 +463,8 @@ class Engine {
 
   // buffers & sizes
   int64_t N, mask; std::vector<float> x;
-  int dec; double dfs; Biquad lp1, lp2, hpf;
+  int dec; double dfs; Biquad lp1, lp2, hpf, eqB, eqP, eqA, eqL; bool eqOn = false, lpOn = false;
+  double bodyDb = 0, presDb = 0, airDb = 0, lpfHz = 20000;
   int64_t dN, dmask, dn = 0; std::vector<float> dx; int decPh = 0;
   int tauMaxAbs, Wd, Wf, hop, hopCnt = 0, tauMinD = 2, tauMaxD = 100;
   std::vector<float> frame; std::vector<double> cm;

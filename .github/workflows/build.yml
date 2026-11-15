@@ -31,6 +31,7 @@ jobs:
           ./core/test/karaoke_test
           node web/test/musiclib.test.js
           node web/test/beatgen.test.js
+          node web/test/presets.test.js
           ./core/test/rt_test
           ./core/test/duplex_sim
           node core/test/equivalence.test.js core/test/ctrun

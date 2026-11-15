@@ -22,6 +22,9 @@ class Biquad {
   _set(b0, b1, b2, a0, a1, a2) { this.b0 = b0 / a0; this.b1 = b1 / a0; this.b2 = b2 / a0; this.a1 = a1 / a0; this.a2 = a2 / a0; }
   hp(fc, fs, q) { const w = TWO_PI * fc / fs, c = Math.cos(w), al = Math.sin(w) / (2 * q); this._set((1 + c) / 2, -(1 + c), (1 + c) / 2, 1 + al, -2 * c, 1 - al); }
   lp(fc, fs, q) { const w = TWO_PI * fc / fs, c = Math.cos(w), al = Math.sin(w) / (2 * q); this._set((1 - c) / 2, 1 - c, (1 - c) / 2, 1 + al, -2 * c, 1 - al); }
+  peak(fc, fs, q, dB) { const A = Math.pow(10, dB / 40), w = TWO_PI * fc / fs, c = Math.cos(w), al = Math.sin(w) / (2 * q); this._set(1 + al * A, -2 * c, 1 - al * A, 1 + al / A, -2 * c, 1 - al / A); }
+  shelf(fc, fs, dB, high) { const A = Math.pow(10, dB / 40), w = TWO_PI * fc / fs, c = Math.cos(w), k = 2 * Math.sqrt(A) * Math.sin(w) / 2 * Math.SQRT2, g = high ? -1 : 1;
+    this._set(A * ((A + 1) - g * (A - 1) * c + k), g * 2 * A * ((A - 1) - g * (A + 1) * c), A * ((A + 1) - g * (A - 1) * c - k), (A + 1) + g * (A - 1) * c + k, -2 * g * ((A - 1) + g * (A + 1) * c), (A + 1) + g * (A - 1) * c - k); }
   run(x) { const y = this.b0 * x + this.z1; this.z1 = this.b1 * x - this.a1 * y + this.z2; this.z2 = this.b2 * x - this.a2 * y; return y; }
 }
 
@@ -145,6 +148,7 @@ const DEFAULT_PARAMS = {
   satDrive: 0, satMix: 0,
   dlyMs: 375, dlyFb: 0.25, dlyMix: 0, dlyDamp: 0.4,
   revTime: 1.2, revDamp: 0.5, revPre: 15, revMix: 0,
+  bodyDb: 0, presDb: 0, airDb: 0, lpfHz: 20000,
   outDb: 0, howlGuard: true, speaker: 0,
 };
 
@@ -179,6 +183,7 @@ class AutoTuneEngine {
     this.p1 = new PsolaVoice(N, fs); this.p2 = new PsolaVoice(N, fs);
     this.latency = 0; this.dryD = 0;
     // input conditioning
+    this.eqB = new Biquad(); this.eqP = new Biquad(); this.eqA = new Biquad(); this.eqL = new Biquad(); this.eqOn = false; this.lpOn = false;
     this.hpf = new Biquad(); this.gEnv = 0; this.gGain = 0; this.gOpen = false; this.gHold = 0;
     this.inPk = 0; this.outPk = 0;
     // comp
@@ -229,6 +234,10 @@ class AutoTuneEngine {
     this.cL.forEach(setC); this.cR.forEach(setC);
     this.preN = Math.max(1, Math.min(this.pre.length - 1, Math.round(p.revPre * fs / 1000)));
     this.outG = Math.pow(10, p.outDb / 20);
+    // tone EQ on the tuned vocal: body (low shelf 220 Hz), presence (peak 3.2 kHz), air (high shelf 9 kHz), low-pass
+    this.eqB.shelf(220, fs, p.bodyDb, false); this.eqP.peak(3200, fs, 0.9, p.presDb); this.eqA.shelf(Math.min(9000, fs * 0.4), fs, p.airDb, true);
+    this.eqOn = p.bodyDb !== 0 || p.presDb !== 0 || p.airDb !== 0;
+    this.lpOn = p.lpfHz < Math.min(19000, fs * 0.45); if (this.lpOn) this.eqL.lp(Math.max(300, p.lpfHz), fs, 0.707);
     if (p.mode !== this._mode) {
       this._mode = p.mode;
       this.s1.reset(this.n); this.s2.reset(this.n); this.p1.reset(this.n, this.T); this.p2.reset(this.n, this.T);
@@ -421,6 +430,7 @@ class AutoTuneEngine {
         const dry = lin(x, m, n - Math.max(1, this.dryD));
         y = dry * (1 - p.mix) + (w1 + p.v2Level * w2) * p.mix;
       }
+      if (!p.bypass) { if (this.eqOn) y = this.eqA.run(this.eqP.run(this.eqB.run(y))); if (this.lpOn) y = this.eqL.run(y); }
       // compressor (soft knee 6 dB)
       if (p.compRatio > 1.01) {
         const ay = Math.abs(y);
