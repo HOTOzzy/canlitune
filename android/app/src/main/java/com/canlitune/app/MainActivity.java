@@ -95,6 +95,8 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         NativeAudio.nRecStop();
         NativeAudio.nStop();
+        stopKeepAlive();
+        AudioService.onStopRequested = null;
         stopPlayer();
         if (web != null) web.destroy();
         super.onDestroy();
@@ -104,8 +106,25 @@ public class MainActivity extends Activity {
     public void onRequestPermissionsResult(int code, String[] perms, int[] results) {
         super.onRequestPermissionsResult(code, perms, results);
         if (code != REQ_MIC) return;
-        boolean ok = results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED;
+        boolean ok = false;   // the notification permission is optional; only the microphone decides
+        for (int i = 0; i < perms.length && i < results.length; i++)
+            if (Manifest.permission.RECORD_AUDIO.equals(perms[i])) ok = results[i] == PackageManager.PERMISSION_GRANTED;
         web.evaluateJavascript("window.__canliPerm && window.__canliPerm(" + ok + ")", null);
+    }
+
+    /** Keeps the engine and the microphone running while another app (a karaoke video…) is in front. */
+    private void startKeepAlive() {
+        try {
+            AudioService.onStopRequested = () -> js("window.__canliStopped && window.__canliStopped()");
+            Intent i = new Intent(this, AudioService.class);
+            if (Build.VERSION.SDK_INT >= 26) startForegroundService(i); else startService(i);
+        } catch (Exception e) {
+            Log.e("CanliTune", "keep-alive service", e);
+        }
+    }
+
+    private void stopKeepAlive() {
+        try { stopService(new Intent(this, AudioService.class)); } catch (Exception ignored) {}
     }
 
     private void js(final String code) { runOnUiThread(() -> { if (web != null) web.evaluateJavascript(code, null); }); }
@@ -157,7 +176,9 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String start() {
             if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                runOnUiThread(() -> requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQ_MIC));
+                runOnUiThread(() -> requestPermissions(Build.VERSION.SDK_INT >= 33
+                        ? new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.POST_NOTIFICATIONS}
+                        : new String[]{Manifest.permission.RECORD_AUDIO}, REQ_MIC));
                 return "{\"ok\":false,\"err\":\"perm\"}";
             }
             String r = NativeAudio.nStart(Build.VERSION.SDK_INT, builtInMicId(), outDeviceId);
@@ -166,11 +187,12 @@ public class MainActivity extends Activity {
                 r = NativeAudio.nStart(Build.VERSION.SDK_INT, builtInMicId(), 0);
             }
             try { lastSampleRate = new JSONObject(r).optInt("sr", 48000); } catch (Exception ignored) {}
+            if (r.contains("\"ok\":true")) runOnUiThread(MainActivity.this::startKeepAlive);
             return r;
         }
 
         @JavascriptInterface
-        public void stop() { NativeAudio.nStop(); }
+        public void stop() { NativeAudio.nStop(); runOnUiThread(MainActivity.this::stopKeepAlive); }
 
         /** Output devices the user can listen on: [{id, name, kind}] (id 0 = system default). */
         @JavascriptInterface

@@ -152,6 +152,12 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px
 <!-- ===================== KARAOKE ===================== -->
 <section class="tab" id="t-kar">
   <div class="msg" id="kMsg"></div>
+  <div class="card nat hide"><h2>Başka uygulamayla söyle (YouTube vb.)</h2>
+    <p class="small" style="margin:0 0 8px">Dosya indirmene gerek yok: CanlıTune arka planda çalışmaya devam eder, sesin diğer uygulamanın sesiyle birlikte çıkar.</p>
+    <ol class="small" style="margin:0 0 10px;padding-left:18px"><li>Kulaklığı tak ve aşağıdaki düğmeye bas.</li><li>YouTube'da şarkının karaoke sürümünü aç.</li><li>Söyle. Kapatmak için bildirimdeki “Durdur”a bas ya da uygulamaya dön.</li></ol>
+    <button class="pri" style="width:100%" id="bBg">▶ Arka plan modunu başlat (vokal öne)</button>
+    <p class="small" style="margin:8px 0 0">Bu düğme motoru başlatır ve vokalini yükseltir (+10 dB, daha sıkı kompresör). Diğer uygulamanın sesini CanlıTune kısamaz; dengeyi “Vokal seviyesi” kaydırıcısıyla kur. Hoparlörden dinlersen mikrofon müziği de duyar ve Auto-Tune şaşırır: kulaklık kullan.</p>
+  </div>
   <div class="card"><h2>Şarkı</h2>
     <div id="kSong" class="small">Şarkı seçilmedi. “Sanatçılar” sekmesinden bir şarkıya dokun ya da doğrudan kendi dosyalarını yükle.</div>
     <div class="row" style="margin-top:10px"><button class="sec grow" id="bBeat">🎵 Beat yükle</button><button class="grow" id="bLyr">📝 Söz dosyası (.lrc / .txt)</button></div>
@@ -839,6 +845,12 @@ async function recToggle() {
   $('#bRec').classList.toggle('on', recOn); $('#bRec').textContent = recOn ? '■ Kaydı bitir' : '● Kaydı başlat';
 }
 $('#bRec').onclick = recToggle;
+window.__canliStopped = () => { if (nativeActive) { nativeActive = false; stop(); msg('Bildirimden durduruldu.'); } };
+if ($('#bBg')) $('#bBg').onclick = async () => {
+  if (!nativeActive) { await startMic(); if (!nativeActive) { kmsg('Ses motoru başlatılamadı (izin gerekiyorsa verip tekrar bas).', 'err'); return; } }
+  setVal('outDb', 10); if (S.compRatio < 4) setVal('compRatio', 4); if (S.compThr > -24) setVal('compThr', -24);
+  kmsg('Arka plan modu açık. Şimdi YouTube’a geç; CanlıTune çalışmaya devam eder.', 'ok');
+};
 window.__canliRecDone = name => { kmsg(name ? `Kaydedildi: ${name}` : 'Kayıt çok kısaydı, silindi.', name ? 'ok' : ''); renderRecs(); };
 window.__canliPlayDone = () => { recPlaying = ''; renderRecs(); };
 function renderRecs() {
