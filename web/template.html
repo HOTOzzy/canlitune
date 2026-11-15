@@ -163,7 +163,8 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px
   <div class="card"><h2>Çalar</h2>
     <div class="row" style="align-items:center"><button class="pri" id="bPlay" style="min-width:92px">▶ Çal</button><button id="bRestart">⏮</button><span id="kTime" class="small" style="flex:1;text-align:right">0:00 / 0:00</span></div>
     <input type="range" id="kSeek" min="0" max="1000" value="0" style="margin-top:6px">
-    <div class="ctl"><label><span>Beat seviyesi</span><em id="kGainTx">70%</em></label><input type="range" id="kGain" min="0" max="100" value="70"></div>
+    <div class="ctl"><label><span>Beat seviyesi</span><em id="kGainTx">30%</em></label><input type="range" id="kGain" min="0" max="100" value="30"></div>
+    <div id="kVoc"></div>
     <div class="lyr plain" id="lyr"><div class="small" style="color:var(--mut)">Söz yüklenmedi.</div></div>
   </div>
   <div class="card"><h2>Kayıt</h2>
@@ -341,7 +342,7 @@ const GROUPS = [
   ['Saturasyon / drive', [['s','satDrive','Drive',0,30,0.5,'dB'], ['s','satMix','Miktar',0,1,0.01,'']]],
   ['Delay', [['s','bpm','Tempo',60,200,1,'BPM'], ['sel','dlyDiv','Nota',Object.keys(DIVS).map(k=>[k,DIVS[k]]),true], ['s','dlyFb','Feedback',0,0.9,0.01,''], ['s','dlyMix','Seviye',0,1,0.01,''], ['s','dlyDamp','Karanlık (HF sönüm)',0,0.9,0.01,'']]],
   ['Reverb', [['s','revTime','Süre (RT60)',0.2,6,0.05,'s'], ['s','revDamp','HF sönüm',0,0.9,0.01,''], ['s','revPre','Pre-delay',0,200,1,'ms'], ['s','revMix','Seviye',0,1,0.01,'']]],
-  ['Çıkış', [['s','mix','Dry / Wet',0,1,0.01,''], ['s','outDb','Çıkış seviyesi',-24,6,0.5,'dB'], ['c','howlGuard','Geri besleme (howl) koruması']]],
+  ['Çıkış', [['s','mix','Dry / Wet',0,1,0.01,''], ['s','outDb','Çıkış (vokal) seviyesi',-24,12,0.5,'dB'], ['c','howlGuard','Geri besleme (howl) koruması']]],
 ];
 for (const [title, items] of GROUPS) {
   const c = document.createElement('div'); c.className = 'card'; c.innerHTML = `<h2>${title}</h2>`;
@@ -646,7 +647,7 @@ renderArt();
 
 /* ---------- karaoke: beat, lyrics, recording, output ---------- */
 const AND = NATIVE === 'android' && typeof window.CanliNative.beatBegin !== 'undefined';
-const K = { song: null, buf: null, len: 0, beatName: '', lyr: null, playing: false, startAt: 0, offset: 0, src: null, gainNode: null, bctx: null, c: null, gain: 0.7, det: null, trim: 0, cur: -2 };
+const K = { song: null, buf: null, len: 0, beatName: '', lyr: null, playing: false, startAt: 0, offset: 0, src: null, gainNode: null, bctx: null, c: null, gain: 0.3, det: null, trim: 0, cur: -2 };
 const kmsg = (t, k) => msg(t, k, $('#kMsg'));
 const fmtT = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 function pickSong(x, sp) {
@@ -691,6 +692,7 @@ async function loadBeat(file) {
     for (let i = a0; i < a1; i++) mono[i - a0] = (L[i] + R[i]) * 0.5;
     K.det = { k: MusicLib.detectKey(mono, sr), b: MusicLib.detectBpm(mono, sr) };
     if (AND) { await sendBeatNative(L, R, n, sr); K.buf = null; window.CanliNative.beatCtl(3, K.gain); } else K.buf = buf;
+    if (S.outDb < 4) setVal('outDb', 4);   // karaoke: vokali beat'in önüne al
     K.len = n / sr; K.beatName = file.name; K.offset = 0; Beat.seek(0);
     setVal('key', K.det.k.key); setVal('scale', K.det.k.scale);
     if (K.det.b.bpm >= 60) setVal('bpm', Math.round(Math.min(200, K.det.b.bpm)));
@@ -728,6 +730,7 @@ function setLyrics(txt) {
   box.innerHTML = K.lyr.lines.map(l => `<div>${esc(l.text) || '♪'}</div>`).join(''); box.scrollTop = 0;
   kmsg(K.lyr.synced ? `${K.lyr.lines.length} satır senkron söz yüklendi.` : 'Zaman damgası yok: sözler sabit metin olarak gösteriliyor (akması için .lrc gerekir).', K.lyr.synced ? 'ok' : '');
 }
+$('#kVoc').appendChild(slider('outDb', 'Vokal seviyesi', -12, 12, 0.5, 'dB'));
 $('#bBeat').onclick = () => $('#beatIn').click();
 $('#beatIn').onchange = e => { const f = e.target.files[0]; if (f) loadBeat(f); e.target.value = ''; };
 $('#bLyr').onclick = () => $('#lyrIn').click();

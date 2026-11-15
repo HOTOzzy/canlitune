@@ -30,7 +30,7 @@ class BackingTrack {
   void clear() { std::lock_guard<std::mutex> lk(mtx); playing.store(false); pcm.clear(); pcm.shrink_to_fit(); len = 0; loaded.store(0); pos = 0; posSec.store(0); lenSec.store(0); }
   void seek(double sec) { seekReq.store(sec); }
   std::atomic<bool> playing{false};
-  std::atomic<float> gain{0.7f}, posSec{0}, lenSec{0};
+  std::atomic<float> gain{0.3f}, posSec{0}, lenSec{0};
   std::atomic<double> recLagSec{0};   // recording only: delay the beat by the round-trip latency so the voice lines up
   std::atomic<int64_t> loaded{0};
 
