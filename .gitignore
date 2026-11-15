@@ -11,3 +11,4 @@ ios/build/
 *.iml
 .DS_Store
 core/test/duplex_sim
+core/test/karaoke_test

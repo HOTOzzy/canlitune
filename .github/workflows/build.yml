@@ -27,6 +27,9 @@ jobs:
           g++ -std=c++17 -O2 -Wall -Wextra -pthread -o core/test/rt_test core/test/rt_test.cpp
           g++ -std=c++17 -O2 -Wall -Wextra -o core/test/ctrun core/test/ctrun.cpp
           g++ -std=c++17 -O2 -Wall -o core/test/duplex_sim core/test/duplex_sim.cpp
+          g++ -std=c++17 -O2 -pthread -o core/test/karaoke_test core/test/karaoke_test.cpp
+          ./core/test/karaoke_test
+          node web/test/musiclib.test.js
           ./core/test/rt_test
           ./core/test/duplex_sim
           node core/test/equivalence.test.js core/test/ctrun

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <external-files-path name="kayitlar" path="kayitlar/" />
+    <files-path name="kayitlar_ic" path="kayitlar/" />
+</paths>

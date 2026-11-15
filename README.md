@@ -12,6 +12,12 @@ kompresör, saturasyon, delay, reverb, geri besleme koruması ve kaynaklı 12 sa
 
 Üç platform da **aynı arayüzü** (`web/`) ve **aynı DSP'yi** kullanır: `web/dsp-core.js` ve onun bit düzeyinde eşdeğer C++ portu `core/CanliTuneEngine.hpp`.
 
+## Sürüm 2
+- 149 sanatçı/stil preseti (rap, trap, pop, R&B, soul, afrobeats, latin, K-pop, dance, alternatif, Türkçe); arama + tür filtresi; güven etiketleri.
+- Karaoke: kendi enstrümantalini ve `.lrc` söz dosyanı yükle; ton ve tempo dosyadan tahmin edilir; sözler akar. (Uygulama telifli söz ya da beat içermez.)
+- Kayıt: işlenmiş ses + beat → `.m4a`; uygulama içinden dinle / paylaş / sil.
+- Hoparlör / soundbar: çıkış cihazı seçimi (Bluetooth, AUX, USB, HDMI) ve geri beslemeyi bastıran hoparlör modu.
+
 ## Yapı
 ```
 core/        C++ DSP çekirdeği (header-only) + kilitsiz parametre kuyruğu (NativeBridge.hpp) + testler

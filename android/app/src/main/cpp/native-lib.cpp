@@ -15,6 +15,7 @@
 #include <vector>
 #include "NativeBridge.hpp"
 #include "DriftFifo.hpp"
+#include "Karaoke.hpp"
 
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "CanliTune", __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "CanliTune", __VA_ARGS__)
@@ -24,10 +25,13 @@ using namespace oboe;
 class Duplex : public AudioStreamDataCallback, public AudioStreamErrorCallback {
  public:
   canlitune::NativeBridge bridge;
+  canlitune::BackingTrack beat;
+  canlitune::Recorder rec;
+  int sampleRate() const { return sr; }
 
-  std::string start(int sdkInt, int micId) {
+  std::string start(int sdkInt, int micId, int outId) {
     std::lock_guard<std::mutex> lk(mtx);
-    sdk = sdkInt; micDevice = micId;
+    sdk = sdkInt; micDevice = micId; outDevice = outId;
     closeLocked();
     Result r = openLocked();
     if (r != Result::OK) { closeLocked(); return err(convertToText(r)); }
@@ -72,7 +76,14 @@ class Duplex : public AudioStreamDataCallback, public AudioStreamErrorCallback {
       int n = std::min(numFrames - done, chunk);
       fifo.pull(inBuf.data(), n);
       bridge.render(inBuf.data(), L.data(), R.data(), n);
-      for (int i = 0; i < n; i++) { o[2 * (done + i)] = L[i]; o[2 * (done + i) + 1] = R[i]; }
+      beat.render(bL.data(), bR.data(), rL.data(), rR.data(), n, sr);
+      // recording mix: voice + beat delayed by the round-trip latency (so the take is in time)
+      for (int i = 0; i < n; i++) { rL[i] += L[i]; rR[i] += R[i]; }
+      rec.push(rL.data(), rR.data(), n);
+      for (int i = 0; i < n; i++) {
+        o[2 * (done + i)] = canlitune::softClip(L[i] + bL[i]);
+        o[2 * (done + i) + 1] = canlitune::softClip(R[i] + bR[i]);
+      }
       done += n;
     }
     fifoMs.store((float)(fifo.fill() * 1000.0 / sr));
@@ -99,6 +110,7 @@ class Duplex : public AudioStreamDataCallback, public AudioStreamErrorCallback {
         ->setChannelCount(ChannelCount::Stereo)
         ->setDataCallback(this)
         ->setErrorCallback(this);
+    if (outDevice > 0) ob.setDeviceId(outDevice);  // user-chosen speaker / soundbar / headphones
     Result r = ob.openStream(out);
     if (r != Result::OK) return r;
     sr = out->getSampleRate();
@@ -122,6 +134,7 @@ class Duplex : public AudioStreamDataCallback, public AudioStreamErrorCallback {
 
     chunk = std::max(4096, out->getBufferCapacityInFrames());
     inBuf.assign((size_t)chunk, 0.f); L.assign((size_t)chunk, 0.f); R.assign((size_t)chunk, 0.f); rdBuf.assign(4096, 0.f);
+    bL.assign((size_t)chunk, 0.f); bR.assign((size_t)chunk, 0.f); rL.assign((size_t)chunk, 0.f); rR.assign((size_t)chunk, 0.f);
     fifo.reset(std::max(128, in->getFramesPerBurst()), sr);
     tuner = std::make_unique<LatencyTuner>(*out);
     bridge.prepare(sr, chunk);
@@ -143,10 +156,10 @@ class Duplex : public AudioStreamDataCallback, public AudioStreamErrorCallback {
 
   std::mutex mtx;
   std::shared_ptr<AudioStream> in, out;
-  std::vector<float> inBuf, L, R, rdBuf;
+  std::vector<float> inBuf, L, R, rdBuf, bL, bR, rL, rR;
   canlitune::DriftFifo fifo;
   std::unique_ptr<LatencyTuner> tuner;
-  int sr = 48000, burst = 192, chunk = 4096, sdk = 24, micDevice = 0;
+  int sr = 48000, burst = 192, chunk = 4096, sdk = 24, micDevice = 0, outDevice = 0;
   std::atomic<bool> wantRunning{false};
 };
 
@@ -154,8 +167,8 @@ static Duplex* gDuplex() { static Duplex d; return &d; }
 
 extern "C" {
 
-JNIEXPORT jstring JNICALL Java_com_canlitune_app_NativeAudio_nStart(JNIEnv* env, jclass, jint sdk, jint micId) {
-  return env->NewStringUTF(gDuplex()->start(sdk, micId).c_str());
+JNIEXPORT jstring JNICALL Java_com_canlitune_app_NativeAudio_nStart(JNIEnv* env, jclass, jint sdk, jint micId, jint outId) {
+  return env->NewStringUTF(gDuplex()->start(sdk, micId, outId).c_str());
 }
 JNIEXPORT void JNICALL Java_com_canlitune_app_NativeAudio_nStop(JNIEnv*, jclass) { gDuplex()->stop(); }
 
@@ -174,20 +187,53 @@ JNIEXPORT void JNICALL Java_com_canlitune_app_NativeAudio_nSetParams(JNIEnv* env
 }
 JNIEXPORT void JNICALL Java_com_canlitune_app_NativeAudio_nMeasure(JNIEnv*, jclass) { gDuplex()->bridge.requestMeasure(); }
 
-// 21 floats: 12 engine telemetry + sampleRate, framesPerBurst, outLatencyMs, inLatencyMs,
+// 26 floats (21..25: beatPosSec, beatLenSec, beatPlaying, recSeconds(-1 = off), recDropped);
+// first 21: 12 engine telemetry + sampleRate, framesPerBurst, outLatencyMs, inLatencyMs,
 // outXruns, outBufferFrames, mmap(0/1), micFifoUnderflows, micFifoMs
 JNIEXPORT jfloatArray JNICALL Java_com_canlitune_app_NativeAudio_nTelemetry(JNIEnv* env, jclass) {
   Duplex* d = gDuplex();
   d->refreshLatency();
-  float t[21];
+  float t[26];
   d->bridge.readTelemetry(t);
   t[12] = d->bridge.sr.load(); t[13] = d->bridge.framesPerBurst.load();
   t[14] = d->bridge.outLatencyMs.load(); t[15] = d->bridge.inLatencyMs.load();
   t[16] = (float)d->outXruns.load(); t[17] = (float)d->outBufFrames.load(); t[18] = (float)d->mmap.load();
   t[19] = (float)d->fifoUnder.load(); t[20] = d->fifoMs.load();
-  jfloatArray a = env->NewFloatArray(21);
-  env->SetFloatArrayRegion(a, 0, 21, t);
+  t[21] = d->beat.posSec.load(); t[22] = d->beat.lenSec.load(); t[23] = d->beat.playing.load() ? 1.f : 0.f;
+  t[24] = d->rec.active.load() ? (float)((double)d->rec.frames.load() / d->rec.sr) : -1.f; t[25] = (float)d->rec.dropped.load();
+  jfloatArray a = env->NewFloatArray(26);
+  env->SetFloatArrayRegion(a, 0, 26, t);
   return a;
 }
+
+// ---- backing track ----
+JNIEXPORT void JNICALL Java_com_canlitune_app_NativeAudio_nBeatBegin(JNIEnv*, jclass, jlong frames, jdouble rate) { gDuplex()->beat.begin(frames, rate); }
+JNIEXPORT void JNICALL Java_com_canlitune_app_NativeAudio_nBeatChunk(JNIEnv* env, jclass, jbyteArray data) {
+  jsize n = env->GetArrayLength(data);
+  jbyte* b = env->GetByteArrayElements(data, nullptr);
+  gDuplex()->beat.append(reinterpret_cast<const int16_t*>(b), n / 4);  // little-endian int16 stereo
+  env->ReleaseByteArrayElements(data, b, JNI_ABORT);
+}
+// cmd: 0 pause, 1 play, 2 seek(sec), 3 gain, 4 clear, 5 record lag (sec)
+JNIEXPORT void JNICALL Java_com_canlitune_app_NativeAudio_nBeatCtl(JNIEnv*, jclass, jint cmd, jdouble v) {
+  auto& b = gDuplex()->beat;
+  switch (cmd) {
+    case 0: b.playing.store(false); break;
+    case 1: b.playing.store(true); break;
+    case 2: b.seek(v); break;
+    case 3: b.gain.store((float)v); break;
+    case 4: b.clear(); break;
+    case 5: b.recLagSec.store(v); break;
+    default: break;
+  }
+}
+// ---- recorder ----
+JNIEXPORT jboolean JNICALL Java_com_canlitune_app_NativeAudio_nRecStart(JNIEnv* env, jclass, jstring path) {
+  const char* p = env->GetStringUTFChars(path, nullptr);
+  bool ok = gDuplex()->rec.start(p, gDuplex()->sampleRate());
+  env->ReleaseStringUTFChars(path, p);
+  return ok ? JNI_TRUE : JNI_FALSE;
+}
+JNIEXPORT jlong JNICALL Java_com_canlitune_app_NativeAudio_nRecStop(JNIEnv*, jclass) { return (jlong)gDuplex()->rec.stop(); }
 
 }  // extern "C"

@@ -36,6 +36,13 @@
 <li>Telemetri: sayfa cross-origin-isolated ise SharedArrayBuffer (sıfır ayırma), değilse 37 ms'de bir küçük postMessage.</li>
 <li>Getiri: echoCancellation / noiseSuppression / autoGainControl kapalı istenir (bunlar gecikme ve bozulma ekler).</li>
 <li>Geri besleme: kulaklık önerilir; çıkış 0.6 s boyunca −4 dBFS üzerinde kalırsa 2 s boyunca −24 dB kısılır.</li></ul>
+<h3>Sürüm 2: karaoke, kayıt, hoparlör</h3>
+<ul>
+<li><b>Sanatçı kütüphanesi:</b> 149 preset. 12'si ayrıntılı kaynaklı; 6'sı nitel kaynaklı (The Weeknd, Billie Eilish, Daft Punk, Bon Iver, Charli XCX, Lil Nas X); kalanı 17 stil arketipinden türetilmiş <i>stil yaklaşımı</i> — bu sanatçılar için yayımlanmış ayar yok. Listelerdeki ton/BPM değerleri doğrulanmadı.</li>
+<li><b>Karaoke:</b> beat ve söz dosyalarını kullanıcı sağlar. Ton: 8192'lik Goertzel kroma + Krumhansl-Kessler profilleri (eş majör/minör aynı 7 notayı verdiği için tuner maskesi aynıdır). Tempo: onset zarfının otokorelasyonu, 1–4 vuruşluk tarak.</li>
+<li><b>Kayıt (uygulama):</b> ses iş parçacığı kilitsiz halkaya yazar, ayrı iş parçacığı WAV'a döker, sonra AAC (.m4a) olur. Kayıtta beat, çıkış + giriş + tampon + algoritma gecikmesi kadar geciktirilir; böylece ses beat'e oturur.</li>
+<li><b>Hoparlör modu:</b> gate eşiği en az −40 dBFS; ayrıca perdesi 1.2 s boyunca ±3 cent içinde kalan ses (insan sesi bu kadar sabit duramaz) geri besleme sayılır ve çıkış kısılır.</li>
+</ul>
 <h3>Testler (Node, 48 kHz)</h3>
 <table>__TESTS__</table>
 <h3>Kaynaklar</h3>

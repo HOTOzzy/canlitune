@@ -114,7 +114,7 @@ enum ParamId : int {
   P_V2LEVEL, P_V2INTERVAL, P_V2DETUNE, P_MIX,
   P_COMPTHR, P_COMPRATIO, P_COMPATK, P_COMPREL, P_COMPMAKEUP,
   P_SATDRIVE, P_SATMIX, P_DLYMS, P_DLYFB, P_DLYMIX, P_DLYDAMP,
-  P_REVTIME, P_REVDAMP, P_REVPRE, P_REVMIX, P_OUTDB, P_HOWLGUARD, P_COUNT
+  P_REVTIME, P_REVDAMP, P_REVPRE, P_REVMIX, P_OUTDB, P_HOWLGUARD, P_SPEAKER, P_COUNT
 };
 // Same names as the JS params object (used by bridges to map JSON keys -> ids)
 static const char* const kParamNames[P_COUNT] = {
@@ -123,7 +123,7 @@ static const char* const kParamNames[P_COUNT] = {
   "v2Level", "v2Interval", "v2Detune", "mix",
   "compThr", "compRatio", "compAtk", "compRel", "compMakeup",
   "satDrive", "satMix", "dlyMs", "dlyFb", "dlyMix", "dlyDamp",
-  "revTime", "revDamp", "revPre", "revMix", "outDb", "howlGuard"
+  "revTime", "revDamp", "revPre", "revMix", "outDb", "howlGuard", "speaker"
 };
 static inline int paramIdFromName(const char* s) { for (int i = 0; i < P_COUNT; i++) if (std::strcmp(s, kParamNames[i]) == 0) return i; return -1; }
 
@@ -175,6 +175,7 @@ class Engine {
       case P_DLYMS: dlyMs = v; break; case P_DLYFB: dlyFb = v; break; case P_DLYMIX: dlyMix = v; break; case P_DLYDAMP: dlyDamp = v; break;
       case P_REVTIME: revTime = v; break; case P_REVDAMP: revDamp = v; break; case P_REVPRE: revPre = v; break; case P_REVMIX: revMix = v; break;
       case P_OUTDB: outDb = v; break; case P_HOWLGUARD: howlGuard = v != 0; break;
+      case P_SPEAKER: speaker = v != 0; break;
       default: return;
     }
     dirty = true;
@@ -311,7 +312,7 @@ class Engine {
     v2Level = 0; v2Interval = 0; v2Detune = 0; mix = 1;
     compThr = -18; compRatio = 3; compAtk = 5; compRel = 80; compMakeup = 3; satDrive = 0; satMix = 0;
     dlyMs = 375; dlyFb = 0.25; dlyMix = 0; dlyDamp = 0.4; revTime = 1.2; revDamp = 0.5; revPre = 15; revMix = 0;
-    outDb = 0; howlGuard = true;
+    outDb = 0; howlGuard = true; speaker = false;
   }
   void recompute() {
     int any = 0; for (int i = 0; i < 12; i++) any += mask12[i];
@@ -415,6 +416,10 @@ class Engine {
       double alpha = ret <= 0.5 ? 1 : 1 - std::exp(-dt / (ret / 1000 / 2.3));
       corr += (ct - corr) * alpha;
       semis = corr + (vibrato / 100) * vib + transpose;
+      if (speaker) {
+        if (std::fabs(im - stabRef) < 0.03) stabT += dt; else { stabRef = im; stabT = 0; }
+        if (stabT > 1.2 && conf > 0.9) { duckT = fs * 1.5; howl = true; stabT = 0; }
+      }
     } else {
       corr *= std::exp(-dt / 0.03);
       semis = corr + transpose;
@@ -469,7 +474,8 @@ class Engine {
   struct { int state = 0; int64_t t = 0, start = 0; double noise = 0, result = -1; int tries = 0; double r[5] = {0, 0, 0, 0, 0}; } meas;
   double measMs = -1;
   // params
-  bool bypass, howlGuard, dirty = false; int mask12[12]; int mode = 0, lastMode = -1;
+  double stabRef = 0, stabT = 0;
+  bool bypass, howlGuard, speaker = false, dirty = false; int mask12[12]; int mode = 0, lastMode = -1;
   double inGainDb, hpfHz, gateDb, minF0, maxF0, yinThresh, retuneMs, humanize, flex, vibrato, transpose, formant,
       v2Level, v2Interval, v2Detune, mix, compThr, compRatio, compAtk, compRel, compMakeup, satDrive, satMix,
       dlyMs, dlyFb, dlyMix, dlyDamp, revTime, revDamp, revPre, revMix, outDb;

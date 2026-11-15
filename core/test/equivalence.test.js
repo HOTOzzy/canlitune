@@ -39,7 +39,7 @@ function runCPP(sig, p) {
 }
 const sig = vowelGlide(3);
 const CASES = {
-  'hard-tune splice, C minor': { mask: [1,0,1,1,0,1,0,1,1,0,1,0], retuneMs: 0, mode: 0, compRatio: 1, howlGuard: false },
+  'hard-tune splice, C minor': { mask: [1,0,1,1,0,1,0,1,1,0,1,0], retuneMs: 0, mode: 0, compRatio: 1, howlGuard: true, speaker: 1 },
   'PSOLA + formant + 2nd voice octave': { mask: [1,1,1,1,1,1,1,1,1,1,1,1], retuneMs: 15, mode: 1, formant: 3, v2Level: 0.4, v2Interval: -12, humanize: 40, flex: 30 },
   'full FX chain (Future preset-like)': { mask: [1,0,1,1,0,1,0,1,1,0,1,0], retuneMs: 15, mode: 0, compThr: -24, compRatio: 4, compAtk: 20, compRel: 120, compMakeup: 5, satDrive: 6, satMix: 0.25, dlyMs: 428, dlyFb: 0.25, dlyMix: 0.15, revTime: 0.75, revPre: 15, revMix: 0.18, v2Level: 0.18, v2Detune: 8 },
 };

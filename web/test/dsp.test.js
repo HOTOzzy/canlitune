@@ -217,6 +217,18 @@ console.log('== 8. Robustness: white noise, silence, extreme params ==');
   check('silence -> silence', o2.every(v => v === 0));
 }
 
+console.log('== 8b. Speaker mode: feedback (dead-steady tone) is ducked, vibrato singing is not ==');
+{
+  const e = engine({ mask: CHROM, speaker: 1, howlGuard: true }); let flagged = false;
+  run(e, sine(437, 3), (eng) => { if (eng.howl) flagged = true; });
+  check('steady 437 Hz tone flagged as feedback', flagged, '');
+  const n = FS * 4, s = new Float32Array(n); let ph = 0;
+  for (let i = 0; i < n; i++) { ph += 2 * Math.PI * 220 * (1 + 0.004 * Math.sin(2 * Math.PI * 5.5 * i / FS)) / FS; let v = 0; for (let k = 1; k < 8; k++) v += Math.sin(k * ph) / k; s[i] = 0.15 * v; }
+  const e2 = engine({ mask: CHROM, speaker: 1, howlGuard: true }); let f2 = false;
+  run(e2, s, (eng) => { if (eng.howl) f2 = true; });
+  check('sung note with natural vibrato (±7 cents) not flagged', !f2, '');
+}
+
 console.log('== 9. Loopback latency measurement (simulated device RTL = 1234 samples) ==');
 {
   const e = engine({});

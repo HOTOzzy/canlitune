@@ -72,6 +72,18 @@ nav button.act{color:var(--acc)}
 .info p,.info li{font-size:14px;color:#cdd5e0}.info h3{font-size:15px;margin:14px 0 6px}.info a{color:#93c5fd}
 table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid var(--line);padding:6px 4px;text-align:left}td:last-child{text-align:right;font-variant-numeric:tabular-nums}
 .small{font-size:12px;color:var(--mut)}
+.lyr{height:36vh;min-height:180px;overflow-y:auto;scroll-behavior:smooth;text-align:center;font-size:17px;background:var(--card2);border-radius:10px;padding:14vh 8px}
+.lyr div{padding:7px 4px;color:var(--mut);transition:color .15s,font-size .15s}
+.lyr div.cur{color:#fff;font-size:23px;font-weight:700}.lyr div.past{opacity:.4}
+.lyr.plain{padding:12px 8px;text-align:left}.lyr.plain div{color:var(--tx);padding:3px 4px}
+.gchips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:none}
+.gchips button{white-space:nowrap;min-height:38px;padding:6px 13px;border-radius:20px;font-size:13px}
+.songs button{display:block;width:100%;text-align:left;margin:5px 0;min-height:42px;padding:8px 10px;font-size:14px}
+.songs button em{float:right;font-style:normal;color:var(--mut);font-size:12px}
+.rec{display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--line);padding:8px 0;flex-wrap:wrap}
+.rec span{flex:1 1 100%;font-size:13px;word-break:break-all}.rec button{min-height:40px;padding:8px 12px;flex:1}
+.rec audio{width:100%}
+#bRec.on{background:var(--bad);border-color:var(--bad);color:#fff}
 .hide{display:none!important}
 </style>
 </head>
@@ -137,6 +149,36 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px
   </div>
 </section>
 
+<!-- ===================== KARAOKE ===================== -->
+<section class="tab" id="t-kar">
+  <div class="msg" id="kMsg"></div>
+  <div class="card"><h2>Şarkı</h2>
+    <div id="kSong" class="small">Şarkı seçilmedi. “Sanatçılar” sekmesinden bir şarkıya dokun ya da doğrudan kendi dosyalarını yükle.</div>
+    <div class="row" style="margin-top:10px"><button class="sec grow" id="bBeat">🎵 Beat yükle</button><button class="grow" id="bLyr">📝 Söz dosyası (.lrc / .txt)</button></div>
+    <div class="row" style="margin-top:8px"><button class="grow" id="bPaste">Sözleri yapıştır</button><button class="grow" id="bKClear">Temizle</button></div>
+    <input type="file" id="beatIn" accept="audio/*" class="hide"><input type="file" id="lyrIn" accept=".lrc,.txt,text/plain" class="hide">
+    <div id="pasteBox" class="hide" style="margin-top:8px"><textarea id="pasteTx" placeholder="[00:12.50] satır …  (zaman damgalı .lrc metni akar; düz metin sabit durur)" spellcheck="false"></textarea><button style="width:100%;margin-top:6px" id="bPasteOk">Sözleri uygula</button></div>
+    <p class="small" style="margin:10px 0 0">Enstrümantal ve söz dosyalarını sen sağlarsın (telif nedeniyle uygulamada şarkı sözü ya da beat yok). Beat yüklenince ton ve tempo dosyadan tahmin edilip otomatik ayarlanır.</p>
+  </div>
+  <div class="card"><h2>Çalar</h2>
+    <div class="row" style="align-items:center"><button class="pri" id="bPlay" style="min-width:92px">▶ Çal</button><button id="bRestart">⏮</button><span id="kTime" class="small" style="flex:1;text-align:right">0:00 / 0:00</span></div>
+    <input type="range" id="kSeek" min="0" max="1000" value="0" style="margin-top:6px">
+    <div class="ctl"><label><span>Beat seviyesi</span><em id="kGainTx">70%</em></label><input type="range" id="kGain" min="0" max="100" value="70"></div>
+    <div class="lyr plain" id="lyr"><div class="small" style="color:var(--mut)">Söz yüklenmedi.</div></div>
+  </div>
+  <div class="card"><h2>Kayıt</h2>
+    <div class="row" style="align-items:center"><button id="bRec" class="grow">● Kaydı başlat</button><span id="recTime" class="small" style="min-width:60px;text-align:right">–</span></div>
+    <div class="ctl nat hide"><label><span>Kayıt senkronu (ses beat'e göre erken/geç ise)</span><em id="trimTx">0 ms</em></label><input type="range" id="kTrim" min="-250" max="250" step="5" value="0"></div>
+    <p class="small" style="margin:6px 0">Kayıt = işlenmiş sesin + beat. Uygulamada kayıtta beat, ölçülen gecikme kadar kaydırılır; böylece Bluetooth'ta bile sesin beat'e oturur.</p>
+    <div id="recList"></div>
+  </div>
+  <div class="card"><h2>Hoparlör / soundbar çıkışı</h2>
+    <div class="nat hide"><div class="ctl"><label><span>Çıkış cihazı</span></label><div class="row"><select id="outSel" style="flex:1"></select><button id="bOutRef">↻</button></div></div></div>
+    <div id="spkCtl"></div>
+    <p class="small" style="margin:6px 0 0"><b>Nasıl bağlanır:</b> soundbar'ı telefona Bluetooth, AUX (3.5 mm / USB-C dönüştürücü) ya da USB ile bağla; ses otomatik oraya gider, istersen yukarıdan seç. <b>Kablo</b> gecikmeyi düşük tutar; <b>Bluetooth</b> ~150–300 ms gecikir (yankı gibi duyulur). Hoparlörden dinlerken “Hoparlör modu”nu aç, telefonu mikrofon gibi ağzına yakın tut ve hoparlöre doğrultma: uğultu (feedback) riski azalır.</p>
+  </div>
+</section>
+
 <!-- ===================== EDİTÖR ===================== -->
 <section class="tab" id="t-edit">
   <div class="card"><h2>Ton &amp; gam</h2>
@@ -161,8 +203,10 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px
 
 <!-- ===================== SANATÇILAR ===================== -->
 <section class="tab" id="t-art">
-  <div class="card"><h2>Sanatçı presetleri</h2>
-    <p class="small" style="margin:0">Her değer kaynakla gerekçelendirildi; kaynakta sayı yoksa “uyarlama” yazıyor. Güven etiketi kaynağın gücünü gösterir. Presetler tonu değiştirmez, şarkının tonunu sen seç.</p>
+  <div class="card"><h2>Sanatçı presetleri <span id="artCount"></span></h2>
+    <input type="text" id="artQ" placeholder="Sanatçı ya da şarkı ara…" autocomplete="off">
+    <div class="gchips" id="gchips"></div>
+    <p class="small" style="margin:6px 0 0"><b style="color:var(--ok)">yüksek/orta</b>: mühendis ya da sanatçı kaynağı var. <b style="color:var(--bad)">stil yaklaşımı</b>: yayımlanmış ayar yok; değerler sanatçının bilinen tınısına göre seçildi. Şarkıya dokununca preset yüklenir ve Karaoke sekmesi açılır. Listelerdeki ton/BPM doğrulanmadı; beat yükleyince dosyadan algılanan değer kullanılır.</p>
   </div>
   <div id="artList"></div>
 </section>
@@ -207,8 +251,15 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px
 <li>Telemetri: sayfa cross-origin-isolated ise SharedArrayBuffer (sıfır ayırma), değilse 37 ms'de bir küçük postMessage.</li>
 <li>Getiri: echoCancellation / noiseSuppression / autoGainControl kapalı istenir (bunlar gecikme ve bozulma ekler).</li>
 <li>Geri besleme: kulaklık önerilir; çıkış 0.6 s boyunca −4 dBFS üzerinde kalırsa 2 s boyunca −24 dB kısılır.</li></ul>
+<h3>Sürüm 2: karaoke, kayıt, hoparlör</h3>
+<ul>
+<li><b>Sanatçı kütüphanesi:</b> 149 preset. 12'si ayrıntılı kaynaklı; 6'sı nitel kaynaklı (The Weeknd, Billie Eilish, Daft Punk, Bon Iver, Charli XCX, Lil Nas X); kalanı 17 stil arketipinden türetilmiş <i>stil yaklaşımı</i> — bu sanatçılar için yayımlanmış ayar yok. Listelerdeki ton/BPM değerleri doğrulanmadı.</li>
+<li><b>Karaoke:</b> beat ve söz dosyalarını kullanıcı sağlar. Ton: 8192'lik Goertzel kroma + Krumhansl-Kessler profilleri (eş majör/minör aynı 7 notayı verdiği için tuner maskesi aynıdır). Tempo: onset zarfının otokorelasyonu, 1–4 vuruşluk tarak.</li>
+<li><b>Kayıt (uygulama):</b> ses iş parçacığı kilitsiz halkaya yazar, ayrı iş parçacığı WAV'a döker, sonra AAC (.m4a) olur. Kayıtta beat, çıkış + giriş + tampon + algoritma gecikmesi kadar geciktirilir; böylece ses beat'e oturur.</li>
+<li><b>Hoparlör modu:</b> gate eşiği en az −40 dBFS; ayrıca perdesi 1.2 s boyunca ±3 cent içinde kalan ses (insan sesi bu kadar sabit duramaz) geri besleme sayılır ve çıkış kısılır.</li>
+</ul>
 <h3>Testler (Node, 48 kHz)</h3>
-<table><tr><td>✅ sine 82.4 Hz<br><span class="small">detected 82.40 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 110 Hz<br><span class="small">detected 110.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 146.8 Hz<br><span class="small">detected 146.80 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 196 Hz<br><span class="small">detected 196.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 261.6 Hz<br><span class="small">detected 261.60 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 392 Hz<br><span class="small">detected 392.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 523.3 Hz<br><span class="small">detected 523.30 Hz, err 0.01 cents</span></td><td></td></tr><tr><td>✅ sine 659.3 Hz<br><span class="small">detected 659.30 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 830 Hz<br><span class="small">detected 830.00 Hz, err 0.01 cents</span></td><td></td></tr><tr><td>✅ sweep median error &lt; 5 cents<br><span class="small">median 1.18 c, p95 2.12 c, frames 1425</span></td><td></td></tr><tr><td>✅ vowel f0=98 Hz<br><span class="small">detected 98.00 Hz (0.00 c), YIN conf 0.982</span></td><td></td></tr><tr><td>✅ vowel f0=180 Hz<br><span class="small">detected 180.00 Hz (0.01 c), YIN conf 0.991</span></td><td></td></tr><tr><td>✅ vowel f0=262 Hz<br><span class="small">detected 262.00 Hz (0.00 c), YIN conf 0.996</span></td><td></td></tr><tr><td>✅ [Splice] chromatic, 446 Hz (+23c) -> A4 440<br><span class="small">out 440.00 Hz (-0.00 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] C major,<br><span class="small">455 Hz (+58c) -> A4 440 (A# not in scale)  out 440.00 Hz (0.00 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] chromatic, 459 Hz (+74c) -> A#4 466.16<br><span class="small">out 466.16 Hz (0.01 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] C major, vowel 151 Hz -> D3 146.83<br><span class="small">out 146.83 Hz (0.03 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] chromatic, 446 Hz (+23c) -> A4 440<br><span class="small">out 439.94 Hz (-0.23 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] C major,<br><span class="small">455 Hz (+58c) -> A4 440 (A# not in scale)  out 439.94 Hz (-0.24 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] chromatic, 459 Hz (+74c) -> A#4 466.16<br><span class="small">out 466.02 Hz (-0.52 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] C major, vowel 151 Hz -> D3 146.83<br><span class="small">out 146.79 Hz (-0.48 c from target)</span></td><td></td></tr><tr><td>✅ retune 0 ms: 90% of correction reached<br><span class="small">after 0.0 ms of voiced signal</span></td><td></td></tr><tr><td>✅ retune 25 ms: 90% of correction reached<br><span class="small">after 21.3 ms of voiced signal</span></td><td></td></tr><tr><td>✅ retune 100 ms: 90% of correction reached<br><span class="small">after 90.7 ms of voiced signal</span></td><td></td></tr><tr><td>✅ PSOLA keeps formant envelope while pitch moves +5 st<br><span class="small">pitch 246.9 Hz (-0.1 c), LPC F1 740 Hz (x0.95), envelope corr: preserved 0.902 vs shifted 0.761</span></td><td></td></tr><tr><td>✅ Splice mode moves formants with pitch (expected x1.33)<br><span class="small">pitch 246.9 Hz (0.0 c), LPC F1 1010 Hz (x1.29), envelope corr: preserved 0.679 vs shifted 1.000</span></td><td></td></tr><tr><td>✅ PSOLA formant +4 st raises F1 (expected ~x1.26)<br><span class="small">F1 935 Hz (x1.20), pitch 185.0 Hz</span></td><td></td></tr><tr><td>✅ [Splice] f0 110 Hz latency<br><span class="small">onset delay 4.52 ms, steady-state reported 4.53 ms (period 9.09 ms)</span></td><td></td></tr><tr><td>✅ [Splice] f0 220 Hz latency<br><span class="small">onset delay 4.77 ms, steady-state reported 4.76 ms (period 4.55 ms)</span></td><td></td></tr><tr><td>✅ [PSOLA] f0 110 Hz latency<br><span class="small">onset delay 18.54 ms, steady-state reported 21.63 ms (period 9.09 ms)</span></td><td></td></tr><tr><td>✅ [PSOLA] f0 220 Hz latency<br><span class="small">onset delay 17.15 ms, steady-state reported 11.18 ms (period 4.55 ms)</span></td><td></td></tr><tr><td>✅ noise: output finite &amp; limited<br><span class="small">peak 0.893</span></td><td></td></tr><tr><td>✅ noise: mostly classified unvoiced<br><span class="small">0.0% voiced frames</span></td><td></td></tr><tr><td>✅ silence -> silence<br><span class="small"></span></td><td></td></tr><tr><td>✅ measured RTL matches simulated<br><span class="small">measured 25.813 ms, true 25.708 ms</span></td><td></td></tr><tr><td>✅ [Splice] real-time factor<br><span class="small">avg 89.7 µs / 2667 µs block (3.4% of one core), worst 1881 µs, 10 s audio in 337 ms</span></td><td></td></tr><tr><td>✅ [Splice] no retained heap growth (leak check) over 3750 blocks<br><span class="small">retained 17 KiB after GC; short-lived churn 738 KiB (harness views + JIT number boxing; the native C++ engine is verified at 0 allocations)</span></td><td></td></tr><tr><td>✅ [PSOLA] real-time factor<br><span class="small">avg 78.1 µs / 2667 µs block (2.9% of one core), worst 485 µs, 10 s audio in 293 ms</span></td><td></td></tr><tr><td>✅ [PSOLA] no retained heap growth (leak check) over 3750 blocks<br><span class="small">retained -0 KiB after GC; short-lived churn 1025 KiB (harness views + JIT number boxing; the native C++ engine is verified at 0 allocations)</span></td><td></td></tr></table>
+<table><tr><td>✅ sine 82.4 Hz<br><span class="small">detected 82.40 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 110 Hz<br><span class="small">detected 110.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 146.8 Hz<br><span class="small">detected 146.80 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 196 Hz<br><span class="small">detected 196.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 261.6 Hz<br><span class="small">detected 261.60 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 392 Hz<br><span class="small">detected 392.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 523.3 Hz<br><span class="small">detected 523.30 Hz, err 0.01 cents</span></td><td></td></tr><tr><td>✅ sine 659.3 Hz<br><span class="small">detected 659.30 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 830 Hz<br><span class="small">detected 830.00 Hz, err 0.01 cents</span></td><td></td></tr><tr><td>✅ sweep median error &lt; 5 cents<br><span class="small">median 1.18 c, p95 2.12 c, frames 1425</span></td><td></td></tr><tr><td>✅ vowel f0=98 Hz<br><span class="small">detected 98.00 Hz (0.00 c), YIN conf 0.982</span></td><td></td></tr><tr><td>✅ vowel f0=180 Hz<br><span class="small">detected 180.00 Hz (0.01 c), YIN conf 0.991</span></td><td></td></tr><tr><td>✅ vowel f0=262 Hz<br><span class="small">detected 262.00 Hz (0.00 c), YIN conf 0.996</span></td><td></td></tr><tr><td>✅ [Splice] chromatic, 446 Hz (+23c) -> A4 440<br><span class="small">out 440.00 Hz (-0.00 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] C major,<br><span class="small">455 Hz (+58c) -> A4 440 (A# not in scale)  out 440.00 Hz (0.00 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] chromatic, 459 Hz (+74c) -> A#4 466.16<br><span class="small">out 466.16 Hz (0.01 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] C major, vowel 151 Hz -> D3 146.83<br><span class="small">out 146.83 Hz (0.03 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] chromatic, 446 Hz (+23c) -> A4 440<br><span class="small">out 439.94 Hz (-0.23 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] C major,<br><span class="small">455 Hz (+58c) -> A4 440 (A# not in scale)  out 439.94 Hz (-0.24 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] chromatic, 459 Hz (+74c) -> A#4 466.16<br><span class="small">out 466.02 Hz (-0.52 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] C major, vowel 151 Hz -> D3 146.83<br><span class="small">out 146.79 Hz (-0.48 c from target)</span></td><td></td></tr><tr><td>✅ retune 0 ms: 90% of correction reached<br><span class="small">after 0.0 ms of voiced signal</span></td><td></td></tr><tr><td>✅ retune 25 ms: 90% of correction reached<br><span class="small">after 21.3 ms of voiced signal</span></td><td></td></tr><tr><td>✅ retune 100 ms: 90% of correction reached<br><span class="small">after 90.7 ms of voiced signal</span></td><td></td></tr><tr><td>✅ PSOLA keeps formant envelope while pitch moves +5 st<br><span class="small">pitch 246.9 Hz (-0.1 c), LPC F1 740 Hz (x0.95), envelope corr: preserved 0.902 vs shifted 0.761</span></td><td></td></tr><tr><td>✅ Splice mode moves formants with pitch (expected x1.33)<br><span class="small">pitch 246.9 Hz (0.0 c), LPC F1 1010 Hz (x1.29), envelope corr: preserved 0.679 vs shifted 1.000</span></td><td></td></tr><tr><td>✅ PSOLA formant +4 st raises F1 (expected ~x1.26)<br><span class="small">F1 935 Hz (x1.20), pitch 185.0 Hz</span></td><td></td></tr><tr><td>✅ [Splice] f0 110 Hz latency<br><span class="small">onset delay 4.52 ms, steady-state reported 4.53 ms (period 9.09 ms)</span></td><td></td></tr><tr><td>✅ [Splice] f0 220 Hz latency<br><span class="small">onset delay 4.77 ms, steady-state reported 4.76 ms (period 4.55 ms)</span></td><td></td></tr><tr><td>✅ [PSOLA] f0 110 Hz latency<br><span class="small">onset delay 18.54 ms, steady-state reported 21.63 ms (period 9.09 ms)</span></td><td></td></tr><tr><td>✅ [PSOLA] f0 220 Hz latency<br><span class="small">onset delay 17.15 ms, steady-state reported 11.18 ms (period 4.55 ms)</span></td><td></td></tr><tr><td>✅ noise: output finite &amp; limited<br><span class="small">peak 0.893</span></td><td></td></tr><tr><td>✅ noise: mostly classified unvoiced<br><span class="small">0.0% voiced frames</span></td><td></td></tr><tr><td>✅ silence -> silence<br><span class="small"></span></td><td></td></tr><tr><td>✅ steady 437 Hz tone flagged as feedback<br><span class="small"></span></td><td></td></tr><tr><td>✅ sung note with natural vibrato (±7 cents) not flagged<br><span class="small"></span></td><td></td></tr><tr><td>✅ measured RTL matches simulated<br><span class="small">measured 25.813 ms, true 25.708 ms</span></td><td></td></tr><tr><td>✅ [Splice] real-time factor<br><span class="small">avg 123.3 µs / 2667 µs block (4.6% of one core), worst 707 µs, 10 s audio in 462 ms</span></td><td></td></tr><tr><td>✅ [Splice] no retained heap growth (leak check) over 3750 blocks<br><span class="small">retained 13 KiB after GC; short-lived churn 781 KiB (harness views + JIT number boxing; the native C++ engine is verified at 0 allocations)</span></td><td></td></tr><tr><td>✅ [PSOLA] real-time factor<br><span class="small">avg 105.8 µs / 2667 µs block (4.0% of one core), worst 393 µs, 10 s audio in 397 ms</span></td><td></td></tr><tr><td>✅ [PSOLA] no retained heap growth (leak check) over 3750 blocks<br><span class="small">retained -0 KiB after GC; short-lived churn 1025 KiB (harness views + JIT number boxing; the native C++ engine is verified at 0 allocations)</span></td><td></td></tr></table>
 <h3>Kaynaklar</h3>
 <ul>
 <li><a href="https://cagnazzo.wp.imt.fr/files/2013/05/2002_JASA_YIN.pdf" target="_blank">de Cheveigné &amp; Kawahara — YIN (JASA 2002)</a></li>
@@ -226,8 +277,9 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px
 </main>
 <nav>
   <button class="act" data-t="t-live"><b>◉</b>Canlı</button>
-  <button data-t="t-edit"><b>⚙</b>Editör</button>
+  <button data-t="t-kar"><b>♪</b>Karaoke</button>
   <button data-t="t-art"><b>★</b>Sanatçılar</button>
+  <button data-t="t-edit"><b>⚙</b>Editör</button>
   <button data-t="t-info"><b>ⓘ</b>Teknik</button>
 </nav>
 
@@ -378,7 +430,7 @@ const DEFAULT_PARAMS = {
   satDrive: 0, satMix: 0,
   dlyMs: 375, dlyFb: 0.25, dlyMix: 0, dlyDamp: 0.4,
   revTime: 1.2, revDamp: 0.5, revPre: 15, revMix: 0,
-  outDb: 0, howlGuard: true,
+  outDb: 0, howlGuard: true, speaker: 0,
 };
 
 class AutoTuneEngine {
@@ -428,6 +480,7 @@ class AutoTuneEngine {
     this.LA = Math.round(0.001 * fs); this.laL = new Float32Array(this.LA + 1); this.laR = new Float32Array(this.LA + 1); this.laI = 0;
     this.limG = 1; this.limHold = 1; this.limHT = 0;
     this.limAtk = 1 - Math.exp(-1 / (this.LA / 4)); this.limRel = 1 - Math.exp(-1 / (fs * 0.08));
+    this.stabRef = 0; this.stabT = 0;
     this.howlEnv = 0; this.howlT = 0; this.duck = 1; this.duckT = 0; this.howl = false;
     // loopback measurement
     this.meas = { state: 0, t: 0, noise: 0, start: 0, result: -1, tries: 0, r: new Float64Array(5), env: 0 };
@@ -562,6 +615,11 @@ class AutoTuneEngine {
       const alpha = ret <= 0.5 ? 1 : 1 - Math.exp(-dt / (ret / 1000 / 2.3));
       this.corr += (ct - this.corr) * alpha;
       this.semis = this.corr + (p.vibrato / 100) * vib + p.transpose;
+      // speaker mode: acoustic feedback is far steadier in pitch than any voice (humans drift > 3 cents)
+      if (p.speaker) {
+        if (Math.abs(im - this.stabRef) < 0.03) this.stabT += dt; else { this.stabRef = im; this.stabT = 0; }
+        if (this.stabT > 1.2 && this.conf > 0.9) { this.duckT = this.fs * 1.5; this.howl = true; this.stabT = 0; }
+      }
     } else {
       this.corr *= Math.exp(-dt / 0.03);
       this.semis = this.corr + p.transpose;
@@ -936,6 +994,113 @@ if (typeof module !== 'undefined') module.exports = { AutoTuneEngine, DEFAULT_PA
   ]
 }
 </script>
+<script id="artist-data" type="application/json">{"base":{"retuneMs":30,"humanize":15,"flex":20,"vibrato":0,"scale":"major","formant":0,"mode":1,"transpose":0,"v2Level":0,"v2Interval":0,"v2Detune":0,"mix":1,"hpfHz":90,"gateDb":-52,"compThr":-20,"compRatio":3,"compAtk":8,"compRel":100,"compMakeup":3,"satDrive":0,"satMix":0,"bpm":110,"dlyDiv":1,"dlyFb":0.2,"dlyMix":0.08,"dlyDamp":0.5,"revTime":1.5,"revDamp":0.5,"revPre":20,"revMix":0.18},"styles":{"hard":{"label":"Sert efekt (retune 0)","o":{"retuneMs":0,"humanize":0,"flex":0,"mode":0,"scale":"minor","compRatio":4,"dlyMix":0.12,"revMix":0.2}},"trap":{"label":"Trap (hızlı retune)","o":{"retuneMs":10,"humanize":0,"flex":0,"mode":0,"scale":"minor","hpfHz":110,"compThr":-22,"compRatio":4,"satDrive":4,"satMix":0.2,"bpm":140,"dlyMix":0.15,"revTime":1.8,"revDamp":0.6,"revMix":0.2}},"trapdark":{"label":"Karanlık trap (sert + uzun reverb)","o":{"retuneMs":4,"humanize":0,"flex":0,"mode":0,"scale":"minor","hpfHz":110,"compThr":-22,"compRatio":4,"satDrive":5,"satMix":0.25,"bpm":140,"dlyMix":0.2,"dlyDamp":0.6,"revTime":2.6,"revDamp":0.8,"revPre":30,"revMix":0.28}},"rage":{"label":"Rage / hyper-trap (sert + doygun)","o":{"retuneMs":2,"humanize":0,"flex":0,"mode":0,"scale":"minor","hpfHz":130,"compThr":-24,"compRatio":5,"compAtk":3,"satDrive":10,"satMix":0.4,"bpm":150,"dlyDiv":0.5,"dlyMix":0.1,"revTime":1.8,"revMix":0.3}},"melodic":{"label":"Melodik rap (orta retune)","o":{"retuneMs":18,"humanize":5,"flex":0,"mode":0,"scale":"minor","compRatio":3.5,"satDrive":3,"satMix":0.15,"bpm":130,"dlyMix":0.14,"revTime":1.8,"revMix":0.2}},"pop":{"label":"Pop (şeffaf düzeltme)","o":{}},"poptune":{"label":"Pop (duyulur düzeltme)","o":{"retuneMs":12,"humanize":5,"flex":0,"mode":0,"v2Level":0.12,"v2Detune":8,"bpm":120,"dlyDiv":0.5,"dlyMix":0.1,"revMix":0.2}},"hyper":{"label":"Hyperpop (sert + formant)","o":{"retuneMs":0,"humanize":0,"flex":0,"mode":1,"formant":2,"compRatio":5,"satDrive":8,"satMix":0.35,"bpm":150,"dlyDiv":0.5,"dlyMix":0.12,"revMix":0.25}},"rnb":{"label":"R&B (yumuşak, formant koruma)","o":{"retuneMs":35,"humanize":25,"flex":25,"scale":"minor","bpm":90,"dlyDiv":0.5,"dlyMix":0.08,"revTime":1.7,"revPre":30,"revMix":0.25}},"rnbtune":{"label":"Trap-soul (duyulur R&B tune)","o":{"retuneMs":14,"humanize":8,"flex":0,"mode":0,"scale":"minor","bpm":85,"dlyMix":0.14,"dlyDamp":0.6,"revTime":2.2,"revDamp":0.7,"revPre":30,"revMix":0.3}},"soul":{"label":"Soul (neredeyse düzeltmesiz)","o":{"retuneMs":70,"humanize":45,"flex":45,"compRatio":2.5,"bpm":90,"dlyMix":0,"revTime":1.3,"revMix":0.14}},"afro":{"label":"Afrobeats (parlak, orta retune)","o":{"retuneMs":15,"humanize":5,"flex":0,"mode":0,"bpm":105,"dlyDiv":0.75,"dlyMix":0.14,"revTime":1.5,"revMix":0.2}},"latin":{"label":"Reggaeton / latin trap","o":{"retuneMs":10,"humanize":0,"flex":0,"mode":0,"scale":"minor","compRatio":4,"bpm":95,"dlyMix":0.14,"revTime":1.7,"revMix":0.22}},"kpop":{"label":"K-pop (parlak, çiftlenmiş)","o":{"retuneMs":22,"humanize":10,"flex":10,"v2Level":0.15,"v2Detune":8,"compRatio":3.5,"bpm":120,"dlyDiv":0.5,"dlyMix":0.08,"revMix":0.18}},"dance":{"label":"Dance / house (sert + çift ses)","o":{"retuneMs":5,"humanize":0,"flex":0,"mode":0,"v2Level":0.2,"v2Detune":10,"compRatio":4,"bpm":124,"dlyDiv":0.75,"dlyMix":0.15,"revTime":1.8,"revMix":0.25}},"prism":{"label":"Harmonizer (sert tune + armoni sesi)","o":{"retuneMs":0,"humanize":0,"flex":0,"mode":0,"v2Level":0.6,"v2Interval":-5,"bpm":80,"dlyMix":0,"revTime":2.4,"revMix":0.3}},"arabesk":{"label":"Türk / arabesk (yavaş, kromatik)","o":{"retuneMs":90,"humanize":50,"flex":50,"scale":"chromatic","bpm":90,"dlyMix":0.06,"revTime":1.8,"revMix":0.22}}},"genres":{"rap":"Rap","trap":"Trap","pop":"Pop","rnb":"R&B","soul":"Soul","afro":"Afrobeats","latin":"Latin","kpop":"K-pop","dance":"Dance","alt":"Alternatif","tr":"Türkçe"},"legacy":{"tpain":["rnb","Buy U a Drank;Bartender;I'm Sprung;Can't Believe It;I'm N Luv (Wit a Stripper)"],"cher":["pop","Believe|F#|133"],"kanye808":["rap","Heartless|A#m|88;Love Lockdown;Say You Will;Paranoid;Street Lights;RoboCop"],"future":["trap","Mask Off;Draco;March Madness;Life Is Good;Low Life;Used to This"],"uzi":["trap","XO Tour Llif3;The Way Life Goes;20 Min;Sauce It Up;Just Wanna Rock"],"travis":["trap","goosebumps;SICKO MODE;Antidote;HIGHEST IN THE ROOM;FE!N;BUTTERFLY EFFECT"],"postmalone":["pop","Circles|C|120;Sunflower|D|90;rockstar;Congratulations;Better Now;I Had Some Help"],"carti":["trap","Magnolia;Sky;Shoota;@ MEH;Stop Breathing;Location"],"toliver":["rnb","No Idea;After Party;Lemonade;Private Landing;Bandit"],"adlib":["trap",""],"melodictrap":["trap",""],"natural":["pop",""]},"artists":[{"name":"Drake","g":"rap","s":"melodic","o":{"retuneMs":22,"revDamp":0.7},"note":"Yarı konuşur yarı söyler; karanlık, boğuk reverb.","songs":["Hotline Bling|Dm|135","One Dance|A#m|104","God's Plan","Passionfruit","Hold On, We're Going Home","In My Feelings"]},{"name":"Lil Wayne","g":"rap","s":"hard","o":{"satDrive":5,"satMix":0.2},"note":"2008 dönemi: sert, kırık vokal efekti.","songs":["Lollipop","How to Love","A Milli","Mirror","Love Me"]},{"name":"Young Thug","g":"trap","s":"trap","o":{"retuneMs":8,"scale":"chromatic"},"note":"Sıçrayan, esnek melodiler; kromatik dene.","songs":["Best Friend","Hot","The London","Check","Go Crazy"]},{"name":"Gunna","g":"trap","s":"trap","o":{"retuneMs":12},"note":"Düz, akıcı melodik akış.","songs":["Drip Too Hard","Pushin P","fukumean","Top Off","Skybox"]},{"name":"Lil Baby","g":"trap","s":"trap","o":{"retuneMs":15},"note":"Rap ağırlıklı; efekt cümle sonlarında duyulur.","songs":["Drip Too Hard","Yes Indeed","Woah","The Bigger Picture","Freestyle"]},{"name":"Quavo / Migos","g":"trap","s":"trap","o":{"retuneMs":6,"v2Level":0.15,"v2Detune":10},"note":"Nakaratlarda sert tune + ad-lib.","songs":["Bad and Boujee","Stir Fry","Walk It Talk It","MotorSport","T-Shirt"]},{"name":"21 Savage","g":"trap","s":"melodic","o":{"retuneMs":25,"hpfHz":80},"note":"Alçak, sakin ton; hafif düzeltme.","songs":["a lot","Bank Account","Rockstar","Runnin","redrum"]},{"name":"Juice WRLD","g":"rap","s":"melodic","o":{"retuneMs":16,"revMix":0.24},"note":"Emo-rap: duygusal, orta hız.","songs":["Lucid Dreams|F#m|84","All Girls Are the Same","Robbery","Wishing Well","Legends"]},{"name":"XXXTentacion","g":"rap","s":"melodic","o":{"retuneMs":28,"satDrive":6,"satMix":0.25,"revMix":0.15},"note":"Lo-fi, yakın mikrofon.","songs":["SAD!","Jocelyn Flores","changes","Moonlight","Fuck Love"]},{"name":"Lil Nas X","g":"rap","s":"poptune","o":{"compRatio":6,"compThr":-24},"note":"Zincirde Auto-Tune EFX ve sert limiter (SOS).","songs":["Old Town Road","MONTERO (Call Me by Your Name)","INDUSTRY BABY","THATS WHAT I WANT","Panini"],"src":[["Sound On Sound: Lil Nas X vokal zinciri (Auto-Tune EFX … L2)","https://www.soundonsound.com/node/4920422?page=2"]]},{"name":"Roddy Ricch","g":"trap","s":"trap","o":{"retuneMs":10},"note":"Melodik, vibratolu nakarat.","songs":["The Box","High Fashion","Ballin'","Down Below","Die Young"]},{"name":"Polo G","g":"rap","s":"melodic","o":{},"note":"Piyano üstü melodik anlatım.","songs":["Pop Out","RAPSTAR","Martin & Gina","Heartless","Finer Things"]},{"name":"Lil Durk","g":"rap","s":"trap","o":{"retuneMs":5},"note":"Belirgin 'warble' — hızlı retune.","songs":["All My Life","Laugh Now Cry Later","Broadway Girls","Viral Moment","3 Headed Goat"]},{"name":"A Boogie wit da Hoodie","g":"rap","s":"melodic","o":{"retuneMs":14},"note":"Melodik New York sesi.","songs":["Drowning","Look Back at It","Swervin","Numbers","Jungle"]},{"name":"Rod Wave","g":"rap","s":"melodic","o":{"retuneMs":30,"humanize":15},"note":"Soul etkili, güçlü ses; yavaşlat.","songs":["Heart on Ice","Rags2Riches","Tombstone","Street Runner","Great Gatsby"]},{"name":"Kid Cudi","g":"rap","s":"melodic","o":{"retuneMs":35,"revTime":2.4,"revMix":0.3},"note":"Mırıldanma ve uzun notalar; geniş reverb.","songs":["Day 'n' Nite","Pursuit of Happiness","Erase Me","Soundtrack 2 My Life","Tequila Shots"]},{"name":"Ty Dolla $ign","g":"rnb","s":"rnbtune","o":{"v2Level":0.3,"v2Interval":4},"note":"Katmanlı armoniler: 2. sesi aç.","songs":["Paranoid","Or Nah","Blasé","Psycho","Purple Emoji"]},{"name":"Swae Lee","g":"rap","s":"melodic","o":{"retuneMs":14,"hpfHz":120},"note":"Yüksek, havadar ton.","songs":["Sunflower|D|90","Unforgettable","Black Beatles","Powerglide","Someone Said"]},{"name":"Trippie Redd","g":"rap","s":"rage","o":{},"note":"Bağıran, doygun vokal.","songs":["Love Scars","Dark Knight Dummo","Miss the Rage","Topanga","Taking a Walk"]},{"name":"Yeat","g":"trap","s":"rage","o":{},"note":"Rage: sert tune, bol doygunluk.","songs":["Monëy so big","Talk","Out thë way","Sorry Bout That","Poppin"]},{"name":"Ken Carson","g":"trap","s":"rage","o":{"satDrive":14,"satMix":0.5},"note":"Çok doygun, sıkıştırılmış.","songs":["Rock N Roll","Yale","Freestyle 2","Fighting My Demons","overseas"]},{"name":"Destroy Lonely","g":"trap","s":"rage","o":{"revTime":2.4,"revMix":0.35,"satDrive":6},"note":"Karanlık, geniş reverb.","songs":["NOSTYLIST","If Looks Could Kill","Bane","VTMNTSCOAT","how u feel?"]},{"name":"Lil Yachty","g":"rap","s":"poptune","o":{"retuneMs":4,"scale":"major"},"note":"'Poland' titremesi için vibratoyu +40 yap.","songs":["Minnesota","One Night","Broccoli","Poland","iSpy"]},{"name":"NAV","g":"trap","s":"trapdark","o":{"retuneMs":0},"note":"Tekdüze, robotik ton.","songs":["Myself","Tap","Turks","Champion","Some Way"]},{"name":"Chief Keef","g":"trap","s":"hard","o":{"satDrive":6,"satMix":0.3,"revMix":0.12},"note":"Erken drill: ham, sert tune.","songs":["Love Sosa","I Don't Like","Faneto","Hate Bein' Sober","Kay Kay"]},{"name":"Akon","g":"rnb","s":"poptune","o":{"retuneMs":8},"note":"2000'ler: parlak, hızlı düzeltme.","songs":["Smack That","Lonely","Don't Matter","I Wanna Love You","Right Now (Na Na Na)"]},{"name":"Doja Cat","g":"pop","s":"poptune","o":{"retuneMs":15},"note":"Rap ve pop arasında geçiş.","songs":["Say So|D|111","Kiss Me More","Woman","Paint the Town Red","Streets"]},{"name":"Nicki Minaj","g":"rap","s":"poptune","o":{"retuneMs":18},"note":"Nakaratlarda pop tune.","songs":["Super Bass","Starships","Anaconda","Moment 4 Life","Super Freaky Girl"]},{"name":"The Kid LAROI","g":"pop","s":"melodic","o":{"retuneMs":15,"scale":"major"},"note":"Pop-rap, yüksek enerji.","songs":["STAY|C#|170","WITHOUT YOU","Love Again","Thousand Miles","GO"]},{"name":"Central Cee","g":"rap","s":"melodic","o":{"retuneMs":40,"revMix":0.1},"note":"Rap ağırlıklı; neredeyse düz.","songs":["Doja","Sprinter","Loading","Obsessed With You","BAND4BAND"]},{"name":"Taylor Swift","g":"pop","s":"pop","o":{},"note":"Net diksiyon; şeffaf düzeltme.","songs":["Blank Space|F|96","Shake It Off|G|160","Anti-Hero|E|97","Love Story|D|119","Cruel Summer|A|170","Cardigan"]},{"name":"Ariana Grande","g":"pop","s":"pop","o":{"retuneMs":25,"v2Level":0.12,"v2Detune":6},"note":"Geniş aralık, katmanlı arka vokaller.","songs":["7 rings|C#m|140","thank u, next","no tears left to cry|Am|122","Into You|F#m|108","positions","we can't be friends"]},{"name":"Billie Eilish","g":"pop","s":"pop","o":{"retuneMs":60,"humanize":40,"flex":40,"gateDb":-60,"hpfHz":80,"revMix":0.12},"note":"Finneas vokalleri düzeltme amaçlı tune etmediğini söylüyor; fısıltıya yakın söyle.","songs":["bad guy|Gm|135","ocean eyes","everything i wanted","Happier Than Ever","lovely|Em|115","BIRDS OF A FEATHER"],"src":[["Sound On Sound: Finneas — Billie Eilish prodüksiyonu","https://www.soundonsound.com/people/billie-eilish?page=2"],["Tape Op: Finneas O'Connell","https://new.tapeop.com/interviews/165/finneas-oconnell"]]},{"name":"Billie Eilish — efekt (Bury a Friend)","g":"pop","s":"hard","o":{"satDrive":6,"satMix":0.25},"note":"Bu şarkılarda güçlü, 'Kanye/T-Pain tipi' Auto-Tune efekti var (SOS).","songs":["bury a friend","listen before i go","when i was older"],"src":[["Sound On Sound: Finneas — Billie Eilish prodüksiyonu","https://www.soundonsound.com/people/billie-eilish?page=2"],["Tape Op: Finneas O'Connell","https://new.tapeop.com/interviews/165/finneas-oconnell"]]},{"name":"Dua Lipa","g":"pop","s":"pop","o":{"scale":"minor","hpfHz":80},"note":"Koyu alto; disko-pop.","songs":["Levitating|Bm|103","Don't Start Now|Bm|124","New Rules|Am|116","Physical|Am|147","One Kiss|Am|124","Houdini"]},{"name":"Ed Sheeran","g":"pop","s":"pop","o":{"retuneMs":40},"note":"Akustik, doğal.","songs":["Shape of You|C#m|96","Perfect|G#|95","Thinking Out Loud|D|79","Bad Habits|Bm|126","Photograph|E|108"]},{"name":"Justin Bieber","g":"pop","s":"poptune","o":{"retuneMs":20,"v2Level":0.1},"note":"Pop-R&B parlaklığı.","songs":["Peaches|C|90","Love Yourself|E|100","Sorry","Baby","Ghost","What Do You Mean?"]},{"name":"Harry Styles","g":"pop","s":"pop","o":{"retuneMs":45},"note":"Retro pop-rock.","songs":["As It Was|A|174","Watermelon Sugar","Sign of the Times|F|120","Adore You|Cm|99","Late Night Talking"]},{"name":"Olivia Rodrigo","g":"pop","s":"pop","o":{"retuneMs":35},"note":"Sessiz mısradan bağıran nakarata.","songs":["drivers license|A#|144","good 4 u","vampire|F|138","deja vu","traitor"]},{"name":"Sabrina Carpenter","g":"pop","s":"pop","o":{"retuneMs":25,"hpfHz":110},"note":"Hafif, nefesli üst ton.","songs":["Espresso|C|104","Please Please Please","Nonsense","Feather","Taste"]},{"name":"Lady Gaga","g":"pop","s":"pop","o":{"retuneMs":35},"note":"Güçlü göğüs sesi.","songs":["Poker Face|G#m|119","Bad Romance|Am|119","Shallow|G|96","Just Dance|C#m|119","Abracadabra"]},{"name":"Katy Perry","g":"pop","s":"poptune","o":{"retuneMs":18},"note":"2010 parlak pop.","songs":["Firework","Roar","Teenage Dream","Dark Horse","California Gurls"]},{"name":"Rihanna","g":"pop","s":"poptune","o":{"retuneMs":22,"scale":"minor"},"note":"Karakteristik tını.","songs":["Umbrella|A#m|87","Diamonds|Bm|92","We Found Love|F#|128","Stay","Work","Love on the Brain"]},{"name":"Britney Spears","g":"pop","s":"poptune","o":{"retuneMs":8,"v2Level":0.2,"v2Detune":10},"note":"2000'ler: belirgin işlenmiş vokal.","songs":["...Baby One More Time|Cm|93","Toxic|Cm|143","Womanizer","Oops!... I Did It Again","Circus"]},{"name":"Miley Cyrus","g":"pop","s":"pop","o":{"retuneMs":40,"hpfHz":80},"note":"Kısık, güçlü alto.","songs":["Flowers|Am|118","Wrecking Ball","Party in the U.S.A.","Midnight Sky","The Climb"]},{"name":"Selena Gomez","g":"pop","s":"pop","o":{"retuneMs":22},"note":"Yumuşak, yakın mikrofon.","songs":["Lose You to Love Me","Calm Down","Come & Get It","Same Old Love","Hands to Myself"]},{"name":"Shawn Mendes","g":"pop","s":"pop","o":{},"note":"Pop-rock tenor.","songs":["Stitches","Treat You Better","Señorita","There's Nothing Holdin' Me Back","In My Blood"]},{"name":"Charlie Puth","g":"pop","s":"poptune","o":{"retuneMs":20,"v2Level":0.15},"note":"Çok temiz, çiftlenmiş falsetto.","songs":["Attention|D#m|100","We Don't Talk Anymore","See You Again","Light Switch","How Long"]},{"name":"Adele","g":"pop","s":"soul","o":{},"note":"Büyük dinamik; düzeltmeyi en aza indir.","songs":["Hello|Fm|79","Someone Like You|A|67","Rolling in the Deep|Cm|105","Easy On Me|F|142","Set Fire to the Rain|Dm|108"]},{"name":"Sia","g":"pop","s":"pop","o":{"retuneMs":50,"humanize":35},"note":"Çatlayan ses kırılmalarını koru.","songs":["Chandelier","Cheap Thrills","Elastic Heart","Unstoppable","Titanium"]},{"name":"Bruno Mars","g":"pop","s":"pop","o":{"retuneMs":40},"note":"Funk-pop tenor.","songs":["Just the Way You Are|F|109","Grenade|Dm|110","Locked Out of Heaven|Dm|144","When I Was Your Man|C|73","Die With A Smile"]},{"name":"Coldplay","g":"pop","s":"pop","o":{"retuneMs":45,"revTime":2.2,"revMix":0.28},"note":"Falsetto + geniş reverb.","songs":["Yellow","Viva la Vida","Fix You","The Scientist","A Sky Full of Stars"]},{"name":"Imagine Dragons","g":"pop","s":"pop","o":{"retuneMs":35,"satDrive":4,"satMix":0.2},"note":"Bağıran nakarat; 'Thunder' için formantı +3 dene.","songs":["Believer","Radioactive","Demons","Thunder","Bones"]},{"name":"Maroon 5","g":"pop","s":"poptune","o":{"retuneMs":20},"note":"Yüksek tenor / falsetto.","songs":["Sugar","Moves Like Jagger","Girls Like You","She Will Be Loved","Memories"]},{"name":"Halsey","g":"pop","s":"pop","o":{"retuneMs":25},"note":"Nefesli, işlenmiş.","songs":["Without Me","Bad at Love","Closer","Colors","Gasoline"]},{"name":"Lana Del Rey","g":"pop","s":"pop","o":{"retuneMs":55,"humanize":35,"revTime":2.8,"revMix":0.35,"hpfHz":75},"note":"Alçak, tembel; uzun reverb.","songs":["Summertime Sadness","Video Games","Young and Beautiful","Born to Die","West Coast"]},{"name":"Lorde","g":"pop","s":"pop","o":{"retuneMs":40,"v2Level":0.2,"v2Interval":-12,"revMix":0.1},"note":"Kuru, katmanlı vokaller.","songs":["Royals","Team","Green Light","Ribs","Solar Power"]},{"name":"Tate McRae","g":"pop","s":"poptune","o":{"retuneMs":18},"note":"Nefesli pop-R&B.","songs":["greedy","you broke me first","exes","she's all i wanna be","Sports car"]},{"name":"Chappell Roan","g":"pop","s":"pop","o":{"retuneMs":45},"note":"Teatral, geniş aralık.","songs":["Good Luck, Babe!","Pink Pony Club","HOT TO GO!","Casual","Red Wine Supernova"]},{"name":"Benson Boone","g":"pop","s":"pop","o":{"retuneMs":45},"note":"Güçlü belting.","songs":["Beautiful Things","In the Stars","Slow It Down","Ghost Town","Mystical Magical"]},{"name":"Sam Smith","g":"pop","s":"soul","o":{"retuneMs":50},"note":"Falsetto geçişleri.","songs":["Stay With Me","Too Good at Goodbyes","I'm Not the Only One","Unholy","Lay Me Down"]},{"name":"Michael Jackson","g":"pop","s":"soul","o":{"retuneMs":60,"revMix":0.12},"note":"Dönem kayıtlarında pitch düzeltme yok; yalnız güvenlik ağı.","songs":["Billie Jean|F#m|117","Beat It|D#m|139","Smooth Criminal","Man in the Mirror","Thriller"]},{"name":"The Weeknd","g":"rnb","s":"rnb","o":{"retuneMs":28,"humanize":20,"revTime":2.2,"revMix":0.3,"dlyDiv":0.5,"dlyMix":0.12},"note":"Illangelo: zincir Auto-Tune EFX ile başlıyor ama çok hafif uygulanıyor.","songs":["Blinding Lights|Fm|171","Starboy|Am|186","The Hills|Cm|113","Save Your Tears|C|118","Can't Feel My Face|Am|108","Die For You"],"src":[["Sound On Sound: Inside Track — The Weeknd (Illangelo)","https://www.soundonsound.com/techniques/inside-track-weeknd"],["Equipboard: The Weeknd vokal zinciri","https://equipboard.com/pros/the-weeknd"]]},{"name":"Frank Ocean","g":"rnb","s":"rnb","o":{"retuneMs":40},"note":"'Nikes' tarzı için formantı +4, retune 0 yap.","songs":["Thinkin Bout You","Pink + White","Nights","Ivy","Chanel"]},{"name":"SZA","g":"rnb","s":"rnb","o":{"retuneMs":45,"humanize":35},"note":"Kaygan, konuşur gibi melodiler: yavaş retune.","songs":["Kill Bill|G#|89","Snooze","Good Days","The Weekend","Love Galore"]},{"name":"Bryson Tiller","g":"rnb","s":"rnbtune","o":{},"note":"Trap-soul.","songs":["Don't","Exchange","Sorry Not Sorry","Right My Wrongs","Whatever She Wants"]},{"name":"PARTYNEXTDOOR","g":"rnb","s":"rnbtune","o":{"retuneMs":8,"revMix":0.35},"note":"Karanlık, sisli; hızlı tune.","songs":["Come and See Me","Recognize","Break from Toronto","Loyal","Not Nice"]},{"name":"Chris Brown","g":"rnb","s":"poptune","o":{"retuneMs":18,"scale":"minor","v2Level":0.15},"note":"Parlak, katmanlı.","songs":["With You","Forever","No Guidance","Under the Influence","Loyal"]},{"name":"Usher","g":"rnb","s":"rnb","o":{"retuneMs":30},"note":"2000'ler R&B.","songs":["Yeah!","U Got It Bad","Burn","Confessions Part II","OMG"]},{"name":"Ne-Yo","g":"rnb","s":"rnb","o":{"retuneMs":28},"note":"Temiz tenor.","songs":["So Sick","Because of You","Miss Independent","Closer","Sexy Love"]},{"name":"Beyoncé","g":"rnb","s":"soul","o":{"retuneMs":55},"note":"Güçlü, çevik; düzeltme en azda.","songs":["Halo|A|80","Crazy in Love|Dm|99","Single Ladies|E|97","Love On Top|C|94","Irreplaceable"]},{"name":"Khalid","g":"rnb","s":"rnb","o":{"hpfHz":75},"note":"Rahat bariton.","songs":["Location","Young Dumb & Broke","Talk","Better","Saved"]},{"name":"H.E.R.","g":"rnb","s":"rnb","o":{},"note":"Sıcak, yakın.","songs":["Best Part","Focus","Damage","Hard Place","Slide"]},{"name":"Summer Walker","g":"rnb","s":"rnb","o":{"retuneMs":30,"satDrive":3,"satMix":0.15},"note":"Mırıltılı, lo-fi.","songs":["Girls Need Love","Playing Games","Come Thru","No Love","Session 32"]},{"name":"Brent Faiyaz","g":"rnb","s":"rnb","o":{"v2Level":0.25,"v2Interval":4},"note":"Katmanlı falsetto armoniler.","songs":["Dead Man Walking","Trust","Gravity","ALL MINE","Clouded"]},{"name":"Daniel Caesar","g":"rnb","s":"soul","o":{"retuneMs":55},"note":"Gospel etkili, doğal.","songs":["Best Part","Get You","Japanese Denim","Always","Superpowers"]},{"name":"Giveon","g":"rnb","s":"rnb","o":{"hpfHz":65},"note":"Derin bariton: ses aralığını 'Kalın erkek' yap.","songs":["Heartbreak Anniversary","Like I Want You","For Tonight","Stuck on You","Lie Again"]},{"name":"Jhené Aiko","g":"rnb","s":"rnb","o":{"retuneMs":28,"hpfHz":120},"note":"Havadar, hafif.","songs":["Sativa","The Worst","While We're Young","Triggered","P*$$y Fairy (OTW)"]},{"name":"Kehlani","g":"rnb","s":"rnb","o":{"retuneMs":32},"note":"Çevik süslemeler.","songs":["Gangsta","Nights Like This","Honey","After Hours","Distraction"]},{"name":"6LACK","g":"rnb","s":"rnbtune","o":{"retuneMs":18,"hpfHz":75},"note":"Alçak, karanlık.","songs":["PRBLMS","Pretty Little Fears","Ex Calling","Switch","Free"]},{"name":"Tinashe","g":"rnb","s":"poptune","o":{"scale":"minor"},"note":"Nefesli pop-R&B.","songs":["2 On","Nasty","All Hands on Deck","Company","Needs"]},{"name":"Jeremih","g":"rnb","s":"rnbtune","o":{"retuneMs":12},"note":"Parlak falsetto.","songs":["Birthday Sex","Don't Tell 'Em","oui","Planez","Down on Me"]},{"name":"Miguel","g":"rnb","s":"rnb","o":{"retuneMs":40},"note":"Soul-rock tını.","songs":["Adorn","Sure Thing|B|81","Sky Walker","Coffee","How Many Drinks?"]},{"name":"Alicia Keys","g":"rnb","s":"soul","o":{},"note":"Ham, piyano başında.","songs":["If I Ain't Got You","No One","Fallin'","Girl on Fire","Empire State of Mind (Part II)"]},{"name":"Aretha Franklin","g":"soul","s":"soul","o":{"retuneMs":90,"humanize":60,"flex":60},"note":"Pitch düzeltme öncesi dönem; preset yalnızca hafif güvenlik ağı.","songs":["Respect","I Say a Little Prayer","(You Make Me Feel Like) A Natural Woman","Think","Chain of Fools"]},{"name":"Stevie Wonder","g":"soul","s":"soul","o":{"retuneMs":90,"humanize":60,"flex":60},"note":"Düzeltme öncesi dönem.","songs":["Superstition","Isn't She Lovely","Sir Duke","I Just Called to Say I Love You","Signed, Sealed, Delivered"]},{"name":"Whitney Houston","g":"soul","s":"soul","o":{"retuneMs":90,"humanize":70,"flex":60},"note":"Uzun, vibratolu notalar: vibratoyu koru.","songs":["I Will Always Love You","I Wanna Dance with Somebody","Greatest Love of All","How Will I Know","I Have Nothing"]},{"name":"Marvin Gaye","g":"soul","s":"soul","o":{"retuneMs":90,"humanize":60,"flex":60},"note":"Düzeltme öncesi dönem.","songs":["What's Going On","Let's Get It On","Sexual Healing","I Heard It Through the Grapevine","Ain't No Mountain High Enough"]},{"name":"Amy Winehouse","g":"soul","s":"soul","o":{"retuneMs":90,"humanize":60,"flex":60,"revMix":0.16},"note":"Caz fraze: geriden gelen, kaygan.","songs":["Rehab","Back to Black","Valerie","You Know I'm No Good","Tears Dry on Their Own"]},{"name":"Sam Cooke","g":"soul","s":"soul","o":{"retuneMs":90,"humanize":60,"flex":60},"note":"Düzeltme öncesi dönem.","songs":["A Change Is Gonna Come","Wonderful World","Bring It On Home to Me","Cupid","You Send Me"]},{"name":"Etta James","g":"soul","s":"soul","o":{"retuneMs":90,"humanize":60,"flex":60},"note":"Düzeltme öncesi dönem.","songs":["At Last","I'd Rather Go Blind","Something's Got a Hold on Me","A Sunday Kind of Love","Tell Mama"]},{"name":"Al Green","g":"soul","s":"soul","o":{"retuneMs":90,"humanize":60,"flex":60},"note":"Yumuşak falsetto.","songs":["Let's Stay Together","Tired of Being Alone","Love and Happiness","How Can You Mend a Broken Heart","I'm Still in Love with You"]},{"name":"Leon Bridges","g":"soul","s":"soul","o":{},"note":"Retro soul.","songs":["River","Coming Home","Beyond","Texas Sun","Bad Bad News"]},{"name":"Burna Boy","g":"afro","s":"afro","o":{"hpfHz":75,"retuneMs":18},"note":"Kalın bariton.","songs":["Last Last","Ye","On the Low","City Boys","Location"]},{"name":"Wizkid","g":"afro","s":"afro","o":{"retuneMs":14},"note":"Rahat, yumuşak.","songs":["Essence","Ojuelegba","Come Closer","Joro","Soco"]},{"name":"Rema","g":"afro","s":"afro","o":{"retuneMs":8},"note":"Yüksek, esnek melodiler.","songs":["Calm Down|B|107","Dumebi","Soundgasm","Charm","Woman"]},{"name":"Tems","g":"afro","s":"rnb","o":{"scale":"major","hpfHz":75},"note":"Derin alto; doğal.","songs":["Free Mind","Higher","Me & U","Damages","Love Me JeJe"]},{"name":"Davido","g":"afro","s":"afro","o":{"retuneMs":12},"note":"Kısık, enerjik.","songs":["Fall","If","Unavailable","FEEL","Assurance"]},{"name":"Tyla","g":"afro","s":"poptune","o":{"retuneMs":18},"note":"Amapiano-pop; nefesli.","songs":["Water","Truth or Dare","ART","Jump","Push 2 Start"]},{"name":"Bad Bunny","g":"latin","s":"latin","o":{"hpfHz":75},"note":"Alçak, genizden bariton.","songs":["Tití Me Preguntó","Me Porto Bonito","DÁKITI","Callaíta","MONACO","DtMF"]},{"name":"J Balvin","g":"latin","s":"latin","o":{"retuneMs":14},"note":"Rahat reggaeton.","songs":["Mi Gente","Ginza","Ay Vamos","Safari","LA CANCIÓN"]},{"name":"Rauw Alejandro","g":"latin","s":"latin","o":{"retuneMs":12,"scale":"major"},"note":"Pop-R&B'ye yakın, parlak.","songs":["Todo de Ti","Tattoo","Punto 40","LOKERA","Desesperados"]},{"name":"Karol G","g":"latin","s":"latin","o":{"retuneMs":15},"note":"Parlak pop-reggaeton.","songs":["TQG","PROVENZA","BICHOTA","Tusa","Si Antes Te Hubiera Conocido"]},{"name":"Ozuna","g":"latin","s":"latin","o":{"retuneMs":5,"hpfHz":120},"note":"Yüksek, tatlı tenor: sert tune.","songs":["Taki Taki","Baila Baila Baila","Se Preparó","Caramelo","El Farsante"]},{"name":"Shakira","g":"latin","s":"pop","o":{"retuneMs":45,"humanize":40},"note":"Kendine özgü vibrato: vibratoyu koru.","songs":["Hips Don't Lie","Whenever, Wherever","Waka Waka","La Tortura","Bzrp Music Sessions, Vol. 53"]},{"name":"ROSALÍA","g":"latin","s":"pop","o":{"retuneMs":25,"scale":"minor"},"note":"Flamenko süslemeleri için kromatik dene.","songs":["MALAMENTE","DESPECHÁ","LA FAMA","Con Altura","SAOKO"]},{"name":"Daddy Yankee","g":"latin","s":"latin","o":{"retuneMs":25},"note":"Rap ağırlıklı klasik reggaeton.","songs":["Gasolina","Con Calma","Dura","Limbo","Despacito"]},{"name":"BTS","g":"kpop","s":"kpop","o":{},"note":"Çok katmanlı grup vokalleri.","songs":["Dynamite|C#m|114","Butter","Boy With Luv","Spring Day","DNA","Fake Love"]},{"name":"BLACKPINK","g":"kpop","s":"kpop","o":{"retuneMs":15},"note":"Sert, parlak.","songs":["DDU-DU DDU-DU","Kill This Love","How You Like That","Pink Venom","As If It's Your Last"]},{"name":"NewJeans","g":"kpop","s":"kpop","o":{"retuneMs":28,"compRatio":2.5},"note":"Yumuşak, nefesli.","songs":["Hype Boy","Ditto","OMG","Super Shy","Attention"]},{"name":"Jung Kook","g":"kpop","s":"kpop","o":{"retuneMs":20},"note":"Pop-R&B tenor.","songs":["Seven|B|125","Standing Next to You","3D","Euphoria","Still With You"]},{"name":"Daft Punk — One More Time","g":"dance","s":"dance","o":{"retuneMs":0,"compRatio":8,"compThr":-26},"note":"Vokal bilerek ağır Auto-Tune ve kompresyondan geçirilmiş.","songs":["One More Time|D|123","Digital Love","Harder, Better, Faster, Stronger","Instant Crush","Get Lucky"],"src":[["Wikipedia: One More Time (Daft Punk)","https://en.wikipedia.org/wiki/One_More_Time_(Daft_Punk_song)"],["Bjango: Daft Punk vokal efektleri","https://bjango.com/articles/daftpunkvocaleffects/"]]},{"name":"Bon Iver — Woods / Messina","g":"alt","s":"prism","o":{},"note":"'Messina': Auto-Tune + harmonizer zinciri, armoni canlı üretilir. Buradaki tek armoni sesi bir yaklaşım.","songs":["Woods","715 - CRΣΣKS","Skinny Love","Holocene","Hey, Ma"],"src":[["W Magazine: Chris Messina ve 'The Messina'","https://www.wmagazine.com/story/the-engineer-behind-bon-ivers-22-a-million-clears-up-any-confusion-about-its-high-tech-sound/amp"],["Antares: Bon Iver canlı vokal sesleri","https://www.antarestech.com/blog/bon-iver-vocal-sounds-live"],["Red Bull: Auto-Tune tarihi (Woods)","https://www.redbull.com/us-en/history-of-auto-tune-in-seven-songs"]]},{"name":"Charli XCX","g":"pop","s":"hyper","o":{"formant":0,"retuneMs":3},"note":"Kayıtta, yazarken ve sahnede hep Auto-Tune ile söylediğini anlatıyor.","songs":["360","Apple","Von dutch","Boom Clap","Speed Drive","Guess"],"src":[["MusicRadar: Charli XCX ve Auto-Tune","https://musicradar.com/news/charli-xcx-auto-tune-brat"],["FADER: Charli XCX & A. G. Cook","https://thefader.com/2017/12/15/charli-xcx-a-g-cook-pop-2-interview"]]},{"name":"100 gecs","g":"alt","s":"hyper","o":{"formant":4,"satDrive":12,"satMix":0.5},"note":"Formantı +4'e kadar çıkar.","songs":["money machine","stupid horse","hand crushed by a mallet","Hollywood Baby","mememe"]},{"name":"James Blake","g":"alt","s":"prism","o":{"retuneMs":25,"v2Interval":-12,"v2Level":0.3},"note":"Katmanlı, işlenmiş falsetto.","songs":["Retrograde","Limit to Your Love","The Wilhelm Scream","Mile High","Say What You Will"]},{"name":"Imogen Heap — Hide and Seek","g":"alt","s":"prism","o":{"retuneMs":10,"v2Interval":4,"v2Level":0.7},"note":"Harmonizer ile çok sesli a cappella; tek armoni sesi yaklaşımı.","songs":["Hide and Seek","Headlock","Goodnight and Go","Speeding Cars","Just for Now"]},{"name":"Black Eyed Peas","g":"dance","s":"dance","o":{"retuneMs":0},"note":"2009 elektro-pop: sert, robotik.","songs":["I Gotta Feeling","Boom Boom Pow","Where Is the Love?","Meet Me Halfway","Pump It"]},{"name":"Calvin Harris","g":"dance","s":"dance","o":{"retuneMs":10},"note":"EDM vokali.","songs":["Summer","Feel So Close","This Is What You Came For","One Kiss|Am|124","Slide"]},{"name":"David Guetta","g":"dance","s":"dance","o":{"retuneMs":12,"revTime":2.4,"revMix":0.3},"note":"Büyük salon reverb'ü.","songs":["Titanium","When Love Takes Over","Without You","I'm Good (Blue)","Memories"]},{"name":"Eiffel 65","g":"dance","s":"dance","o":{"retuneMs":0,"v2Level":0},"note":"1999 eurodance: tam robotik.","songs":["Blue (Da Ba Dee)","Move Your Body","Too Much of Heaven","Lucky (In My Life)","My Console"]},{"name":"Tame Impala","g":"alt","s":"pop","o":{"retuneMs":35,"v2Level":0.3,"v2Detune":12,"dlyMix":0.2,"dlyDiv":0.5,"revMix":0.3},"note":"Çiftlenmiş, psikedelik; bol delay.","songs":["The Less I Know the Better","Let It Happen","Feels Like We Only Go Backwards","Borderline","New Person, Same Old Mistakes"]},{"name":"Cher (2. preset: yumuşak)","g":"pop","s":"pop","o":{"retuneMs":40},"note":"Efektsiz Cher şarkıları için.","songs":["If I Could Turn Back Time","Strong Enough","The Shoop Shoop Song","Song for the Lonely"]},{"name":"Ezhel","g":"tr","s":"melodic","o":{"retuneMs":14},"note":"Melodik Türkçe rap; reggae etkili.","songs":["Geceler","Felaket","Şehrimin Tadı","Olay","AYA","Bul Beni"]},{"name":"Uzi","g":"tr","s":"trap","o":{"retuneMs":10},"note":"Türkçe trap/drill.","songs":["Umrumda Değil","Makina","Krvn","Paparazzi","Arasan da"]},{"name":"Murda","g":"tr","s":"trap","o":{"retuneMs":8},"note":"Hollanda etkili melodik trap.","songs":["Eh Baba","AYA","Pahalı","İmdat","Güneş"]},{"name":"Ben Fero","g":"tr","s":"melodic","o":{"retuneMs":30,"revMix":0.12},"note":"Rap ağırlıklı.","songs":["Demet Akalın","3 2 1","Biladerim İçin","Babafingo","Mahallemiz Esmer"]},{"name":"Semicenk","g":"tr","s":"melodic","o":{"retuneMs":22,"scale":"chromatic"},"note":"Duygusal pop-rap; alaturka süslemeler için kromatik.","songs":["Herkes Gibisin","Pişman Değilim","Canın Sağ Olsun","Unutmak Öyle Kolay mı Sandın"]},{"name":"Edis","g":"tr","s":"poptune","o":{"retuneMs":20},"note":"Modern Türkçe pop.","songs":["Martılar","Arıyorum","Çok Çok","Dudak","Benim Ol"]},{"name":"Zeynep Bastık","g":"tr","s":"pop","o":{"retuneMs":30},"note":"Pop; şeffaf.","songs":["Felaket","Uslanmıyor Bu","Ara","Marlon Brando","Lan"]},{"name":"Mabel Matiz","g":"tr","s":"arabesk","o":{"retuneMs":60},"note":"Gırtlak süslemeleri: yavaş, kromatik.","songs":["Öyle Kolaysa","Gel","Fırtınadayım","Sarmaşık","Antidepresan"]},{"name":"Tarkan","g":"tr","s":"pop","o":{"retuneMs":40},"note":"Türk pop; süslemelerde kromatik dene.","songs":["Şımarık","Kuzu Kuzu","Dudu","Hüp","Yolla","Kedi Gibi"]},{"name":"Sezen Aksu","g":"tr","s":"arabesk","o":{"retuneMs":100},"note":"Düzeltmeyi en azda tut; makam geçkilerini 12 ton bozar.","songs":["Gülümse","Firuze","Hadi Bakalım","Kaybolan Yıllar","Geri Dön","Seni Kimler Aldı"]},{"name":"Sertab Erener","g":"tr","s":"pop","o":{"retuneMs":45},"note":"Geniş aralıklı soprano: ses aralığını 'Soprano' yap.","songs":["Everyway That I Can","Olsun","Aşk","Rengarenk","Kumsalda"]},{"name":"Cem Adrian","g":"tr","s":"arabesk","o":{"retuneMs":80},"note":"Çok geniş ses aralığı; doğal.","songs":["Sen Benim Şarkılarımsın","Yalnızlık","Ben Seni Çok Sevdim","Kül","Mutlu Yıllar"]},{"name":"Müslüm Gürses","g":"tr","s":"arabesk","o":{"retuneMs":140,"humanize":70,"flex":70},"note":"Arabesk: koma sesleri var, düzeltme neredeyse kapalı.","songs":["Affet","İtirazım Var","Nilüfer","Sensiz Olmaz","Hangimiz Sevmedik"]},{"name":"Barış Manço","g":"tr","s":"arabesk","o":{"retuneMs":90},"note":"Anadolu rock; doğal.","songs":["Gülpembe","Dağlar Dağlar","Sarı Çizmeli Mehmet Ağa","Dönence","Kara Sevda"]}]}</script>
+<script>'use strict';
+/* Pure helpers for karaoke mode: LRC parsing, key names, key + tempo estimation of the user's own backing track. */
+const KEY_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const FLATS = { DB: 1, EB: 3, GB: 6, AB: 8, BB: 10 };
+
+// "F#m" -> {key:6, scale:'minor'}, "Bb" -> {key:10, scale:'major'}; null if not a key name
+function parseKeyName(s) {
+  if (!s) return null;
+  const m = /^([A-Ga-g])([#b]?)(m?)$/.exec(String(s).trim());
+  if (!m) return null;
+  const up = (m[1] + m[2]).toUpperCase();
+  let k = up in FLATS ? FLATS[up] : KEY_NAMES.indexOf(up);
+  if (k < 0) return null;
+  return { key: k, scale: m[3] ? 'minor' : 'major' };
+}
+
+// LRC text -> { synced:boolean, lines:[{t:seconds|-1, text}] }. Plain text gives synced:false.
+function parseLrc(txt) {
+  const out = []; let synced = false, offset = 0;
+  for (const raw of String(txt).replace(/\r/g, '').split('\n')) {
+    const line = raw.trim();
+    const off = /^\[offset:\s*([+-]?\d+)\s*\]$/i.exec(line);
+    if (off) { offset = +off[1] / 1000; continue; }
+    if (/^\[[a-z]+:.*\]$/i.test(line)) continue;                       // [ar:], [ti:], [by:] ...
+    const stamps = []; let rest = line, m;
+    while ((m = /^\[(\d{1,3}):(\d{1,2})(?:[.:](\d{1,3}))?\]/.exec(rest))) {
+      const frac = m[3] ? +m[3] / Math.pow(10, m[3].length) : 0;
+      stamps.push(+m[1] * 60 + +m[2] + frac); rest = rest.slice(m[0].length);
+    }
+    const text = rest.replace(/<\d+:\d+(?:\.\d+)?>/g, '').trim();      // drop word-level stamps
+    if (stamps.length) { synced = true; for (const t of stamps) out.push({ t: Math.max(0, t - offset), text }); }
+    else if (line) out.push({ t: -1, text: line });
+  }
+  if (synced) { const s = out.filter(l => l.t >= 0); s.sort((a, b) => a.t - b.t); return { synced: true, lines: s }; }
+  return { synced: false, lines: out };
+}
+// index of the line being sung at time t (binary search), -1 before the first line
+function lineAt(lines, t) {
+  let lo = 0, hi = lines.length - 1, r = -1;
+  while (lo <= hi) { const mid = (lo + hi) >> 1; if (lines[mid].t <= t) { r = mid; lo = mid + 1; } else hi = mid - 1; }
+  return r;
+}
+
+function decimate(x, sr, target) {
+  const f = Math.max(1, Math.round(sr / target)), n = Math.floor(x.length / f), y = new Float32Array(n);
+  for (let i = 0; i < n; i++) { let s = 0; for (let j = 0; j < f; j++) s += x[i * f + j]; y[i] = s / f; }
+  return { y, sr: sr / f };
+}
+
+// Krumhansl-Kessler key profiles
+const MAJ = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88];
+const MIN = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17];
+function corr(a, b, rot) {
+  let ma = 0, mb = 0; for (let i = 0; i < 12; i++) { ma += a[i]; mb += b[i]; } ma /= 12; mb /= 12;
+  let sab = 0, saa = 0, sbb = 0;
+  for (let i = 0; i < 12; i++) { const x = a[(i + rot) % 12] - ma, y = b[i] - mb; sab += x * y; saa += x * x; sbb += y * y; }
+  return sab / Math.sqrt(saa * sbb + 1e-20);
+}
+// mono Float32Array -> { key, scale, conf(0..1), chroma }
+function detectKey(mono, sr) {
+  const d = decimate(mono, sr, 11025), x = d.y, fs = d.sr, N = 8192, hop = 4096;
+  const chroma = new Float64Array(12), win = new Float32Array(N);
+  for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / N);
+  const notes = []; for (let m = 36; m <= 88; m++) { const f = 440 * Math.pow(2, (m - 69) / 12); if (f < fs * 0.45) notes.push([m % 12, 2 * Math.cos(2 * Math.PI * f / fs)]); }
+  const fr = new Float32Array(N);
+  for (let s = 0; s + N <= x.length; s += hop) {
+    for (let i = 0; i < N; i++) fr[i] = x[s + i] * win[i];
+    for (const [pc, c] of notes) {                                   // Goertzel
+      let s1 = 0, s2 = 0;
+      for (let i = 0; i < N; i++) { const s0 = fr[i] + c * s1 - s2; s2 = s1; s1 = s0; }
+      chroma[pc] += Math.sqrt(Math.max(0, s1 * s1 + s2 * s2 - c * s1 * s2));
+    }
+  }
+  let best = -2, second = -2, key = 0, scale = 'major';
+  for (let k = 0; k < 12; k++) for (const [prof, name] of [[MAJ, 'major'], [MIN, 'minor']]) {
+    const r = corr(chroma, prof, k);
+    if (r > best) { second = best; best = r; key = k; scale = name; } else if (r > second) second = r;
+  }
+  return { key, scale, conf: Math.max(0, Math.min(1, (best - second) * 4 + (best > 0.6 ? 0.3 : 0))), chroma: Array.from(chroma) };
+}
+// mono Float32Array -> { bpm, conf }
+function detectBpm(mono, sr) {
+  const d = decimate(mono, sr, 11025), x = d.y, fs = d.sr, hop = 64, n = Math.floor(x.length / hop) - 1, rate = fs / hop;
+  if (n < rate * 4) return { bpm: 0, conf: 0 };
+  const env = new Float32Array(n); let prev = 0;
+  for (let i = 0; i < n; i++) { let e = 0; for (let j = 0; j < hop * 6 && i * hop + j < x.length; j++)  /* ~32 ms window: longer than a bass period, so sustained notes don't ripple */ { const v = x[i * hop + j]; e += v * v; } const l = Math.log(1e-7 + e); env[i] = Math.max(0, l - prev); prev = l; }
+  let mean = 0; for (let i = 0; i < n; i++) mean += env[i]; mean /= n; for (let i = 0; i < n; i++) env[i] -= mean;
+  // autocorrelation of the onset envelope for every integer lag up to 4 beats at 60 BPM
+  const maxLag = Math.min(n - 2, Math.ceil(4 * 60 * rate / 60) + 2), acf = new Float64Array(maxLag + 2);
+  for (let lag = 0; lag <= maxLag; lag++) { let s = 0; for (let i = 0; i + lag < n; i++) s += env[i] * env[i + lag]; acf[lag] = s / (n - lag); }
+  const at = lag => { if (lag >= maxLag) return 0; const l0 = Math.floor(lag), f = lag - l0; return (1 - f) * acf[l0] + f * acf[l0 + 1]; };
+  let best = -1e9, bl = 0; const a0 = acf[0] + 1e-12;
+  for (let bpm = 60; bpm <= 185; bpm += 0.25) {
+    const lag = 60 * rate / bpm;
+    // comb over 1,2,3,4 beats; subtracting the half-beat lags penalises picking half the true tempo's period
+    let v = at(lag) + 0.6 * at(2 * lag) + 0.4 * at(3 * lag) + 0.5 * at(4 * lag) - 0.25 * (at(1.5 * lag) + at(2.5 * lag));
+    v *= Math.exp(-0.5 * Math.pow(Math.log2(bpm / 110) / 0.75, 2));   // prior: most pop/rap tempi are 75-160
+    if (v > best) { best = v; bl = bpm; }
+  }
+  return { bpm: Math.round(bl * 2) / 2, conf: Math.max(0, Math.min(1, best / a0)) };
+}
+function keyLabel(k, scale) { return KEY_NAMES[k] + (scale === 'minor' ? ' minör' : ' majör'); }
+
+const MusicLib = { parseKeyName, parseLrc, lineAt, detectKey, detectBpm, keyLabel, KEY_NAMES };
+if (typeof module !== 'undefined') module.exports = MusicLib;
+</script>
 <script>
 'use strict';
 const $ = s => document.querySelector(s);
@@ -947,12 +1112,12 @@ const DIVS = { 0.25:'1/16', 0.5:'1/8', 0.75:'1/8 noktalı', 1:'1/4', 1.5:'1/4 no
 const DEF = { key:9, scale:'minor', custom:[1,1,1,1,1,1,1,1,1,1,1,1], voice:'wide', bypass:false,
   inGainDb:0, hpfHz:90, gateDb:-55, retuneMs:20, humanize:0, flex:0, vibrato:0, transpose:0, mode:0, formant:0,
   v2Level:0, v2Interval:0, v2Detune:0, mix:1, compThr:-18, compRatio:3, compAtk:5, compRel:80, compMakeup:3,
-  satDrive:0, satMix:0, bpm:120, dlyDiv:1, dlyFb:0.25, dlyMix:0, dlyDamp:0.4, revTime:1.2, revDamp:0.5, revPre:15, revMix:0.12, outDb:0, howlGuard:true };
-const PRESET_KEYS = Object.keys(DEF).filter(k => k !== 'bypass');
+  satDrive:0, satMix:0, bpm:120, dlyDiv:1, dlyFb:0.25, dlyMix:0, dlyDamp:0.4, revTime:1.2, revDamp:0.5, revPre:15, revMix:0.12, outDb:0, howlGuard:true, speaker:false };
+const PRESET_KEYS = Object.keys(DEF).filter(k => k !== 'bypass' && k !== 'speaker');
 let S = Object.assign({}, DEF);
 let ctx = null, node = null, outGain = null, stream = null, srcNode = null, wakeLock = null, running = false, modeName = '';
 let telem = null, muted = false, measuring = false, measSeen = false, inLat = 0, activePreset = 'varsayılan';
-const ART = JSON.parse($('#preset-data').textContent);
+const ART = JSON.parse($('#preset-data').textContent), LIBSRC = JSON.parse($('#artist-data').textContent);
 
 /* ---------- state -> engine ---------- */
 function maskAbs() {
@@ -967,6 +1132,8 @@ function engineParams() {
   p.mask = maskAbs(); p.minF0 = v[1]; p.maxF0 = v[2];
   p.dlyMs = 60000 / S.bpm * S.dlyDiv;
   p.mode = +S.mode;
+  p.speaker = S.speaker ? 1 : 0;
+  if (S.speaker) { p.gateDb = Math.max(p.gateDb, -40); p.howlGuard = true; }  // hoparlör modu: yalnız yakın ses kapıyı açar
   delete p.custom; delete p.key; delete p.scale; delete p.voice; delete p.bpm; delete p.dlyDiv;
   return p;
 }
@@ -1163,7 +1330,9 @@ async function started() {
   try { if (navigator.wakeLock) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
 }
 async function stop() {
-  running = false;
+  if (typeof recOn !== 'undefined' && recOn) await recToggle();
+  if (typeof Beat !== 'undefined') Beat.pause();
+  running = false; lastT = null;
   if (nativeActive) { Native.stop(); nativeActive = false; nativeLast = null; }
   try { if (srcNode) { srcNode.disconnect(); if (srcNode.stop) srcNode.stop(); } } catch (e) {}
   if (stream) stream.getTracks().forEach(t => t.stop());
@@ -1190,11 +1359,11 @@ const H = 300, hIn = new Float32Array(H).fill(-1), hTg = new Float32Array(H).fil
 const cv = $('#graph'), g2 = cv.getContext('2d');
 const db = v => v > 1e-6 ? 20 * Math.log10(v) : -120;
 const nn = m => m < 0 ? '–' : NOTES[((Math.round(m) % 12) + 12) % 12] + (Math.floor(Math.round(m) / 12) - 1);
-let lastSeen = 0, routeAt = 0, route = '';
+let lastSeen = 0, routeAt = 0, route = '', lastT = null;
 function frame() {
   requestAnimationFrame(frame);
   const t = nativeActive ? Native.poll() : (sabView || telem); if (!t || !running) return;
-  const now0 = performance.now();
+  const now0 = performance.now(); lastT = t;
   const inD = db(t[0]), outD = db(t[1]);
   $('#mIn').style.width = Math.max(0, Math.min(100, (inD + 60) / 60 * 100)) + '%'; $('#mInTx').textContent = inD < -99 ? '–∞' : inD.toFixed(0) + ' dB';
   $('#mOut').style.width = Math.max(0, Math.min(100, (outD + 60) / 60 * 100)) + '%'; $('#mOutTx').textContent = outD < -99 ? '–∞' : outD.toFixed(0) + ' dB';
@@ -1302,22 +1471,244 @@ $('#bApplyImp').onclick = () => importText($('#ioTx').value);
 $('#bFileImp').onclick = () => $('#impFile').click();
 $('#impFile').onchange = async e => { const f = e.target.files[0]; if (f) importText(await f.text()); e.target.value = ''; };
 
-/* ---------- artist browser ---------- */
+/* ---------- artist library ---------- */
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 function confClass(c) { return /^yüksek/.test(c) ? 'h' : /^orta/.test(c) ? 'm' : 'l'; }
+const LIB = [];
 for (const a of ART.presets) {
-  const p = a.params, d = document.createElement('div'); d.className = 'art';
-  const why = Object.entries(a.why).map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('');
-  const src = a.sources.map(s => `<li><a href="${esc(s.u)}" target="_blank" rel="noopener">${esc(s.t)}</a></li>`).join('');
-  d.innerHTML = `<h3>${esc(a.name)}</h3><div class="era">${esc(a.era)}</div><span class="badge ${confClass(a.confidence)}">güven: ${esc(a.confidence)}</span>
-   <div class="pills"><span>Retune ${p.retuneMs} ms</span><span>Humanize ${p.humanize}</span><span>Flex ${p.flex}</span><span>${SCALE_TR[p.scale]}</span><span>Formant ${p.formant > 0 ? '+' : ''}${p.formant}</span><span>${p.mode ? 'PSOLA' : 'Düşük gecikme'}</span>${p.v2Level ? `<span>2. ses ${p.v2Interval} st</span>` : ''}<span>Delay ${DIVS[p.dlyDiv] || p.dlyDiv}</span><span>Reverb ${p.revTime}s</span></div>
-   <p class="small" style="margin:6px 0">${esc(a.performance)}</p>
-   <button class="pri" style="width:100%">Yükle</button>
-   <details><summary>Neden bu değerler?</summary><ul>${why}</ul></details>
-   <details><summary>Kaynaklar</summary><ul>${src}</ul></details>`;
-  d.querySelector('button').onclick = () => { applyPreset(p, a.name, true); msg(`“${a.name}” yüklendi — ton: ${NOTES[S.key]} ${SCALE_TR[S.scale]} (tonu şarkına göre ayarla).`, 'ok'); document.querySelector('nav button[data-t="t-live"]').click(); };
-  $('#artList').appendChild(d);
+  const lg = LIBSRC.legacy[a.id] || ['pop', ''];
+  LIB.push({ name: a.name, g: lg[0], sub: a.era, params: a.params, conf: a.confidence, note: a.performance, why: a.why, src: a.sources.map(x => [x.t, x.u]), songs: lg[1] ? lg[1].split(';') : [] });
 }
+for (const a of LIBSRC.artists) {
+  const st = LIBSRC.styles[a.s];
+  LIB.push({ name: a.name, g: a.g, sub: st.label, params: Object.assign({}, LIBSRC.base, st.o, a.o), note: a.note, songs: a.songs, src: a.src || null,
+    conf: a.src ? 'orta — kaynak var (sayılar uyarlama)' : 'stil yaklaşımı — yayımlanmış ayar yok' });
+}
+LIB.forEach(x => { x.hay = (x.name + ' ' + x.songs.map(q => q.split('|')[0]).join(' ')).toLocaleLowerCase('tr'); });
+let artG = 'all';
+function songParts(q) { const a = q.split('|'); return { title: a[0], key: a[1] || '', bpm: a[2] ? +a[2] : 0 }; }
+function renderArt() {
+  const q = $('#artQ').value.trim().toLocaleLowerCase('tr'); let n = 0, h = '';
+  LIB.forEach((x, i) => {
+    if (artG !== 'all' && x.g !== artG) return; if (q && !x.hay.includes(q)) return; n++;
+    const p = x.params;
+    const songs = x.songs.map((sq, j) => { const sp = songParts(sq); return `<button data-i="${i}" data-song="${j}">${esc(sp.title)}<em>${sp.key ? esc(sp.key) : ''}${sp.bpm ? ' · ' + sp.bpm : ''}</em></button>`; }).join('');
+    h += `<div class="art"><h3>${esc(x.name)}</h3><div class="era">${esc(LIBSRC.genres[x.g] || x.g)} · ${esc(x.sub)}</div><span class="badge ${confClass(x.conf)}">${esc(x.conf)}</span>
+      <div class="pills"><span>Retune ${p.retuneMs} ms</span><span>Humanize ${p.humanize}</span><span>${SCALE_TR[p.scale]}</span>${p.formant ? `<span>Formant ${p.formant > 0 ? '+' : ''}${p.formant}</span>` : ''}<span>${p.mode ? 'PSOLA' : 'Düşük gecikme'}</span>${p.v2Level ? `<span>2. ses ${p.v2Interval} st</span>` : ''}<span>Reverb ${p.revTime}s</span></div>
+      ${x.note ? `<p class="small" style="margin:6px 0">${esc(x.note)}</p>` : ''}
+      <button class="pri" style="width:100%" data-i="${i}" data-load="1">Preseti yükle</button>
+      ${songs ? `<details><summary>Şarkılar (${x.songs.length})</summary><div class="songs">${songs}</div></details>` : ''}
+      ${x.why ? `<details><summary>Neden bu değerler?</summary><ul>${Object.entries(x.why).map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('')}</ul></details>` : ''}
+      ${x.src ? `<details><summary>Kaynaklar</summary><ul>${x.src.map(u => `<li><a href="${esc(u[1])}" target="_blank" rel="noopener">${esc(u[0])}</a></li>`).join('')}</ul></details>` : ''}</div>`;
+  });
+  $('#artList').innerHTML = h || '<p class="small" style="text-align:center">Sonuç yok.</p>';
+  $('#artCount').textContent = `(${n} / ${LIB.length})`;
+}
+{ const gc = $('#gchips'); const mk = (id, label) => { const b = document.createElement('button'); b.textContent = label; b.dataset.g = id; if (id === artG) b.className = 'on';
+    b.onclick = () => { artG = id; gc.querySelectorAll('button').forEach(z => z.classList.toggle('on', z === b)); renderArt(); }; gc.appendChild(b); };
+  mk('all', 'Tümü'); for (const g in LIBSRC.genres) mk(g, LIBSRC.genres[g]); }
+$('#artQ').addEventListener('input', renderArt);
+$('#artList').addEventListener('click', e => {
+  const b = e.target.closest('button[data-i]'); if (!b) return; const x = LIB[+b.dataset.i];
+  applyPreset(x.params, x.name, true);
+  if (b.dataset.song !== undefined) { pickSong(x, songParts(x.songs[+b.dataset.song])); return; }
+  msg(`“${x.name}” yüklendi — ton: ${NOTES[S.key]} ${SCALE_TR[S.scale]} (tonu şarkına göre ayarla).`, 'ok'); goTab('t-live');
+});
+function goTab(id) { document.querySelector(`nav button[data-t="${id}"]`).click(); }
+renderArt();
+
+/* ---------- karaoke: beat, lyrics, recording, output ---------- */
+const AND = NATIVE === 'android' && typeof window.CanliNative.beatBegin !== 'undefined';
+const K = { song: null, buf: null, len: 0, beatName: '', lyr: null, playing: false, startAt: 0, offset: 0, src: null, gainNode: null, bctx: null, c: null, gain: 0.7, det: null, trim: 0, cur: -2 };
+const kmsg = (t, k) => msg(t, k, $('#kMsg'));
+const fmtT = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+function pickSong(x, sp) {
+  K.song = { title: sp.title, artist: x.name, key: sp.key, bpm: sp.bpm };
+  const pk = MusicLib.parseKeyName(sp.key);
+  if (pk) { setVal('key', pk.key); setVal('scale', pk.scale); }
+  if (sp.bpm) setVal('bpm', Math.max(60, Math.min(200, sp.bpm)));
+  renderSong(); goTab('t-kar');
+  kmsg(`“${sp.title}” seçildi, “${x.name}” preseti yüklendi. Şimdi beat ve söz dosyanı yükle.`, 'ok');
+}
+function renderSong() {
+  let h = K.song ? `<b style="font-size:16px;color:var(--tx)">${esc(K.song.title)}</b> — ${esc(K.song.artist)}` : 'Şarkı seçilmedi. “Sanatçılar” sekmesinden bir şarkıya dokun ya da doğrudan kendi dosyalarını yükle.';
+  h += `<br>Ayarlı ton: <b>${NOTES[S.key]} ${SCALE_TR[S.scale]}</b> · ${S.bpm} BPM`;
+  if (K.song && K.song.key) h += `<br>Listedeki: ${esc(K.song.key)}${K.song.bpm ? ' · ' + K.song.bpm + ' BPM' : ''} (doğrulanmadı)`;
+  if (K.det) h += `<br>Beat'ten algılanan: <b>${MusicLib.keyLabel(K.det.k.key, K.det.k.scale)}</b>${K.det.b.bpm ? ' · ~' + K.det.b.bpm + ' BPM' : ''} (tahmin; yanlışsa Canlı sekmesinden değiştir)`;
+  if (K.beatName) h += `<br>Beat: ${esc(K.beatName)} (${fmtT(K.len)})`;
+  $('#kSong').innerHTML = h;
+}
+(reg.key = reg.key || []).push(renderSong); (reg.scale = reg.scale || []).push(renderSong); (reg.bpm = reg.bpm || []).push(renderSong);
+async function decodeFile(file, sr) {
+  const ab = await file.arrayBuffer(), OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext, oc = new OAC(2, 1, sr);
+  return await new Promise((res, rej) => { const p = oc.decodeAudioData(ab, res, rej); if (p && p.catch) p.catch(rej); });
+}
+async function sendBeatNative(L, R, n, sr) {
+  window.CanliNative.beatBegin(n, sr);
+  const CH = 16384, i16 = new Int16Array(CH * 2), u8 = new Uint8Array(i16.buffer);
+  for (let s = 0, c = 0; s < n; s += CH, c++) {
+    const m = Math.min(CH, n - s);
+    for (let i = 0; i < m; i++) { let a = L[s + i], b = R[s + i]; a = a > 1 ? 1 : a < -1 ? -1 : a; b = b > 1 ? 1 : b < -1 ? -1 : b; i16[2 * i] = a * 32767; i16[2 * i + 1] = b * 32767; }
+    let bin = ''; const bytes = u8.subarray(0, m * 4);
+    for (let o = 0; o < bytes.length; o += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(o, o + 8192));
+    window.CanliNative.beatChunk(btoa(bin));
+    if (c % 8 === 0) { kmsg(`Beat uygulamaya aktarılıyor… %${Math.round(100 * s / n)}`); await new Promise(r => setTimeout(r, 0)); }
+  }
+}
+async function loadBeat(file) {
+  try {
+    Beat.pause(); kmsg('Beat çözülüyor…');
+    const buf = await decodeFile(file, 48000), n = buf.length, sr = buf.sampleRate;
+    const L = buf.getChannelData(0), R = buf.numberOfChannels > 1 ? buf.getChannelData(1) : L;
+    const a0 = Math.max(0, Math.floor(n / 2 - 30 * sr)), a1 = Math.min(n, a0 + 60 * sr), mono = new Float32Array(a1 - a0);
+    for (let i = a0; i < a1; i++) mono[i - a0] = (L[i] + R[i]) * 0.5;
+    K.det = { k: MusicLib.detectKey(mono, sr), b: MusicLib.detectBpm(mono, sr) };
+    if (AND) { await sendBeatNative(L, R, n, sr); K.buf = null; window.CanliNative.beatCtl(3, K.gain); } else K.buf = buf;
+    K.len = n / sr; K.beatName = file.name; K.offset = 0; Beat.seek(0);
+    setVal('key', K.det.k.key); setVal('scale', K.det.k.scale);
+    if (K.det.b.bpm >= 60) setVal('bpm', Math.round(Math.min(200, K.det.b.bpm)));
+    renderSong(); kmsg(`Beat yüklendi. Algılanan ton: ${MusicLib.keyLabel(K.det.k.key, K.det.k.scale)} — otomatik ayarlandı.`, 'ok');
+  } catch (e) { kmsg('Beat açılamadı: ' + (e && e.message || e), 'err'); }
+}
+const Beat = {
+  has() { return K.len > 0; },
+  playing() { return AND ? !!(nativeActive && lastT && lastT[23]) : K.playing; },
+  pos() { if (AND) return nativeActive && lastT ? lastT[21] : K.offset; return K.playing ? Math.min(K.len, K.offset + (K.c.currentTime - K.startAt)) : K.offset; },
+  async play() {
+    if (!this.has()) { kmsg('Önce beat yükle.', 'err'); return; }
+    if (AND) { if (!nativeActive) { await startMic(); if (!nativeActive) { kmsg('Ses motoru başlatılamadı (Canlı sekmesine bak).', 'err'); return; } window.CanliNative.beatCtl(2, K.offset); } window.CanliNative.beatCtl(3, K.gain); window.CanliNative.beatCtl(1, 0); return; }
+    if (K.playing) return;
+    const AC = window.AudioContext || window.webkitAudioContext, c = ctx || (K.bctx = K.bctx || new AC());
+    try { await c.resume(); } catch (e) {}
+    const src = c.createBufferSource(), g = c.createGain(); src.buffer = K.buf; g.gain.value = K.gain; src.connect(g); g.connect(c.destination);
+    if (recDest && c === ctx) g.connect(recDest);
+    if (K.offset >= K.len - 0.05) K.offset = 0;
+    src.start(0, K.offset); K.startAt = c.currentTime; K.c = c; K.src = src; K.gainNode = g; K.playing = true;
+    src.onended = () => { if (K.src === src) { K.playing = false; K.src = null; K.offset = 0; } };
+  },
+  pause() {
+    if (AND) { if (K.len) { K.offset = this.pos(); window.CanliNative.beatCtl(0, 0); } return; }
+    if (!K.playing) return; K.offset = this.pos(); K.playing = false; const s = K.src; K.src = null; try { s.stop(); } catch (e) {}
+  },
+  seek(sec) { sec = Math.max(0, Math.min(K.len, sec)); if (AND) { K.offset = sec; window.CanliNative.beatCtl(2, sec); return; } const was = K.playing; if (was) this.pause(); K.offset = sec; if (was) this.play(); },
+  setGain(g) { K.gain = g; if (AND) window.CanliNative.beatCtl(3, g); else if (K.gainNode) K.gainNode.gain.value = g; },
+  clear() { this.pause(); if (AND) window.CanliNative.beatCtl(4, 0); K.buf = null; K.len = 0; K.beatName = ''; K.det = null; K.offset = 0; },
+};
+function setLyrics(txt) {
+  K.lyr = MusicLib.parseLrc(txt); K.cur = -2; const box = $('#lyr');
+  if (!K.lyr.lines.length) { K.lyr = null; box.className = 'lyr plain'; box.innerHTML = '<div class="small" style="color:var(--mut)">Söz yüklenmedi.</div>'; return; }
+  box.className = K.lyr.synced ? 'lyr' : 'lyr plain';
+  box.innerHTML = K.lyr.lines.map(l => `<div>${esc(l.text) || '♪'}</div>`).join(''); box.scrollTop = 0;
+  kmsg(K.lyr.synced ? `${K.lyr.lines.length} satır senkron söz yüklendi.` : 'Zaman damgası yok: sözler sabit metin olarak gösteriliyor (akması için .lrc gerekir).', K.lyr.synced ? 'ok' : '');
+}
+$('#bBeat').onclick = () => $('#beatIn').click();
+$('#beatIn').onchange = e => { const f = e.target.files[0]; if (f) loadBeat(f); e.target.value = ''; };
+$('#bLyr').onclick = () => $('#lyrIn').click();
+$('#lyrIn').onchange = async e => { const f = e.target.files[0]; if (f) setLyrics(await f.text()); e.target.value = ''; };
+$('#bPaste').onclick = () => $('#pasteBox').classList.toggle('hide');
+$('#bPasteOk').onclick = () => { setLyrics($('#pasteTx').value); $('#pasteBox').classList.add('hide'); };
+$('#bKClear').onclick = () => { Beat.clear(); setLyrics(''); K.song = null; renderSong(); kmsg('Temizlendi.'); };
+$('#bPlay').onclick = () => { if (Beat.playing()) Beat.pause(); else Beat.play(); };
+$('#bRestart').onclick = () => Beat.seek(0);
+let seeking = false;
+$('#kSeek').addEventListener('input', () => { seeking = true; });
+$('#kSeek').addEventListener('change', e => { seeking = false; Beat.seek(+e.target.value / 1000 * K.len); });
+$('#kGain').addEventListener('input', e => { Beat.setGain(+e.target.value / 100); $('#kGainTx').textContent = e.target.value + '%'; });
+try { K.trim = +(localStorage.getItem('canlitune.trim') || 0) || 0; } catch (e) {}
+$('#kTrim').value = K.trim; $('#trimTx').textContent = K.trim + ' ms';
+$('#kTrim').addEventListener('input', e => { K.trim = +e.target.value; $('#trimTx').textContent = K.trim + ' ms'; try { localStorage.setItem('canlitune.trim', K.trim); } catch (x) {} });
+
+// --- recording ---
+let recOn = false, webRec = null, webChunks = [], recDest = null, recT0 = 0, recPlaying = '', delArmRec = '';
+const webRecs = [];
+function monitorLagMs() { const t = lastT || []; return nativeActive ? (t[14] || 0) + (t[15] || 0) + (t[20] || 0) + (t[7] || 0) : 0; }
+async function recToggle() {
+  if (!recOn) {
+    if (AND) {
+      if (!nativeActive) { await startMic(); if (!nativeActive) { kmsg('Ses motoru başlatılamadı.', 'err'); return; } await new Promise(r => setTimeout(r, 400)); }
+      window.CanliNative.beatCtl(5, Math.max(0, monitorLagMs() + K.trim) / 1000);
+      if (!window.CanliNative.recStart()) { kmsg('Kayıt başlatılamadı (depolama?).', 'err'); return; }
+    } else {
+      if (!ctx || !node) { kmsg('Önce Canlı sekmesinden mikrofonu (ya da bir dosyayı) başlat.', 'err'); return; }
+      if (!window.MediaRecorder) { kmsg('Bu tarayıcı kayıt desteklemiyor.', 'err'); return; }
+      recDest = ctx.createMediaStreamDestination(); node.connect(recDest); if (K.gainNode && K.c === ctx) K.gainNode.connect(recDest);
+      webChunks = []; const mr = webRec = new MediaRecorder(recDest.stream);
+      mr.ondataavailable = e => { if (e.data && e.data.size) webChunks.push(e.data); };
+      mr.onstop = () => { const blob = new Blob(webChunks, { type: mr.mimeType || 'audio/webm' });
+        webRecs.unshift({ name: 'CanliTune_' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + (/mp4/.test(blob.type) ? '.m4a' : '.webm'), url: URL.createObjectURL(blob), blob, kb: blob.size >> 10 }); renderRecs(); };
+      mr.start(); recT0 = performance.now();
+    }
+    recOn = true; kmsg('Kayıt başladı.');
+  } else {
+    recOn = false;
+    if (AND) { window.CanliNative.recStop(); kmsg('Kayıt dönüştürülüyor…'); }
+    else { try { webRec.stop(); } catch (e) {} try { node.disconnect(recDest); } catch (e) {} recDest = null; kmsg('Kayıt tamamlandı.', 'ok'); }
+  }
+  $('#bRec').classList.toggle('on', recOn); $('#bRec').textContent = recOn ? '■ Kaydı bitir' : '● Kaydı başlat';
+}
+$('#bRec').onclick = recToggle;
+window.__canliRecDone = name => { kmsg(name ? `Kaydedildi: ${name}` : 'Kayıt çok kısaydı, silindi.', name ? 'ok' : ''); renderRecs(); };
+window.__canliPlayDone = () => { recPlaying = ''; renderRecs(); };
+function renderRecs() {
+  const box = $('#recList'); let h = '';
+  if (AND) {
+    let list = []; try { list = JSON.parse(window.CanliNative.recList()); } catch (e) {}
+    for (const r of list) h += `<div class="rec"><span>${esc(r.name)} · ${(r.kb / 1024).toFixed(1)} MB</span><button data-n="${esc(r.name)}" data-a="play">${recPlaying === r.name ? '■ Durdur' : '▶ Dinle'}</button><button data-n="${esc(r.name)}" data-a="share" class="sec">Paylaş</button><button data-n="${esc(r.name)}" data-a="del">${delArmRec === r.name ? 'Emin misin?' : 'Sil'}</button></div>`;
+  } else {
+    webRecs.forEach((r, i) => { h += `<div class="rec"><span>${esc(r.name)} · ${(r.kb / 1024).toFixed(1)} MB</span><audio controls src="${r.url}"></audio><button data-w="${i}" data-a="share" class="sec">Paylaş / indir</button><button data-w="${i}" data-a="del">Sil</button></div>`; });
+  }
+  box.innerHTML = h || '<p class="small">Henüz kayıt yok.</p>';
+}
+$('#recList').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-a]'); if (!b) return; const act = b.dataset.a;
+  if (AND) {
+    const n = b.dataset.n;
+    if (act === 'play') { if (recPlaying === n) { window.CanliNative.recPlayStop(); recPlaying = ''; } else if (window.CanliNative.recPlay(n)) recPlaying = n; }
+    else if (act === 'share') { if (!window.CanliNative.recShare(n)) kmsg('Paylaşım açılamadı.', 'err'); }
+    else if (act === 'del') { if (delArmRec !== n) delArmRec = n; else { delArmRec = ''; if (recPlaying === n) { window.CanliNative.recPlayStop(); recPlaying = ''; } window.CanliNative.recDelete(n); } }
+    renderRecs(); return;
+  }
+  const r = webRecs[+b.dataset.w]; if (!r) return;
+  if (act === 'del') { URL.revokeObjectURL(r.url); webRecs.splice(+b.dataset.w, 1); renderRecs(); return; }
+  try { const f = new File([r.blob], r.name, { type: r.blob.type }); if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: r.name }); return; } } catch (x) { if (x && x.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = r.url; a.download = r.name; a.click();
+});
+renderRecs();
+
+// --- output device + speaker mode ---
+$('#spkCtl').appendChild(check('speaker', 'Hoparlör modu (uğultu bastırma, yalnız yakın ses)'));
+const KIND_TR = { bluetooth: 'Bluetooth', wired: 'Kablolu', usb: 'USB', hdmi: 'HDMI', speaker: 'Telefon hoparlörü' };
+function fillOutputs() {
+  if (!AND) return; const sel = $('#outSel'); let list = []; try { list = JSON.parse(window.CanliNative.outputs()); } catch (e) {}
+  const cur = window.CanliNative.getOutput();
+  sel.innerHTML = '<option value="0">Sistem varsayılanı (otomatik)</option>' + list.map(d => `<option value="${d.id}">${esc(KIND_TR[d.kind] || d.kind)} — ${esc(d.name)}</option>`).join('');
+  sel.value = list.some(d => d.id === cur) ? String(cur) : '0';
+}
+if (AND) {
+  fillOutputs(); $('#bOutRef').onclick = fillOutputs;
+  $('#outSel').onchange = async e => { window.CanliNative.setOutput(+e.target.value); if (nativeActive) { const was = Beat.playing(); await stop(); await startMic(); if (was) Beat.play(); } kmsg('Çıkış cihazı değişti.', 'ok'); };
+  document.querySelector('nav button[data-t="t-kar"]').addEventListener('click', fillOutputs);
+}
+
+// --- karaoke display loop ---
+function ktick() {
+  requestAnimationFrame(ktick);
+  const playing = Beat.playing(), pos = Beat.pos();
+  $('#bPlay').textContent = playing ? '❚❚ Duraklat' : '▶ Çal';
+  $('#kTime').textContent = fmtT(pos) + ' / ' + fmtT(K.len);
+  if (!seeking && K.len) $('#kSeek').value = Math.round(pos / K.len * 1000);
+  if (AND) $('#recTime').textContent = recOn && lastT && lastT[24] >= 0 ? '● ' + fmtT(lastT[24]) : '–';
+  else $('#recTime').textContent = recOn ? '● ' + fmtT((performance.now() - recT0) / 1000) : '–';
+  if (K.lyr && K.lyr.synced) {
+    // what is heard lags the engine position by the output latency (large on Bluetooth)
+    const outMs = nativeActive && lastT ? (lastT[14] || 0) : ctx ? ((ctx.baseLatency || 0) + (ctx.outputLatency || 0)) * 1000 : 0;
+    const i = MusicLib.lineAt(K.lyr.lines, pos - outMs / 1000 + 0.15);
+    if (i !== K.cur) { K.cur = i; const box = $('#lyr'), ch = box.children;
+      for (let k = 0; k < ch.length; k++) ch[k].className = k === i ? 'cur' : k < i ? 'past' : '';
+      const el = ch[Math.max(0, i)]; if (el) box.scrollTop = el.offsetTop - box.offsetTop - box.clientHeight / 2 + el.clientHeight / 2; }
+  }
+}
+requestAnimationFrame(ktick); renderSong();
 if (Native) {
   document.querySelectorAll('.nat').forEach(e => e.classList.remove('hide'));
   $('#lOutLbl').textContent = 'Çıkış tamponu (sürücü raporu)';

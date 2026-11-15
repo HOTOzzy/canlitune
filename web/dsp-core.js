@@ -145,7 +145,7 @@ const DEFAULT_PARAMS = {
   satDrive: 0, satMix: 0,
   dlyMs: 375, dlyFb: 0.25, dlyMix: 0, dlyDamp: 0.4,
   revTime: 1.2, revDamp: 0.5, revPre: 15, revMix: 0,
-  outDb: 0, howlGuard: true,
+  outDb: 0, howlGuard: true, speaker: 0,
 };
 
 class AutoTuneEngine {
@@ -195,6 +195,7 @@ class AutoTuneEngine {
     this.LA = Math.round(0.001 * fs); this.laL = new Float32Array(this.LA + 1); this.laR = new Float32Array(this.LA + 1); this.laI = 0;
     this.limG = 1; this.limHold = 1; this.limHT = 0;
     this.limAtk = 1 - Math.exp(-1 / (this.LA / 4)); this.limRel = 1 - Math.exp(-1 / (fs * 0.08));
+    this.stabRef = 0; this.stabT = 0;
     this.howlEnv = 0; this.howlT = 0; this.duck = 1; this.duckT = 0; this.howl = false;
     // loopback measurement
     this.meas = { state: 0, t: 0, noise: 0, start: 0, result: -1, tries: 0, r: new Float64Array(5), env: 0 };
@@ -329,6 +330,11 @@ class AutoTuneEngine {
       const alpha = ret <= 0.5 ? 1 : 1 - Math.exp(-dt / (ret / 1000 / 2.3));
       this.corr += (ct - this.corr) * alpha;
       this.semis = this.corr + (p.vibrato / 100) * vib + p.transpose;
+      // speaker mode: acoustic feedback is far steadier in pitch than any voice (humans drift > 3 cents)
+      if (p.speaker) {
+        if (Math.abs(im - this.stabRef) < 0.03) this.stabT += dt; else { this.stabRef = im; this.stabT = 0; }
+        if (this.stabT > 1.2 && this.conf > 0.9) { this.duckT = this.fs * 1.5; this.howl = true; this.stabT = 0; }
+      }
     } else {
       this.corr *= Math.exp(-dt / 0.03);
       this.semis = this.corr + p.transpose;

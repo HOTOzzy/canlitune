@@ -72,6 +72,18 @@ nav button.act{color:var(--acc)}
 .info p,.info li{font-size:14px;color:#cdd5e0}.info h3{font-size:15px;margin:14px 0 6px}.info a{color:#93c5fd}
 table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid var(--line);padding:6px 4px;text-align:left}td:last-child{text-align:right;font-variant-numeric:tabular-nums}
 .small{font-size:12px;color:var(--mut)}
+.lyr{height:36vh;min-height:180px;overflow-y:auto;scroll-behavior:smooth;text-align:center;font-size:17px;background:var(--card2);border-radius:10px;padding:14vh 8px}
+.lyr div{padding:7px 4px;color:var(--mut);transition:color .15s,font-size .15s}
+.lyr div.cur{color:#fff;font-size:23px;font-weight:700}.lyr div.past{opacity:.4}
+.lyr.plain{padding:12px 8px;text-align:left}.lyr.plain div{color:var(--tx);padding:3px 4px}
+.gchips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:none}
+.gchips button{white-space:nowrap;min-height:38px;padding:6px 13px;border-radius:20px;font-size:13px}
+.songs button{display:block;width:100%;text-align:left;margin:5px 0;min-height:42px;padding:8px 10px;font-size:14px}
+.songs button em{float:right;font-style:normal;color:var(--mut);font-size:12px}
+.rec{display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--line);padding:8px 0;flex-wrap:wrap}
+.rec span{flex:1 1 100%;font-size:13px;word-break:break-all}.rec button{min-height:40px;padding:8px 12px;flex:1}
+.rec audio{width:100%}
+#bRec.on{background:var(--bad);border-color:var(--bad);color:#fff}
 .hide{display:none!important}
 </style>
 </head>
@@ -137,6 +149,36 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px
   </div>
 </section>
 
+<!-- ===================== KARAOKE ===================== -->
+<section class="tab" id="t-kar">
+  <div class="msg" id="kMsg"></div>
+  <div class="card"><h2>Şarkı</h2>
+    <div id="kSong" class="small">Şarkı seçilmedi. “Sanatçılar” sekmesinden bir şarkıya dokun ya da doğrudan kendi dosyalarını yükle.</div>
+    <div class="row" style="margin-top:10px"><button class="sec grow" id="bBeat">🎵 Beat yükle</button><button class="grow" id="bLyr">📝 Söz dosyası (.lrc / .txt)</button></div>
+    <div class="row" style="margin-top:8px"><button class="grow" id="bPaste">Sözleri yapıştır</button><button class="grow" id="bKClear">Temizle</button></div>
+    <input type="file" id="beatIn" accept="audio/*" class="hide"><input type="file" id="lyrIn" accept=".lrc,.txt,text/plain" class="hide">
+    <div id="pasteBox" class="hide" style="margin-top:8px"><textarea id="pasteTx" placeholder="[00:12.50] satır …  (zaman damgalı .lrc metni akar; düz metin sabit durur)" spellcheck="false"></textarea><button style="width:100%;margin-top:6px" id="bPasteOk">Sözleri uygula</button></div>
+    <p class="small" style="margin:10px 0 0">Enstrümantal ve söz dosyalarını sen sağlarsın (telif nedeniyle uygulamada şarkı sözü ya da beat yok). Beat yüklenince ton ve tempo dosyadan tahmin edilip otomatik ayarlanır.</p>
+  </div>
+  <div class="card"><h2>Çalar</h2>
+    <div class="row" style="align-items:center"><button class="pri" id="bPlay" style="min-width:92px">▶ Çal</button><button id="bRestart">⏮</button><span id="kTime" class="small" style="flex:1;text-align:right">0:00 / 0:00</span></div>
+    <input type="range" id="kSeek" min="0" max="1000" value="0" style="margin-top:6px">
+    <div class="ctl"><label><span>Beat seviyesi</span><em id="kGainTx">70%</em></label><input type="range" id="kGain" min="0" max="100" value="70"></div>
+    <div class="lyr plain" id="lyr"><div class="small" style="color:var(--mut)">Söz yüklenmedi.</div></div>
+  </div>
+  <div class="card"><h2>Kayıt</h2>
+    <div class="row" style="align-items:center"><button id="bRec" class="grow">● Kaydı başlat</button><span id="recTime" class="small" style="min-width:60px;text-align:right">–</span></div>
+    <div class="ctl nat hide"><label><span>Kayıt senkronu (ses beat'e göre erken/geç ise)</span><em id="trimTx">0 ms</em></label><input type="range" id="kTrim" min="-250" max="250" step="5" value="0"></div>
+    <p class="small" style="margin:6px 0">Kayıt = işlenmiş sesin + beat. Uygulamada kayıtta beat, ölçülen gecikme kadar kaydırılır; böylece Bluetooth'ta bile sesin beat'e oturur.</p>
+    <div id="recList"></div>
+  </div>
+  <div class="card"><h2>Hoparlör / soundbar çıkışı</h2>
+    <div class="nat hide"><div class="ctl"><label><span>Çıkış cihazı</span></label><div class="row"><select id="outSel" style="flex:1"></select><button id="bOutRef">↻</button></div></div></div>
+    <div id="spkCtl"></div>
+    <p class="small" style="margin:6px 0 0"><b>Nasıl bağlanır:</b> soundbar'ı telefona Bluetooth, AUX (3.5 mm / USB-C dönüştürücü) ya da USB ile bağla; ses otomatik oraya gider, istersen yukarıdan seç. <b>Kablo</b> gecikmeyi düşük tutar; <b>Bluetooth</b> ~150–300 ms gecikir (yankı gibi duyulur). Hoparlörden dinlerken “Hoparlör modu”nu aç, telefonu mikrofon gibi ağzına yakın tut ve hoparlöre doğrultma: uğultu (feedback) riski azalır.</p>
+  </div>
+</section>
+
 <!-- ===================== EDİTÖR ===================== -->
 <section class="tab" id="t-edit">
   <div class="card"><h2>Ton &amp; gam</h2>
@@ -161,8 +203,10 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px
 
 <!-- ===================== SANATÇILAR ===================== -->
 <section class="tab" id="t-art">
-  <div class="card"><h2>Sanatçı presetleri</h2>
-    <p class="small" style="margin:0">Her değer kaynakla gerekçelendirildi; kaynakta sayı yoksa “uyarlama” yazıyor. Güven etiketi kaynağın gücünü gösterir. Presetler tonu değiştirmez, şarkının tonunu sen seç.</p>
+  <div class="card"><h2>Sanatçı presetleri <span id="artCount"></span></h2>
+    <input type="text" id="artQ" placeholder="Sanatçı ya da şarkı ara…" autocomplete="off">
+    <div class="gchips" id="gchips"></div>
+    <p class="small" style="margin:6px 0 0"><b style="color:var(--ok)">yüksek/orta</b>: mühendis ya da sanatçı kaynağı var. <b style="color:var(--bad)">stil yaklaşımı</b>: yayımlanmış ayar yok; değerler sanatçının bilinen tınısına göre seçildi. Şarkıya dokununca preset yüklenir ve Karaoke sekmesi açılır. Listelerdeki ton/BPM doğrulanmadı; beat yükleyince dosyadan algılanan değer kullanılır.</p>
   </div>
   <div id="artList"></div>
 </section>
@@ -174,13 +218,16 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px
 </main>
 <nav>
   <button class="act" data-t="t-live"><b>◉</b>Canlı</button>
-  <button data-t="t-edit"><b>⚙</b>Editör</button>
+  <button data-t="t-kar"><b>♪</b>Karaoke</button>
   <button data-t="t-art"><b>★</b>Sanatçılar</button>
+  <button data-t="t-edit"><b>⚙</b>Editör</button>
   <button data-t="t-info"><b>ⓘ</b>Teknik</button>
 </nav>
 
 <script id="dsp-src" type="text/plain">__DSP__</script>
 <script id="preset-data" type="application/json">__PRESETS__</script>
+<script id="artist-data" type="application/json">__ARTISTS__</script>
+<script>__MUSICLIB__</script>
 <script>
 'use strict';
 const $ = s => document.querySelector(s);
@@ -192,12 +239,12 @@ const DIVS = { 0.25:'1/16', 0.5:'1/8', 0.75:'1/8 noktalı', 1:'1/4', 1.5:'1/4 no
 const DEF = { key:9, scale:'minor', custom:[1,1,1,1,1,1,1,1,1,1,1,1], voice:'wide', bypass:false,
   inGainDb:0, hpfHz:90, gateDb:-55, retuneMs:20, humanize:0, flex:0, vibrato:0, transpose:0, mode:0, formant:0,
   v2Level:0, v2Interval:0, v2Detune:0, mix:1, compThr:-18, compRatio:3, compAtk:5, compRel:80, compMakeup:3,
-  satDrive:0, satMix:0, bpm:120, dlyDiv:1, dlyFb:0.25, dlyMix:0, dlyDamp:0.4, revTime:1.2, revDamp:0.5, revPre:15, revMix:0.12, outDb:0, howlGuard:true };
-const PRESET_KEYS = Object.keys(DEF).filter(k => k !== 'bypass');
+  satDrive:0, satMix:0, bpm:120, dlyDiv:1, dlyFb:0.25, dlyMix:0, dlyDamp:0.4, revTime:1.2, revDamp:0.5, revPre:15, revMix:0.12, outDb:0, howlGuard:true, speaker:false };
+const PRESET_KEYS = Object.keys(DEF).filter(k => k !== 'bypass' && k !== 'speaker');
 let S = Object.assign({}, DEF);
 let ctx = null, node = null, outGain = null, stream = null, srcNode = null, wakeLock = null, running = false, modeName = '';
 let telem = null, muted = false, measuring = false, measSeen = false, inLat = 0, activePreset = 'varsayılan';
-const ART = JSON.parse($('#preset-data').textContent);
+const ART = JSON.parse($('#preset-data').textContent), LIBSRC = JSON.parse($('#artist-data').textContent);
 
 /* ---------- state -> engine ---------- */
 function maskAbs() {
@@ -212,6 +259,8 @@ function engineParams() {
   p.mask = maskAbs(); p.minF0 = v[1]; p.maxF0 = v[2];
   p.dlyMs = 60000 / S.bpm * S.dlyDiv;
   p.mode = +S.mode;
+  p.speaker = S.speaker ? 1 : 0;
+  if (S.speaker) { p.gateDb = Math.max(p.gateDb, -40); p.howlGuard = true; }  // hoparlör modu: yalnız yakın ses kapıyı açar
   delete p.custom; delete p.key; delete p.scale; delete p.voice; delete p.bpm; delete p.dlyDiv;
   return p;
 }
@@ -408,7 +457,9 @@ async function started() {
   try { if (navigator.wakeLock) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
 }
 async function stop() {
-  running = false;
+  if (typeof recOn !== 'undefined' && recOn) await recToggle();
+  if (typeof Beat !== 'undefined') Beat.pause();
+  running = false; lastT = null;
   if (nativeActive) { Native.stop(); nativeActive = false; nativeLast = null; }
   try { if (srcNode) { srcNode.disconnect(); if (srcNode.stop) srcNode.stop(); } } catch (e) {}
   if (stream) stream.getTracks().forEach(t => t.stop());
@@ -435,11 +486,11 @@ const H = 300, hIn = new Float32Array(H).fill(-1), hTg = new Float32Array(H).fil
 const cv = $('#graph'), g2 = cv.getContext('2d');
 const db = v => v > 1e-6 ? 20 * Math.log10(v) : -120;
 const nn = m => m < 0 ? '–' : NOTES[((Math.round(m) % 12) + 12) % 12] + (Math.floor(Math.round(m) / 12) - 1);
-let lastSeen = 0, routeAt = 0, route = '';
+let lastSeen = 0, routeAt = 0, route = '', lastT = null;
 function frame() {
   requestAnimationFrame(frame);
   const t = nativeActive ? Native.poll() : (sabView || telem); if (!t || !running) return;
-  const now0 = performance.now();
+  const now0 = performance.now(); lastT = t;
   const inD = db(t[0]), outD = db(t[1]);
   $('#mIn').style.width = Math.max(0, Math.min(100, (inD + 60) / 60 * 100)) + '%'; $('#mInTx').textContent = inD < -99 ? '–∞' : inD.toFixed(0) + ' dB';
   $('#mOut').style.width = Math.max(0, Math.min(100, (outD + 60) / 60 * 100)) + '%'; $('#mOutTx').textContent = outD < -99 ? '–∞' : outD.toFixed(0) + ' dB';
@@ -547,22 +598,244 @@ $('#bApplyImp').onclick = () => importText($('#ioTx').value);
 $('#bFileImp').onclick = () => $('#impFile').click();
 $('#impFile').onchange = async e => { const f = e.target.files[0]; if (f) importText(await f.text()); e.target.value = ''; };
 
-/* ---------- artist browser ---------- */
+/* ---------- artist library ---------- */
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 function confClass(c) { return /^yüksek/.test(c) ? 'h' : /^orta/.test(c) ? 'm' : 'l'; }
+const LIB = [];
 for (const a of ART.presets) {
-  const p = a.params, d = document.createElement('div'); d.className = 'art';
-  const why = Object.entries(a.why).map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('');
-  const src = a.sources.map(s => `<li><a href="${esc(s.u)}" target="_blank" rel="noopener">${esc(s.t)}</a></li>`).join('');
-  d.innerHTML = `<h3>${esc(a.name)}</h3><div class="era">${esc(a.era)}</div><span class="badge ${confClass(a.confidence)}">güven: ${esc(a.confidence)}</span>
-   <div class="pills"><span>Retune ${p.retuneMs} ms</span><span>Humanize ${p.humanize}</span><span>Flex ${p.flex}</span><span>${SCALE_TR[p.scale]}</span><span>Formant ${p.formant > 0 ? '+' : ''}${p.formant}</span><span>${p.mode ? 'PSOLA' : 'Düşük gecikme'}</span>${p.v2Level ? `<span>2. ses ${p.v2Interval} st</span>` : ''}<span>Delay ${DIVS[p.dlyDiv] || p.dlyDiv}</span><span>Reverb ${p.revTime}s</span></div>
-   <p class="small" style="margin:6px 0">${esc(a.performance)}</p>
-   <button class="pri" style="width:100%">Yükle</button>
-   <details><summary>Neden bu değerler?</summary><ul>${why}</ul></details>
-   <details><summary>Kaynaklar</summary><ul>${src}</ul></details>`;
-  d.querySelector('button').onclick = () => { applyPreset(p, a.name, true); msg(`“${a.name}” yüklendi — ton: ${NOTES[S.key]} ${SCALE_TR[S.scale]} (tonu şarkına göre ayarla).`, 'ok'); document.querySelector('nav button[data-t="t-live"]').click(); };
-  $('#artList').appendChild(d);
+  const lg = LIBSRC.legacy[a.id] || ['pop', ''];
+  LIB.push({ name: a.name, g: lg[0], sub: a.era, params: a.params, conf: a.confidence, note: a.performance, why: a.why, src: a.sources.map(x => [x.t, x.u]), songs: lg[1] ? lg[1].split(';') : [] });
 }
+for (const a of LIBSRC.artists) {
+  const st = LIBSRC.styles[a.s];
+  LIB.push({ name: a.name, g: a.g, sub: st.label, params: Object.assign({}, LIBSRC.base, st.o, a.o), note: a.note, songs: a.songs, src: a.src || null,
+    conf: a.src ? 'orta — kaynak var (sayılar uyarlama)' : 'stil yaklaşımı — yayımlanmış ayar yok' });
+}
+LIB.forEach(x => { x.hay = (x.name + ' ' + x.songs.map(q => q.split('|')[0]).join(' ')).toLocaleLowerCase('tr'); });
+let artG = 'all';
+function songParts(q) { const a = q.split('|'); return { title: a[0], key: a[1] || '', bpm: a[2] ? +a[2] : 0 }; }
+function renderArt() {
+  const q = $('#artQ').value.trim().toLocaleLowerCase('tr'); let n = 0, h = '';
+  LIB.forEach((x, i) => {
+    if (artG !== 'all' && x.g !== artG) return; if (q && !x.hay.includes(q)) return; n++;
+    const p = x.params;
+    const songs = x.songs.map((sq, j) => { const sp = songParts(sq); return `<button data-i="${i}" data-song="${j}">${esc(sp.title)}<em>${sp.key ? esc(sp.key) : ''}${sp.bpm ? ' · ' + sp.bpm : ''}</em></button>`; }).join('');
+    h += `<div class="art"><h3>${esc(x.name)}</h3><div class="era">${esc(LIBSRC.genres[x.g] || x.g)} · ${esc(x.sub)}</div><span class="badge ${confClass(x.conf)}">${esc(x.conf)}</span>
+      <div class="pills"><span>Retune ${p.retuneMs} ms</span><span>Humanize ${p.humanize}</span><span>${SCALE_TR[p.scale]}</span>${p.formant ? `<span>Formant ${p.formant > 0 ? '+' : ''}${p.formant}</span>` : ''}<span>${p.mode ? 'PSOLA' : 'Düşük gecikme'}</span>${p.v2Level ? `<span>2. ses ${p.v2Interval} st</span>` : ''}<span>Reverb ${p.revTime}s</span></div>
+      ${x.note ? `<p class="small" style="margin:6px 0">${esc(x.note)}</p>` : ''}
+      <button class="pri" style="width:100%" data-i="${i}" data-load="1">Preseti yükle</button>
+      ${songs ? `<details><summary>Şarkılar (${x.songs.length})</summary><div class="songs">${songs}</div></details>` : ''}
+      ${x.why ? `<details><summary>Neden bu değerler?</summary><ul>${Object.entries(x.why).map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('')}</ul></details>` : ''}
+      ${x.src ? `<details><summary>Kaynaklar</summary><ul>${x.src.map(u => `<li><a href="${esc(u[1])}" target="_blank" rel="noopener">${esc(u[0])}</a></li>`).join('')}</ul></details>` : ''}</div>`;
+  });
+  $('#artList').innerHTML = h || '<p class="small" style="text-align:center">Sonuç yok.</p>';
+  $('#artCount').textContent = `(${n} / ${LIB.length})`;
+}
+{ const gc = $('#gchips'); const mk = (id, label) => { const b = document.createElement('button'); b.textContent = label; b.dataset.g = id; if (id === artG) b.className = 'on';
+    b.onclick = () => { artG = id; gc.querySelectorAll('button').forEach(z => z.classList.toggle('on', z === b)); renderArt(); }; gc.appendChild(b); };
+  mk('all', 'Tümü'); for (const g in LIBSRC.genres) mk(g, LIBSRC.genres[g]); }
+$('#artQ').addEventListener('input', renderArt);
+$('#artList').addEventListener('click', e => {
+  const b = e.target.closest('button[data-i]'); if (!b) return; const x = LIB[+b.dataset.i];
+  applyPreset(x.params, x.name, true);
+  if (b.dataset.song !== undefined) { pickSong(x, songParts(x.songs[+b.dataset.song])); return; }
+  msg(`“${x.name}” yüklendi — ton: ${NOTES[S.key]} ${SCALE_TR[S.scale]} (tonu şarkına göre ayarla).`, 'ok'); goTab('t-live');
+});
+function goTab(id) { document.querySelector(`nav button[data-t="${id}"]`).click(); }
+renderArt();
+
+/* ---------- karaoke: beat, lyrics, recording, output ---------- */
+const AND = NATIVE === 'android' && typeof window.CanliNative.beatBegin !== 'undefined';
+const K = { song: null, buf: null, len: 0, beatName: '', lyr: null, playing: false, startAt: 0, offset: 0, src: null, gainNode: null, bctx: null, c: null, gain: 0.7, det: null, trim: 0, cur: -2 };
+const kmsg = (t, k) => msg(t, k, $('#kMsg'));
+const fmtT = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+function pickSong(x, sp) {
+  K.song = { title: sp.title, artist: x.name, key: sp.key, bpm: sp.bpm };
+  const pk = MusicLib.parseKeyName(sp.key);
+  if (pk) { setVal('key', pk.key); setVal('scale', pk.scale); }
+  if (sp.bpm) setVal('bpm', Math.max(60, Math.min(200, sp.bpm)));
+  renderSong(); goTab('t-kar');
+  kmsg(`“${sp.title}” seçildi, “${x.name}” preseti yüklendi. Şimdi beat ve söz dosyanı yükle.`, 'ok');
+}
+function renderSong() {
+  let h = K.song ? `<b style="font-size:16px;color:var(--tx)">${esc(K.song.title)}</b> — ${esc(K.song.artist)}` : 'Şarkı seçilmedi. “Sanatçılar” sekmesinden bir şarkıya dokun ya da doğrudan kendi dosyalarını yükle.';
+  h += `<br>Ayarlı ton: <b>${NOTES[S.key]} ${SCALE_TR[S.scale]}</b> · ${S.bpm} BPM`;
+  if (K.song && K.song.key) h += `<br>Listedeki: ${esc(K.song.key)}${K.song.bpm ? ' · ' + K.song.bpm + ' BPM' : ''} (doğrulanmadı)`;
+  if (K.det) h += `<br>Beat'ten algılanan: <b>${MusicLib.keyLabel(K.det.k.key, K.det.k.scale)}</b>${K.det.b.bpm ? ' · ~' + K.det.b.bpm + ' BPM' : ''} (tahmin; yanlışsa Canlı sekmesinden değiştir)`;
+  if (K.beatName) h += `<br>Beat: ${esc(K.beatName)} (${fmtT(K.len)})`;
+  $('#kSong').innerHTML = h;
+}
+(reg.key = reg.key || []).push(renderSong); (reg.scale = reg.scale || []).push(renderSong); (reg.bpm = reg.bpm || []).push(renderSong);
+async function decodeFile(file, sr) {
+  const ab = await file.arrayBuffer(), OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext, oc = new OAC(2, 1, sr);
+  return await new Promise((res, rej) => { const p = oc.decodeAudioData(ab, res, rej); if (p && p.catch) p.catch(rej); });
+}
+async function sendBeatNative(L, R, n, sr) {
+  window.CanliNative.beatBegin(n, sr);
+  const CH = 16384, i16 = new Int16Array(CH * 2), u8 = new Uint8Array(i16.buffer);
+  for (let s = 0, c = 0; s < n; s += CH, c++) {
+    const m = Math.min(CH, n - s);
+    for (let i = 0; i < m; i++) { let a = L[s + i], b = R[s + i]; a = a > 1 ? 1 : a < -1 ? -1 : a; b = b > 1 ? 1 : b < -1 ? -1 : b; i16[2 * i] = a * 32767; i16[2 * i + 1] = b * 32767; }
+    let bin = ''; const bytes = u8.subarray(0, m * 4);
+    for (let o = 0; o < bytes.length; o += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(o, o + 8192));
+    window.CanliNative.beatChunk(btoa(bin));
+    if (c % 8 === 0) { kmsg(`Beat uygulamaya aktarılıyor… %${Math.round(100 * s / n)}`); await new Promise(r => setTimeout(r, 0)); }
+  }
+}
+async function loadBeat(file) {
+  try {
+    Beat.pause(); kmsg('Beat çözülüyor…');
+    const buf = await decodeFile(file, 48000), n = buf.length, sr = buf.sampleRate;
+    const L = buf.getChannelData(0), R = buf.numberOfChannels > 1 ? buf.getChannelData(1) : L;
+    const a0 = Math.max(0, Math.floor(n / 2 - 30 * sr)), a1 = Math.min(n, a0 + 60 * sr), mono = new Float32Array(a1 - a0);
+    for (let i = a0; i < a1; i++) mono[i - a0] = (L[i] + R[i]) * 0.5;
+    K.det = { k: MusicLib.detectKey(mono, sr), b: MusicLib.detectBpm(mono, sr) };
+    if (AND) { await sendBeatNative(L, R, n, sr); K.buf = null; window.CanliNative.beatCtl(3, K.gain); } else K.buf = buf;
+    K.len = n / sr; K.beatName = file.name; K.offset = 0; Beat.seek(0);
+    setVal('key', K.det.k.key); setVal('scale', K.det.k.scale);
+    if (K.det.b.bpm >= 60) setVal('bpm', Math.round(Math.min(200, K.det.b.bpm)));
+    renderSong(); kmsg(`Beat yüklendi. Algılanan ton: ${MusicLib.keyLabel(K.det.k.key, K.det.k.scale)} — otomatik ayarlandı.`, 'ok');
+  } catch (e) { kmsg('Beat açılamadı: ' + (e && e.message || e), 'err'); }
+}
+const Beat = {
+  has() { return K.len > 0; },
+  playing() { return AND ? !!(nativeActive && lastT && lastT[23]) : K.playing; },
+  pos() { if (AND) return nativeActive && lastT ? lastT[21] : K.offset; return K.playing ? Math.min(K.len, K.offset + (K.c.currentTime - K.startAt)) : K.offset; },
+  async play() {
+    if (!this.has()) { kmsg('Önce beat yükle.', 'err'); return; }
+    if (AND) { if (!nativeActive) { await startMic(); if (!nativeActive) { kmsg('Ses motoru başlatılamadı (Canlı sekmesine bak).', 'err'); return; } window.CanliNative.beatCtl(2, K.offset); } window.CanliNative.beatCtl(3, K.gain); window.CanliNative.beatCtl(1, 0); return; }
+    if (K.playing) return;
+    const AC = window.AudioContext || window.webkitAudioContext, c = ctx || (K.bctx = K.bctx || new AC());
+    try { await c.resume(); } catch (e) {}
+    const src = c.createBufferSource(), g = c.createGain(); src.buffer = K.buf; g.gain.value = K.gain; src.connect(g); g.connect(c.destination);
+    if (recDest && c === ctx) g.connect(recDest);
+    if (K.offset >= K.len - 0.05) K.offset = 0;
+    src.start(0, K.offset); K.startAt = c.currentTime; K.c = c; K.src = src; K.gainNode = g; K.playing = true;
+    src.onended = () => { if (K.src === src) { K.playing = false; K.src = null; K.offset = 0; } };
+  },
+  pause() {
+    if (AND) { if (K.len) { K.offset = this.pos(); window.CanliNative.beatCtl(0, 0); } return; }
+    if (!K.playing) return; K.offset = this.pos(); K.playing = false; const s = K.src; K.src = null; try { s.stop(); } catch (e) {}
+  },
+  seek(sec) { sec = Math.max(0, Math.min(K.len, sec)); if (AND) { K.offset = sec; window.CanliNative.beatCtl(2, sec); return; } const was = K.playing; if (was) this.pause(); K.offset = sec; if (was) this.play(); },
+  setGain(g) { K.gain = g; if (AND) window.CanliNative.beatCtl(3, g); else if (K.gainNode) K.gainNode.gain.value = g; },
+  clear() { this.pause(); if (AND) window.CanliNative.beatCtl(4, 0); K.buf = null; K.len = 0; K.beatName = ''; K.det = null; K.offset = 0; },
+};
+function setLyrics(txt) {
+  K.lyr = MusicLib.parseLrc(txt); K.cur = -2; const box = $('#lyr');
+  if (!K.lyr.lines.length) { K.lyr = null; box.className = 'lyr plain'; box.innerHTML = '<div class="small" style="color:var(--mut)">Söz yüklenmedi.</div>'; return; }
+  box.className = K.lyr.synced ? 'lyr' : 'lyr plain';
+  box.innerHTML = K.lyr.lines.map(l => `<div>${esc(l.text) || '♪'}</div>`).join(''); box.scrollTop = 0;
+  kmsg(K.lyr.synced ? `${K.lyr.lines.length} satır senkron söz yüklendi.` : 'Zaman damgası yok: sözler sabit metin olarak gösteriliyor (akması için .lrc gerekir).', K.lyr.synced ? 'ok' : '');
+}
+$('#bBeat').onclick = () => $('#beatIn').click();
+$('#beatIn').onchange = e => { const f = e.target.files[0]; if (f) loadBeat(f); e.target.value = ''; };
+$('#bLyr').onclick = () => $('#lyrIn').click();
+$('#lyrIn').onchange = async e => { const f = e.target.files[0]; if (f) setLyrics(await f.text()); e.target.value = ''; };
+$('#bPaste').onclick = () => $('#pasteBox').classList.toggle('hide');
+$('#bPasteOk').onclick = () => { setLyrics($('#pasteTx').value); $('#pasteBox').classList.add('hide'); };
+$('#bKClear').onclick = () => { Beat.clear(); setLyrics(''); K.song = null; renderSong(); kmsg('Temizlendi.'); };
+$('#bPlay').onclick = () => { if (Beat.playing()) Beat.pause(); else Beat.play(); };
+$('#bRestart').onclick = () => Beat.seek(0);
+let seeking = false;
+$('#kSeek').addEventListener('input', () => { seeking = true; });
+$('#kSeek').addEventListener('change', e => { seeking = false; Beat.seek(+e.target.value / 1000 * K.len); });
+$('#kGain').addEventListener('input', e => { Beat.setGain(+e.target.value / 100); $('#kGainTx').textContent = e.target.value + '%'; });
+try { K.trim = +(localStorage.getItem('canlitune.trim') || 0) || 0; } catch (e) {}
+$('#kTrim').value = K.trim; $('#trimTx').textContent = K.trim + ' ms';
+$('#kTrim').addEventListener('input', e => { K.trim = +e.target.value; $('#trimTx').textContent = K.trim + ' ms'; try { localStorage.setItem('canlitune.trim', K.trim); } catch (x) {} });
+
+// --- recording ---
+let recOn = false, webRec = null, webChunks = [], recDest = null, recT0 = 0, recPlaying = '', delArmRec = '';
+const webRecs = [];
+function monitorLagMs() { const t = lastT || []; return nativeActive ? (t[14] || 0) + (t[15] || 0) + (t[20] || 0) + (t[7] || 0) : 0; }
+async function recToggle() {
+  if (!recOn) {
+    if (AND) {
+      if (!nativeActive) { await startMic(); if (!nativeActive) { kmsg('Ses motoru başlatılamadı.', 'err'); return; } await new Promise(r => setTimeout(r, 400)); }
+      window.CanliNative.beatCtl(5, Math.max(0, monitorLagMs() + K.trim) / 1000);
+      if (!window.CanliNative.recStart()) { kmsg('Kayıt başlatılamadı (depolama?).', 'err'); return; }
+    } else {
+      if (!ctx || !node) { kmsg('Önce Canlı sekmesinden mikrofonu (ya da bir dosyayı) başlat.', 'err'); return; }
+      if (!window.MediaRecorder) { kmsg('Bu tarayıcı kayıt desteklemiyor.', 'err'); return; }
+      recDest = ctx.createMediaStreamDestination(); node.connect(recDest); if (K.gainNode && K.c === ctx) K.gainNode.connect(recDest);
+      webChunks = []; const mr = webRec = new MediaRecorder(recDest.stream);
+      mr.ondataavailable = e => { if (e.data && e.data.size) webChunks.push(e.data); };
+      mr.onstop = () => { const blob = new Blob(webChunks, { type: mr.mimeType || 'audio/webm' });
+        webRecs.unshift({ name: 'CanliTune_' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + (/mp4/.test(blob.type) ? '.m4a' : '.webm'), url: URL.createObjectURL(blob), blob, kb: blob.size >> 10 }); renderRecs(); };
+      mr.start(); recT0 = performance.now();
+    }
+    recOn = true; kmsg('Kayıt başladı.');
+  } else {
+    recOn = false;
+    if (AND) { window.CanliNative.recStop(); kmsg('Kayıt dönüştürülüyor…'); }
+    else { try { webRec.stop(); } catch (e) {} try { node.disconnect(recDest); } catch (e) {} recDest = null; kmsg('Kayıt tamamlandı.', 'ok'); }
+  }
+  $('#bRec').classList.toggle('on', recOn); $('#bRec').textContent = recOn ? '■ Kaydı bitir' : '● Kaydı başlat';
+}
+$('#bRec').onclick = recToggle;
+window.__canliRecDone = name => { kmsg(name ? `Kaydedildi: ${name}` : 'Kayıt çok kısaydı, silindi.', name ? 'ok' : ''); renderRecs(); };
+window.__canliPlayDone = () => { recPlaying = ''; renderRecs(); };
+function renderRecs() {
+  const box = $('#recList'); let h = '';
+  if (AND) {
+    let list = []; try { list = JSON.parse(window.CanliNative.recList()); } catch (e) {}
+    for (const r of list) h += `<div class="rec"><span>${esc(r.name)} · ${(r.kb / 1024).toFixed(1)} MB</span><button data-n="${esc(r.name)}" data-a="play">${recPlaying === r.name ? '■ Durdur' : '▶ Dinle'}</button><button data-n="${esc(r.name)}" data-a="share" class="sec">Paylaş</button><button data-n="${esc(r.name)}" data-a="del">${delArmRec === r.name ? 'Emin misin?' : 'Sil'}</button></div>`;
+  } else {
+    webRecs.forEach((r, i) => { h += `<div class="rec"><span>${esc(r.name)} · ${(r.kb / 1024).toFixed(1)} MB</span><audio controls src="${r.url}"></audio><button data-w="${i}" data-a="share" class="sec">Paylaş / indir</button><button data-w="${i}" data-a="del">Sil</button></div>`; });
+  }
+  box.innerHTML = h || '<p class="small">Henüz kayıt yok.</p>';
+}
+$('#recList').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-a]'); if (!b) return; const act = b.dataset.a;
+  if (AND) {
+    const n = b.dataset.n;
+    if (act === 'play') { if (recPlaying === n) { window.CanliNative.recPlayStop(); recPlaying = ''; } else if (window.CanliNative.recPlay(n)) recPlaying = n; }
+    else if (act === 'share') { if (!window.CanliNative.recShare(n)) kmsg('Paylaşım açılamadı.', 'err'); }
+    else if (act === 'del') { if (delArmRec !== n) delArmRec = n; else { delArmRec = ''; if (recPlaying === n) { window.CanliNative.recPlayStop(); recPlaying = ''; } window.CanliNative.recDelete(n); } }
+    renderRecs(); return;
+  }
+  const r = webRecs[+b.dataset.w]; if (!r) return;
+  if (act === 'del') { URL.revokeObjectURL(r.url); webRecs.splice(+b.dataset.w, 1); renderRecs(); return; }
+  try { const f = new File([r.blob], r.name, { type: r.blob.type }); if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: r.name }); return; } } catch (x) { if (x && x.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = r.url; a.download = r.name; a.click();
+});
+renderRecs();
+
+// --- output device + speaker mode ---
+$('#spkCtl').appendChild(check('speaker', 'Hoparlör modu (uğultu bastırma, yalnız yakın ses)'));
+const KIND_TR = { bluetooth: 'Bluetooth', wired: 'Kablolu', usb: 'USB', hdmi: 'HDMI', speaker: 'Telefon hoparlörü' };
+function fillOutputs() {
+  if (!AND) return; const sel = $('#outSel'); let list = []; try { list = JSON.parse(window.CanliNative.outputs()); } catch (e) {}
+  const cur = window.CanliNative.getOutput();
+  sel.innerHTML = '<option value="0">Sistem varsayılanı (otomatik)</option>' + list.map(d => `<option value="${d.id}">${esc(KIND_TR[d.kind] || d.kind)} — ${esc(d.name)}</option>`).join('');
+  sel.value = list.some(d => d.id === cur) ? String(cur) : '0';
+}
+if (AND) {
+  fillOutputs(); $('#bOutRef').onclick = fillOutputs;
+  $('#outSel').onchange = async e => { window.CanliNative.setOutput(+e.target.value); if (nativeActive) { const was = Beat.playing(); await stop(); await startMic(); if (was) Beat.play(); } kmsg('Çıkış cihazı değişti.', 'ok'); };
+  document.querySelector('nav button[data-t="t-kar"]').addEventListener('click', fillOutputs);
+}
+
+// --- karaoke display loop ---
+function ktick() {
+  requestAnimationFrame(ktick);
+  const playing = Beat.playing(), pos = Beat.pos();
+  $('#bPlay').textContent = playing ? '❚❚ Duraklat' : '▶ Çal';
+  $('#kTime').textContent = fmtT(pos) + ' / ' + fmtT(K.len);
+  if (!seeking && K.len) $('#kSeek').value = Math.round(pos / K.len * 1000);
+  if (AND) $('#recTime').textContent = recOn && lastT && lastT[24] >= 0 ? '● ' + fmtT(lastT[24]) : '–';
+  else $('#recTime').textContent = recOn ? '● ' + fmtT((performance.now() - recT0) / 1000) : '–';
+  if (K.lyr && K.lyr.synced) {
+    // what is heard lags the engine position by the output latency (large on Bluetooth)
+    const outMs = nativeActive && lastT ? (lastT[14] || 0) : ctx ? ((ctx.baseLatency || 0) + (ctx.outputLatency || 0)) * 1000 : 0;
+    const i = MusicLib.lineAt(K.lyr.lines, pos - outMs / 1000 + 0.15);
+    if (i !== K.cur) { K.cur = i; const box = $('#lyr'), ch = box.children;
+      for (let k = 0; k < ch.length; k++) ch[k].className = k === i ? 'cur' : k < i ? 'past' : '';
+      const el = ch[Math.max(0, i)]; if (el) box.scrollTop = el.offsetTop - box.offsetTop - box.clientHeight / 2 + el.clientHeight / 2; }
+  }
+}
+requestAnimationFrame(ktick); renderSong();
 if (Native) {
   document.querySelectorAll('.nat').forEach(e => e.classList.remove('hide'));
   $('#lOutLbl').textContent = 'Çıkış tamponu (sürücü raporu)';
