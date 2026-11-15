@@ -99,7 +99,49 @@ function detectBpm(mono, sr) {
   }
   return { bpm: Math.round(bl * 2) / 2, conf: Math.max(0, Math.min(1, best / a0)) };
 }
+
+// Chord progression estimate for the user's own audio file. Tempo-independent: fixed 0.37 s frames -> best major/minor
+// triad per frame -> median smoothing -> runs shorter than 0.7 s dropped -> shortest repeating sequence of changes.
+function detectChords(mono, sr, LOWM = 28, SM = 2) {
+  const d = decimate(mono, sr, 11025), x = d.y, fs = d.sr, N = 4096, hop = 2048, nf = Math.floor((x.length - N) / hop);
+  if (nf < 20) return null;
+  const win = new Float32Array(N); for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / N);
+  const notes = []; for (let m = LOWM; m <= 84; m++) { const f = 440 * Math.pow(2, (m - 69) / 12); notes.push([m % 12, 2 * Math.cos(2 * Math.PI * f / fs), m < 57]); }
+  const fr = new Float32Array(N), raw = new Int16Array(nf), CH = new Float32Array(nf * 12), BS = new Float32Array(nf * 12), en = new Float32Array(nf); let emax = 0;
+  for (let b = 0; b < nf; b++) {
+    const s = b * hop;
+    for (let i = 0; i < N; i++) fr[i] = x[s + i] * win[i];
+    for (const [pc, co, low] of notes) { let s1 = 0, s2 = 0; for (let i = 0; i < N; i++) { const s0 = fr[i] + co * s1 - s2; s2 = s1; s1 = s0; } const mag = Math.sqrt(Math.max(0, s1 * s1 + s2 * s2 - co * s1 * s2)); CH[b * 12 + pc] += mag; if (low) BS[b * 12 + pc] += mag; }
+    let cs = 0; for (let i = 0; i < 12; i++) cs += CH[b * 12 + i]; en[b] = cs; if (cs > emax) emax = cs;
+  }
+  const c = new Float64Array(12), bs = new Float64Array(12);
+  for (let b = 0; b < nf; b++) {                                  // chroma summed over ~1 s so arpeggios add up to their chord
+    c.fill(0); bs.fill(0);
+    for (let k = Math.max(0, b - SM); k <= Math.min(nf - 1, b + SM); k++) for (let i = 0; i < 12; i++) { c[i] += CH[k * 12 + i]; bs[i] += BS[k * 12 + i]; }
+    let cs = 1e-9, bsum = 1e-9; for (let i = 0; i < 12; i++) { cs += c[i]; bsum += bs[i]; }
+    let best = -1e9, bl = -1;
+    for (let r = 0; r < 12; r++) for (let q = 0; q < 2; q++) {
+      const v = (c[r] + c[(r + (q ? 3 : 4)) % 12] + c[(r + 7) % 12] - 0.8 * c[(r + (q ? 4 : 3)) % 12]) / cs + 0.6 * bs[r] / bsum;
+      if (v > best) { best = v; bl = r * 2 + q; }
+    }
+    raw[b] = bl;
+  }
+  const lab = new Int16Array(nf);
+  for (let b = 0; b < nf; b++) {                                  // mode over a 5-frame window; quiet frames are ignored
+    const m = new Map(); let bk = -1, bc = 0;
+    for (let k = Math.max(0, b - 2); k <= Math.min(nf - 1, b + 2); k++) { if (en[k] < emax * 0.05) continue; const v = raw[k], n = (m.get(v) || 0) + 1; m.set(v, n); if (n > bc) { bc = n; bk = v; } }
+    lab[b] = bk;
+  }
+  const minRun = Math.max(2, Math.round(0.9 * fs / hop)), seq = [];
+  for (let b = 0; b < nf;) { let e = b; while (e < nf && lab[e] === lab[b]) e++; if (lab[b] >= 0 && e - b >= minRun && seq[seq.length - 1] !== lab[b]) seq.push(lab[b]); b = e; }
+  if (seq.length < 2) return seq.length ? { chords: [KEY_NAMES[seq[0] >> 1] + (seq[0] & 1 ? 'm' : '')], text: KEY_NAMES[seq[0] >> 1] + (seq[0] & 1 ? 'm' : ''), conf: 0.3, changes: 1 } : null;
+  let bestP = seq.length, bestA = 0;
+  for (let P = 2; P <= Math.min(16, seq.length >> 1); P++) { let ok = 0, tot = 0; for (let i = 0; i + P < seq.length; i++) { tot++; if (seq[i] === seq[i + P]) ok++; } const a = ok / Math.max(1, tot); if (a > bestA + 0.05) { bestA = a; bestP = P; } }
+  const prog = []; for (let k = 0; k < bestP; k++) { const m = new Map(); let bk = seq[k], bc = 0; for (let i = k; i < seq.length; i += bestP) { const n = (m.get(seq[i]) || 0) + 1; m.set(seq[i], n); if (n > bc) { bc = n; bk = seq[i]; } } prog.push(bk); }
+  const name = v => KEY_NAMES[v >> 1] + (v & 1 ? 'm' : '');
+  return { chords: prog.map(name), text: prog.map(name).join(' '), conf: bestP === seq.length ? 0.3 : bestA, changes: seq.length };
+}
 function keyLabel(k, scale) { return KEY_NAMES[k] + (scale === 'minor' ? ' minör' : ' majör'); }
 
-const MusicLib = { parseKeyName, parseLrc, lineAt, detectKey, detectBpm, keyLabel, KEY_NAMES };
+const MusicLib = { parseKeyName, parseLrc, lineAt, detectKey, detectBpm, detectChords, keyLabel, KEY_NAMES };
 if (typeof module !== 'undefined') module.exports = MusicLib;

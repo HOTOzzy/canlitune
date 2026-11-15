@@ -160,6 +160,16 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px
     <div id="pasteBox" class="hide" style="margin-top:8px"><textarea id="pasteTx" placeholder="[00:12.50] satır …  (zaman damgalı .lrc metni akar; düz metin sabit durur)" spellcheck="false"></textarea><button style="width:100%;margin-top:6px" id="bPasteOk">Sözleri uygula</button></div>
     <p class="small" style="margin:10px 0 0">Enstrümantal ve söz dosyalarını sen sağlarsın (telif nedeniyle uygulamada şarkı sözü ya da beat yok). Beat yüklenince ton ve tempo dosyadan tahmin edilip otomatik ayarlanır.</p>
   </div>
+  <div class="card"><h2>Beat üret (özgün)</h2>
+    <div class="row"><select id="gStyle" style="flex:1.3"></select><select id="gLen" style="flex:1"><option value="1">1 dk</option><option value="2">2 dk</option><option value="3" selected>3 dk</option><option value="4">4 dk</option></select></div>
+    <input type="text" id="gChords" placeholder="Akorlar: Fm C# G# D#   (her akor 1 ölçü, “-” = tekrar)" autocomplete="off" autocapitalize="off" spellcheck="false" style="margin-top:8px">
+    <div class="row" style="margin-top:8px"><button class="grow" id="bGSug">Tona göre öner</button><button class="grow" id="bGDet">Akorları dosyadan algıla</button></div>
+    <div id="gBpm"></div>
+    <div class="row"><button class="pri grow" id="bGen">Beat üret</button><button class="grow" id="bGenAgain">Farklı desen</button></div>
+    <div class="row" style="margin-top:8px"><select id="gSaved" style="flex:1"></select><button id="bGSave">Kaydet</button><button id="bGDel">Sil</button></div>
+    <input type="file" id="chordIn" accept="audio/*" class="hide">
+    <p class="small" style="margin:8px 0 0">Girdiğin akorların üzerine davul, bas ve eşlik sıfırdan sentezlenir; hiçbir şarkının melodisi ya da kaydı kullanılmaz. “Farklı desen” aynı akorlarla yeni bir ritim üretir. “Akorları dosyadan algıla” telefonundaki bir ses dosyasını analiz eder (tahmindir; yalnız majör/minör akorları tanır, kontrol et).</p>
+  </div>
   <div class="card"><h2>Çalar</h2>
     <div class="row" style="align-items:center"><button class="pri" id="bPlay" style="min-width:92px">▶ Çal</button><button id="bRestart">⏮</button><span id="kTime" class="small" style="flex:1;text-align:right">0:00 / 0:00</span></div>
     <input type="range" id="kSeek" min="0" max="1000" value="0" style="margin-top:6px">
@@ -260,7 +270,7 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px
 <li><b>Hoparlör modu:</b> gate eşiği en az −40 dBFS; ayrıca perdesi 1.2 s boyunca ±3 cent içinde kalan ses (insan sesi bu kadar sabit duramaz) geri besleme sayılır ve çıkış kısılır.</li>
 </ul>
 <h3>Testler (Node, 48 kHz)</h3>
-<table><tr><td>✅ sine 82.4 Hz<br><span class="small">detected 82.40 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 110 Hz<br><span class="small">detected 110.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 146.8 Hz<br><span class="small">detected 146.80 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 196 Hz<br><span class="small">detected 196.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 261.6 Hz<br><span class="small">detected 261.60 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 392 Hz<br><span class="small">detected 392.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 523.3 Hz<br><span class="small">detected 523.30 Hz, err 0.01 cents</span></td><td></td></tr><tr><td>✅ sine 659.3 Hz<br><span class="small">detected 659.30 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 830 Hz<br><span class="small">detected 830.00 Hz, err 0.01 cents</span></td><td></td></tr><tr><td>✅ sweep median error &lt; 5 cents<br><span class="small">median 1.18 c, p95 2.12 c, frames 1425</span></td><td></td></tr><tr><td>✅ vowel f0=98 Hz<br><span class="small">detected 98.00 Hz (0.00 c), YIN conf 0.982</span></td><td></td></tr><tr><td>✅ vowel f0=180 Hz<br><span class="small">detected 180.00 Hz (0.01 c), YIN conf 0.991</span></td><td></td></tr><tr><td>✅ vowel f0=262 Hz<br><span class="small">detected 262.00 Hz (0.00 c), YIN conf 0.996</span></td><td></td></tr><tr><td>✅ [Splice] chromatic, 446 Hz (+23c) -> A4 440<br><span class="small">out 440.00 Hz (-0.00 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] C major,<br><span class="small">455 Hz (+58c) -> A4 440 (A# not in scale)  out 440.00 Hz (0.00 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] chromatic, 459 Hz (+74c) -> A#4 466.16<br><span class="small">out 466.16 Hz (0.01 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] C major, vowel 151 Hz -> D3 146.83<br><span class="small">out 146.83 Hz (0.03 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] chromatic, 446 Hz (+23c) -> A4 440<br><span class="small">out 439.94 Hz (-0.23 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] C major,<br><span class="small">455 Hz (+58c) -> A4 440 (A# not in scale)  out 439.94 Hz (-0.24 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] chromatic, 459 Hz (+74c) -> A#4 466.16<br><span class="small">out 466.02 Hz (-0.52 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] C major, vowel 151 Hz -> D3 146.83<br><span class="small">out 146.79 Hz (-0.48 c from target)</span></td><td></td></tr><tr><td>✅ retune 0 ms: 90% of correction reached<br><span class="small">after 0.0 ms of voiced signal</span></td><td></td></tr><tr><td>✅ retune 25 ms: 90% of correction reached<br><span class="small">after 21.3 ms of voiced signal</span></td><td></td></tr><tr><td>✅ retune 100 ms: 90% of correction reached<br><span class="small">after 90.7 ms of voiced signal</span></td><td></td></tr><tr><td>✅ PSOLA keeps formant envelope while pitch moves +5 st<br><span class="small">pitch 246.9 Hz (-0.1 c), LPC F1 740 Hz (x0.95), envelope corr: preserved 0.902 vs shifted 0.761</span></td><td></td></tr><tr><td>✅ Splice mode moves formants with pitch (expected x1.33)<br><span class="small">pitch 246.9 Hz (0.0 c), LPC F1 1010 Hz (x1.29), envelope corr: preserved 0.679 vs shifted 1.000</span></td><td></td></tr><tr><td>✅ PSOLA formant +4 st raises F1 (expected ~x1.26)<br><span class="small">F1 935 Hz (x1.20), pitch 185.0 Hz</span></td><td></td></tr><tr><td>✅ [Splice] f0 110 Hz latency<br><span class="small">onset delay 4.52 ms, steady-state reported 4.53 ms (period 9.09 ms)</span></td><td></td></tr><tr><td>✅ [Splice] f0 220 Hz latency<br><span class="small">onset delay 4.77 ms, steady-state reported 4.76 ms (period 4.55 ms)</span></td><td></td></tr><tr><td>✅ [PSOLA] f0 110 Hz latency<br><span class="small">onset delay 18.54 ms, steady-state reported 21.63 ms (period 9.09 ms)</span></td><td></td></tr><tr><td>✅ [PSOLA] f0 220 Hz latency<br><span class="small">onset delay 17.15 ms, steady-state reported 11.18 ms (period 4.55 ms)</span></td><td></td></tr><tr><td>✅ noise: output finite &amp; limited<br><span class="small">peak 0.893</span></td><td></td></tr><tr><td>✅ noise: mostly classified unvoiced<br><span class="small">0.0% voiced frames</span></td><td></td></tr><tr><td>✅ silence -> silence<br><span class="small"></span></td><td></td></tr><tr><td>✅ steady 437 Hz tone flagged as feedback<br><span class="small"></span></td><td></td></tr><tr><td>✅ sung note with natural vibrato (±7 cents) not flagged<br><span class="small"></span></td><td></td></tr><tr><td>✅ measured RTL matches simulated<br><span class="small">measured 25.813 ms, true 25.708 ms</span></td><td></td></tr><tr><td>✅ [Splice] real-time factor<br><span class="small">avg 120.5 µs / 2667 µs block (4.5% of one core), worst 497 µs, 10 s audio in 452 ms</span></td><td></td></tr><tr><td>✅ [Splice] no retained heap growth (leak check) over 3750 blocks<br><span class="small">retained 11 KiB after GC; short-lived churn 770 KiB (harness views + JIT number boxing; the native C++ engine is verified at 0 allocations)</span></td><td></td></tr><tr><td>✅ [PSOLA] real-time factor<br><span class="small">avg 94.9 µs / 2667 µs block (3.6% of one core), worst 593 µs, 10 s audio in 356 ms</span></td><td></td></tr><tr><td>✅ [PSOLA] no retained heap growth (leak check) over 3750 blocks<br><span class="small">retained -0 KiB after GC; short-lived churn 1025 KiB (harness views + JIT number boxing; the native C++ engine is verified at 0 allocations)</span></td><td></td></tr></table>
+<table><tr><td>✅ sine 82.4 Hz<br><span class="small">detected 82.40 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 110 Hz<br><span class="small">detected 110.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 146.8 Hz<br><span class="small">detected 146.80 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 196 Hz<br><span class="small">detected 196.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 261.6 Hz<br><span class="small">detected 261.60 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 392 Hz<br><span class="small">detected 392.00 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 523.3 Hz<br><span class="small">detected 523.30 Hz, err 0.01 cents</span></td><td></td></tr><tr><td>✅ sine 659.3 Hz<br><span class="small">detected 659.30 Hz, err 0.00 cents</span></td><td></td></tr><tr><td>✅ sine 830 Hz<br><span class="small">detected 830.00 Hz, err 0.01 cents</span></td><td></td></tr><tr><td>✅ sweep median error &lt; 5 cents<br><span class="small">median 1.18 c, p95 2.12 c, frames 1425</span></td><td></td></tr><tr><td>✅ vowel f0=98 Hz<br><span class="small">detected 98.00 Hz (0.00 c), YIN conf 0.982</span></td><td></td></tr><tr><td>✅ vowel f0=180 Hz<br><span class="small">detected 180.00 Hz (0.01 c), YIN conf 0.991</span></td><td></td></tr><tr><td>✅ vowel f0=262 Hz<br><span class="small">detected 262.00 Hz (0.00 c), YIN conf 0.996</span></td><td></td></tr><tr><td>✅ [Splice] chromatic, 446 Hz (+23c) -> A4 440<br><span class="small">out 440.00 Hz (-0.00 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] C major,<br><span class="small">455 Hz (+58c) -> A4 440 (A# not in scale)  out 440.00 Hz (0.00 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] chromatic, 459 Hz (+74c) -> A#4 466.16<br><span class="small">out 466.16 Hz (0.01 c from target)</span></td><td></td></tr><tr><td>✅ [Splice] C major, vowel 151 Hz -> D3 146.83<br><span class="small">out 146.83 Hz (0.03 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] chromatic, 446 Hz (+23c) -> A4 440<br><span class="small">out 439.94 Hz (-0.23 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] C major,<br><span class="small">455 Hz (+58c) -> A4 440 (A# not in scale)  out 439.94 Hz (-0.24 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] chromatic, 459 Hz (+74c) -> A#4 466.16<br><span class="small">out 466.02 Hz (-0.52 c from target)</span></td><td></td></tr><tr><td>✅ [PSOLA] C major, vowel 151 Hz -> D3 146.83<br><span class="small">out 146.79 Hz (-0.48 c from target)</span></td><td></td></tr><tr><td>✅ retune 0 ms: 90% of correction reached<br><span class="small">after 0.0 ms of voiced signal</span></td><td></td></tr><tr><td>✅ retune 25 ms: 90% of correction reached<br><span class="small">after 21.3 ms of voiced signal</span></td><td></td></tr><tr><td>✅ retune 100 ms: 90% of correction reached<br><span class="small">after 90.7 ms of voiced signal</span></td><td></td></tr><tr><td>✅ PSOLA keeps formant envelope while pitch moves +5 st<br><span class="small">pitch 246.9 Hz (-0.1 c), LPC F1 740 Hz (x0.95), envelope corr: preserved 0.902 vs shifted 0.761</span></td><td></td></tr><tr><td>✅ Splice mode moves formants with pitch (expected x1.33)<br><span class="small">pitch 246.9 Hz (0.0 c), LPC F1 1010 Hz (x1.29), envelope corr: preserved 0.679 vs shifted 1.000</span></td><td></td></tr><tr><td>✅ PSOLA formant +4 st raises F1 (expected ~x1.26)<br><span class="small">F1 935 Hz (x1.20), pitch 185.0 Hz</span></td><td></td></tr><tr><td>✅ [Splice] f0 110 Hz latency<br><span class="small">onset delay 4.52 ms, steady-state reported 4.53 ms (period 9.09 ms)</span></td><td></td></tr><tr><td>✅ [Splice] f0 220 Hz latency<br><span class="small">onset delay 4.77 ms, steady-state reported 4.76 ms (period 4.55 ms)</span></td><td></td></tr><tr><td>✅ [PSOLA] f0 110 Hz latency<br><span class="small">onset delay 18.54 ms, steady-state reported 21.63 ms (period 9.09 ms)</span></td><td></td></tr><tr><td>✅ [PSOLA] f0 220 Hz latency<br><span class="small">onset delay 17.15 ms, steady-state reported 11.18 ms (period 4.55 ms)</span></td><td></td></tr><tr><td>✅ noise: output finite &amp; limited<br><span class="small">peak 0.893</span></td><td></td></tr><tr><td>✅ noise: mostly classified unvoiced<br><span class="small">0.0% voiced frames</span></td><td></td></tr><tr><td>✅ silence -> silence<br><span class="small"></span></td><td></td></tr><tr><td>✅ steady 437 Hz tone flagged as feedback<br><span class="small"></span></td><td></td></tr><tr><td>✅ sung note with natural vibrato (±7 cents) not flagged<br><span class="small"></span></td><td></td></tr><tr><td>✅ measured RTL matches simulated<br><span class="small">measured 25.813 ms, true 25.708 ms</span></td><td></td></tr><tr><td>✅ [Splice] real-time factor<br><span class="small">avg 96.0 µs / 2667 µs block (3.6% of one core), worst 646 µs, 10 s audio in 360 ms</span></td><td></td></tr><tr><td>✅ [Splice] no retained heap growth (leak check) over 3750 blocks<br><span class="small">retained 13 KiB after GC; short-lived churn 1832 KiB (harness views + JIT number boxing; the native C++ engine is verified at 0 allocations)</span></td><td></td></tr><tr><td>✅ [PSOLA] real-time factor<br><span class="small">avg 120.4 µs / 2667 µs block (4.5% of one core), worst 951 µs, 10 s audio in 451 ms</span></td><td></td></tr><tr><td>✅ [PSOLA] no retained heap growth (leak check) over 3750 blocks<br><span class="small">retained -0 KiB after GC; short-lived churn 1025 KiB (harness views + JIT number boxing; the native C++ engine is verified at 0 allocations)</span></td><td></td></tr></table>
 <h3>Kaynaklar</h3>
 <ul>
 <li><a href="https://cagnazzo.wp.imt.fr/files/2013/05/2002_JASA_YIN.pdf" target="_blank">de Cheveigné &amp; Kawahara — YIN (JASA 2002)</a></li>
@@ -1097,10 +1107,185 @@ function detectBpm(mono, sr) {
   }
   return { bpm: Math.round(bl * 2) / 2, conf: Math.max(0, Math.min(1, best / a0)) };
 }
+
+// Chord progression estimate for the user's own audio file. Tempo-independent: fixed 0.37 s frames -> best major/minor
+// triad per frame -> median smoothing -> runs shorter than 0.7 s dropped -> shortest repeating sequence of changes.
+function detectChords(mono, sr, LOWM = 28, SM = 2) {
+  const d = decimate(mono, sr, 11025), x = d.y, fs = d.sr, N = 4096, hop = 2048, nf = Math.floor((x.length - N) / hop);
+  if (nf < 20) return null;
+  const win = new Float32Array(N); for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / N);
+  const notes = []; for (let m = LOWM; m <= 84; m++) { const f = 440 * Math.pow(2, (m - 69) / 12); notes.push([m % 12, 2 * Math.cos(2 * Math.PI * f / fs), m < 57]); }
+  const fr = new Float32Array(N), raw = new Int16Array(nf), CH = new Float32Array(nf * 12), BS = new Float32Array(nf * 12), en = new Float32Array(nf); let emax = 0;
+  for (let b = 0; b < nf; b++) {
+    const s = b * hop;
+    for (let i = 0; i < N; i++) fr[i] = x[s + i] * win[i];
+    for (const [pc, co, low] of notes) { let s1 = 0, s2 = 0; for (let i = 0; i < N; i++) { const s0 = fr[i] + co * s1 - s2; s2 = s1; s1 = s0; } const mag = Math.sqrt(Math.max(0, s1 * s1 + s2 * s2 - co * s1 * s2)); CH[b * 12 + pc] += mag; if (low) BS[b * 12 + pc] += mag; }
+    let cs = 0; for (let i = 0; i < 12; i++) cs += CH[b * 12 + i]; en[b] = cs; if (cs > emax) emax = cs;
+  }
+  const c = new Float64Array(12), bs = new Float64Array(12);
+  for (let b = 0; b < nf; b++) {                                  // chroma summed over ~1 s so arpeggios add up to their chord
+    c.fill(0); bs.fill(0);
+    for (let k = Math.max(0, b - SM); k <= Math.min(nf - 1, b + SM); k++) for (let i = 0; i < 12; i++) { c[i] += CH[k * 12 + i]; bs[i] += BS[k * 12 + i]; }
+    let cs = 1e-9, bsum = 1e-9; for (let i = 0; i < 12; i++) { cs += c[i]; bsum += bs[i]; }
+    let best = -1e9, bl = -1;
+    for (let r = 0; r < 12; r++) for (let q = 0; q < 2; q++) {
+      const v = (c[r] + c[(r + (q ? 3 : 4)) % 12] + c[(r + 7) % 12] - 0.8 * c[(r + (q ? 4 : 3)) % 12]) / cs + 0.6 * bs[r] / bsum;
+      if (v > best) { best = v; bl = r * 2 + q; }
+    }
+    raw[b] = bl;
+  }
+  const lab = new Int16Array(nf);
+  for (let b = 0; b < nf; b++) {                                  // mode over a 5-frame window; quiet frames are ignored
+    const m = new Map(); let bk = -1, bc = 0;
+    for (let k = Math.max(0, b - 2); k <= Math.min(nf - 1, b + 2); k++) { if (en[k] < emax * 0.05) continue; const v = raw[k], n = (m.get(v) || 0) + 1; m.set(v, n); if (n > bc) { bc = n; bk = v; } }
+    lab[b] = bk;
+  }
+  const minRun = Math.max(2, Math.round(0.9 * fs / hop)), seq = [];
+  for (let b = 0; b < nf;) { let e = b; while (e < nf && lab[e] === lab[b]) e++; if (lab[b] >= 0 && e - b >= minRun && seq[seq.length - 1] !== lab[b]) seq.push(lab[b]); b = e; }
+  if (seq.length < 2) return seq.length ? { chords: [KEY_NAMES[seq[0] >> 1] + (seq[0] & 1 ? 'm' : '')], text: KEY_NAMES[seq[0] >> 1] + (seq[0] & 1 ? 'm' : ''), conf: 0.3, changes: 1 } : null;
+  let bestP = seq.length, bestA = 0;
+  for (let P = 2; P <= Math.min(16, seq.length >> 1); P++) { let ok = 0, tot = 0; for (let i = 0; i + P < seq.length; i++) { tot++; if (seq[i] === seq[i + P]) ok++; } const a = ok / Math.max(1, tot); if (a > bestA + 0.05) { bestA = a; bestP = P; } }
+  const prog = []; for (let k = 0; k < bestP; k++) { const m = new Map(); let bk = seq[k], bc = 0; for (let i = k; i < seq.length; i += bestP) { const n = (m.get(seq[i]) || 0) + 1; m.set(seq[i], n); if (n > bc) { bc = n; bk = seq[i]; } } prog.push(bk); }
+  const name = v => KEY_NAMES[v >> 1] + (v & 1 ? 'm' : '');
+  return { chords: prog.map(name), text: prog.map(name).join(' '), conf: bestP === seq.length ? 0.3 : bestA, changes: seq.length };
+}
 function keyLabel(k, scale) { return KEY_NAMES[k] + (scale === 'minor' ? ' minör' : ' majör'); }
 
-const MusicLib = { parseKeyName, parseLrc, lineAt, detectKey, detectBpm, keyLabel, KEY_NAMES };
+const MusicLib = { parseKeyName, parseLrc, lineAt, detectKey, detectBpm, detectChords, keyLabel, KEY_NAMES };
 if (typeof module !== 'undefined') module.exports = MusicLib;
+</script>
+<script>'use strict';
+/* Original backing-track generator: the user gives chords + tempo + style, this synthesises drums, bass and
+ * accompaniment from scratch (no samples, no melodies from existing songs). Deterministic for a given seed. */
+const BG_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+function bgRng(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+// "Fm Db Ab Eb" | "Am - F G7" ("-" or "%" repeats the previous bar). One chord per bar.
+function parseChords(str) {
+  const toks = String(str || '').replace(/[|,;]/g, ' ').trim().split(/\s+/).filter(Boolean), out = [];
+  for (const tok of toks) {
+    if (tok === '%' || tok === '-') { if (out.length) out.push(out[out.length - 1]); continue; }
+    const m = /^([A-Ga-g])([#b♯♭]?)(.*)$/.exec(tok); if (!m) return { error: tok, chords: [] };
+    const pc = (BG_PC[m[1].toUpperCase()] + (m[2] === '#' || m[2] === '♯' ? 1 : m[2] ? -1 : 0) + 12) % 12, q = m[3].split('/')[0];
+    if (!/^(m|min|maj|M|dim|aug|sus|add|\+|°|[0-9])*[0-9a-zA-Z+°]*$/.test(q)) return { error: tok, chords: [] };
+    const dim = /dim|°/.test(q), minor = dim || /^m(?!aj)/.test(q), third = /sus2/.test(q) ? 2 : /sus/.test(q) ? 5 : minor ? 3 : 4, fifth = dim ? 6 : /aug|\+/.test(q) ? 8 : 7;
+    const iv = [0, third, fifth]; if (/maj7|M7/.test(q)) iv.push(11); else if (/7|9/.test(q)) iv.push(dim ? 9 : 10);
+    out.push({ pc, iv, minor, name: tok });
+  }
+  return out.length ? { chords: out } : { error: '(boş)', chords: [] };
+}
+// a sensible default progression for a key: minor i-VI-III-VII, major I-V-vi-IV
+function suggestChords(key, scale) {
+  const N = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'], n = d => N[(key + d) % 12];
+  return scale === 'major' || scale === 'majPent' ? `${n(0)} ${n(7)} ${n(9)}m ${n(5)}` : `${n(0)}m ${n(8)} ${n(3)} ${n(10)}`;
+}
+
+// Key implied by a chord list: the major scale covering most chord tones (its relative minor if the first chord is that minor).
+function keyFromChords(chords) {
+  const MAJ = [0, 2, 4, 5, 7, 9, 11]; let best = -1, K = 0;
+  for (let k = 0; k < 12; k++) { let sc = 0; for (const ch of chords) for (const iv of ch.iv.slice(0, 3)) if (MAJ.includes((ch.pc + iv - k + 24) % 12)) sc++;
+    const f = chords[0]; if ((!f.minor && f.pc === k) || (f.minor && f.pc === (k + 9) % 12)) sc += 0.5;
+    if (sc > best) { best = sc; K = k; } }
+  const f = chords[0]; return f.minor && f.pc === (K + 9) % 12 ? { key: f.pc, scale: 'minor' } : { key: K, scale: 'major' };
+}
+
+const BG_STYLES = {
+  trap:      { label: 'Trap', bpm: 140, kick: ['x.....x...x.....', 'x..x......x...x.', 'x.......x.x.....'], snare: '........x.......', clap: 1, hat: 'x.x.x.x.x.x.x.x.', rolls: 0.14, bass: '808', chord: 'pad', swing: 0 },
+  drill:     { label: 'Drill', bpm: 142, kick: ['x..x......x..x..', 'x.....x...x..x..'], snare: '........x.....x.', clap: 0, hat: 'x..x..x.x..x..x.', rolls: 0.08, bass: '808', chord: 'pad', swing: 0 },
+  pop:       { label: 'Pop', bpm: 116, kick: ['x.......x.x.....', 'x.....x.x.......'], snare: '....x.......x...', clap: 1, hat: 'x.x.x.x.x.x.x.x.', rolls: 0, bass: 'eighth', chord: 'keys', swing: 0 },
+  rnb:       { label: 'R&B', bpm: 88, kick: ['x......x..x.....', 'x.........x..x..'], snare: '....x.......x...', clap: 0, hat: 'xxxxxxxxxxxxxxxx', rolls: 0.05, bass: 'sub', chord: 'pad', swing: 0.14 },
+  afro:      { label: 'Afrobeats', bpm: 104, kick: ['x..x..x...x..x..', 'x.....x.x.....x.'], snare: '..x...x...x..x..', rim: 1, hat: 'xxxxxxxxxxxxxxxx', shaker: 1, rolls: 0, bass: 'synco', chord: 'pluck', swing: 0.08 },
+  reggaeton: { label: 'Reggaeton', bpm: 95, kick: ['x...x...x...x...'], snare: '...x..x....x..x.', clap: 0, hat: 'x.x.x.x.x.x.x.x.', rolls: 0, bass: 'onkick', chord: 'pluck', swing: 0 },
+  house:     { label: 'House', bpm: 124, kick: ['x...x...x...x...'], snare: '....x.......x...', clap: 1, clapOnly: 1, hat: '..o...o...o...o.', rolls: 0, bass: 'offbeat', chord: 'stab', swing: 0 },
+  boombap:   { label: 'Boom bap', bpm: 90, kick: ['x......x.x......', 'x.........x.....'], snare: '....x.......x...', clap: 0, hat: 'x.x.x.x.x.x.x.x.', rolls: 0, bass: 'sub', chord: 'keys', swing: 0.17 },
+  ballad:    { label: 'Balad', bpm: 72, kick: ['x.........x.....'], snare: '........x.......', rim: 1, hat: '', rolls: 0, bass: 'sub', chord: 'arp', swing: 0 },
+};
+const BASS_PAT = { eighth: [0, 2, 4, 6, 8, 10, 12, 14], sub: [0, 10], synco: [0, 3, 6, 10], offbeat: [2, 6, 10, 14] };
+
+function bgTable(harm) { const n = 2048, t = new Float32Array(n + 1); let pk = 0; for (let i = 0; i <= n; i++) { let v = 0; for (let h = 0; h < harm.length; h++) v += harm[h] * Math.sin(2 * Math.PI * (h + 1) * i / n); t[i] = v; pk = Math.max(pk, Math.abs(v)); } for (let i = 0; i <= n; i++) t[i] /= pk; return t; }
+
+function renderBeat(opt) {
+  const sr = opt.sr || 48000, st = BG_STYLES[opt.style] || BG_STYLES.pop, bpm = Math.max(50, Math.min(220, opt.bpm || st.bpm)), rnd = bgRng((opt.seed | 0) || 1);
+  let chords = opt.chords.slice(); if (!chords.length) throw new Error('akor yok');
+  while (chords.length < 4) chords = chords.concat(opt.chords);
+  const bars = chords.length, step = 60 / bpm / 4 * sr, barLen = step * 16, len = Math.round(barLen * bars);
+  const mk = () => [new Float32Array(len), new Float32Array(len)];
+  const C = mk(), B = mk(), D1 = mk(), D2 = mk();
+  const stepPos = (bar, s) => bar * barLen + s * step + (s % 2 ? st.swing * step : 0);
+  // ---------- one-shot drums ----------
+  const shot = (dur, fn) => { const n = Math.round(dur * sr), a = new Float32Array(n); for (let i = 0; i < n; i++) a[i] = fn(i / sr, i); return a; };
+  let ph = 0; const kick = shot(0.4, (t) => { ph += 2 * Math.PI * (44 + 130 * Math.exp(-t * 38)) / sr; return Math.sin(ph) * Math.exp(-t * 8.5) * Math.min(1, t * 2000) + 0.25 * Math.exp(-t * 400) * (rnd() - 0.5); });
+  const hp = () => { let x1 = 0, x2 = 0; return v => { const y = v - 2 * x1 + x2; x2 = x1; x1 = v; return y * 0.3; }; };
+  let f1 = hp(); const snare = shot(0.25, (t) => 0.75 * f1(rnd() * 2 - 1) * Math.exp(-t * 24) + 0.5 * Math.sin(2 * Math.PI * 185 * t) * Math.exp(-t * 34));
+  f1 = hp(); const clap = shot(0.3, (t) => { const e = Math.exp(-((t % 0.011) * 260)) * (t < 0.033 ? 1 : 0) + (t >= 0.033 ? Math.exp(-(t - 0.033) * 26) : 0); return f1(rnd() * 2 - 1) * e * 0.9; });
+  f1 = hp(); let f2 = hp(); const hatC = shot(0.06, (t) => f2(f1(rnd() * 2 - 1)) * Math.exp(-t * 95) * 1.6);
+  f1 = hp(); f2 = hp(); const hatO = shot(0.32, (t) => f2(f1(rnd() * 2 - 1)) * Math.exp(-t * 13) * 1.4);
+  const rim = shot(0.06, (t) => (Math.sin(2 * Math.PI * 1700 * t) + 0.5 * Math.sin(2 * Math.PI * 820 * t)) * Math.exp(-t * 90));
+  const put = (buf, pos, smp, g, pan) => { const p0 = Math.round(pos), gl = g * (1 - Math.max(0, pan || 0)), gr = g * (1 + Math.min(0, pan || 0)); for (let i = 0; i < smp.length; i++) { const k = (p0 + i) % len; buf[0][k] += smp[i] * gl; buf[1][k] += smp[i] * gr; } };
+  // ---------- pitched voices ----------
+  const mf = m => 440 * Math.pow(2, (m - 69) / 12);
+  const T_PAD = bgTable([1, 0.5, 0.33, 0.2, 0.12, 0.06]), T_KEYS = bgTable([1, 0.45, 0.22, 0.12, 0.05]), T_PLUCK = bgTable([1, 0.7, 0.45, 0.3, 0.2, 0.12, 0.08]), T_SUB = bgTable([1, 0.12]);
+  const tone = (buf, pos, dur, freq, tab, amp, atk, decay, pan, detune) => {
+    const n = Math.round((dur + 0.12) * sr), p0 = Math.round(pos), rel = 0.1 * sr, dN = dur * sr, aN = Math.max(1, atk * sr); let p1 = 0, p2 = 0; const inc = freq * 2048 / sr, inc2 = inc * (1 + (detune || 0));
+    const gl = amp * (1 - Math.max(0, pan)), gr = amp * (1 + Math.min(0, pan));
+    for (let i = 0; i < n; i++) {
+      let e = Math.min(1, i / aN) * Math.exp(-decay * i / sr); if (i > dN) e *= Math.max(0, 1 - (i - dN) / rel);
+      const a = p1 | 0, b = p2 | 0, v = (tab[a] + (tab[a + 1] - tab[a]) * (p1 - a) + (detune ? tab[b] + (tab[b + 1] - tab[b]) * (p2 - b) : 0)) * e;
+      p1 += inc; if (p1 >= 2048) p1 -= 2048; p2 += inc2; if (p2 >= 2048) p2 -= 2048;
+      const k = (p0 + i) % len; buf[0][k] += v * gl; buf[1][k] += v * gr;
+    }
+  };
+  const bass808 = (pos, dur, freq, amp) => { const n = Math.round(dur * sr), p0 = Math.round(pos); let p = 0; for (let i = 0; i < n; i++) { const t = i / sr; p += 2 * Math.PI * freq * (1 + 0.5 * Math.exp(-t * 60)) / sr; const e = Math.min(1, i / 150) * Math.exp(-t * 2.2) * Math.min(1, (n - i) / 400); const v = Math.tanh(1.8 * Math.sin(p)) * e * amp, k = (p0 + i) % len; B[0][k] += v; B[1][k] += v; } };
+  // ---------- per-bar content ----------
+  const kp = st.kick[Math.floor(rnd() * st.kick.length)], kp2 = st.kick[Math.floor(rnd() * st.kick.length)];
+  let prevTop = 64;
+  for (let bar = 0; bar < bars; bar++) {
+    const ch = chords[bar], kpat = bar % 2 ? kp2 : kp, lastBar = bar === bars - 1;
+    // voicing: keep every chord tone inside one octave window that follows the previous chord (smooth voice leading)
+    const lo = prevTop - 9, notes = ch.iv.map(iv => { let m = 48 + ch.pc + iv; while (m < lo) m += 12; while (m >= lo + 12) m -= 12; return m; }).sort((a, b) => a - b);
+    prevTop = notes[notes.length - 1];
+    const bassM = 24 + ((ch.pc + 12 - 4) % 12) + 4;   // E1..D#2
+    // chords
+    if (st.chord === 'pad') notes.forEach((m, i) => tone(C, bar * barLen, barLen / sr * 0.98, mf(m), T_PAD, 0.085, 0.09, 0.15, (i % 2 ? 0.35 : -0.35), 0.004));
+    else if (st.chord === 'keys') for (const s of [0, 6, 10]) notes.forEach((m, i) => tone(C, stepPos(bar, s), step * 4 / sr, mf(m), T_KEYS, s ? 0.075 : 0.1, 0.004, 3.2, (i - 1) * 0.25, 0));
+    else if (st.chord === 'stab') for (const s of [0, 3, 6, 10, 13]) notes.forEach((m, i) => tone(C, stepPos(bar, s), step * 1.4 / sr, mf(m + 12), T_PLUCK, 0.06, 0.003, 9, (i - 1) * 0.3, 0.003));
+    else { const seq = st.chord === 'arp' ? [0, 1, 2, 1, 0, 1, 2, 1] : [0, 2, 1, 2, 0, 2, 1, 2]; for (let e = 0; e < 8; e++) { const m = notes[seq[e] % notes.length] + (st.chord === 'arp' ? 0 : 12); tone(C, stepPos(bar, e * 2), step * (st.chord === 'arp' ? 6 : 2.2) / sr, mf(m), st.chord === 'arp' ? T_KEYS : T_PLUCK, st.chord === 'arp' ? 0.1 : 0.075, 0.003, st.chord === 'arp' ? 2.2 : 7, e % 2 ? 0.3 : -0.3, 0); }
+      if (st.chord === 'arp') tone(C, bar * barLen, barLen / sr, mf(notes[0] - 12), T_PAD, 0.07, 0.05, 0.4, 0, 0.003); }
+    // bass
+    if (st.bass === '808' || st.bass === 'onkick') { const hits = []; for (let s = 0; s < 16; s++) if (kpat[s] === 'x') hits.push(s);
+      hits.forEach((s, i) => { const end = i + 1 < hits.length ? hits[i + 1] : 16, f = mf(bassM + (st.bass === '808' && i === hits.length - 1 && rnd() < 0.3 ? 12 : 0));
+        if (st.bass === '808') bass808(stepPos(bar, s), (end - s) * step / sr, f, 0.55); else tone(B, stepPos(bar, s), step * 2.5 / sr, f * 2, T_SUB, 0.45, 0.004, 4, 0, 0); }); }
+    else for (const s of BASS_PAT[st.bass]) tone(B, stepPos(bar, s), step * (st.bass === 'sub' ? 5.5 : 1.6) / sr, mf(bassM + 12), st.bass === 'sub' ? T_SUB : T_KEYS, st.bass === 'sub' ? 0.5 : 0.33, 0.005, st.bass === 'sub' ? 1.2 : 5, 0, 0);
+    // drums: D1 = main groove, D2 = same with a fill in its last bar
+    for (const [D, fill] of [[D1, false], [D2, lastBar]]) {
+      for (let s = 0; s < 16; s++) {
+        const pos = stepPos(bar, s), dropped = fill && s >= 8;
+        if (kpat[s] === 'x' && !dropped) put(D, pos, kick, 0.9, 0);
+        if (st.snare[s] === 'x') { if (!st.clapOnly) put(D, pos, st.rim ? rim : snare, st.rim ? 0.4 : 0.5, 0.1); if (st.clap) put(D, pos, clap, 0.38, -0.1); }
+        if (fill && s >= 12) put(D, pos, snare, 0.25 + 0.08 * (s - 12), 0.1);
+        const h = st.hat[s];
+        if (h === 'o') put(D, pos, hatO, 0.2, 0.2);
+        else if (h === 'x') { const g = (st.shaker ? 0.1 : 0.17) * (s % 4 === 0 ? 1 : 0.7 + 0.2 * rnd());
+          if (st.rolls && rnd() < st.rolls && s < 15) { const k = rnd() < 0.5 ? 3 : 4; for (let r = 0; r < k; r++) put(D, pos + r * step * 2 / k, hatC, g * (0.6 + 0.4 * r / k), 0.2); }
+          else put(D, pos, hatC, g, 0.2); }
+      }
+      if (st.hat && bar % 4 === 3 && !st.shaker && opt.style !== 'house') put(D, stepPos(bar, 14), hatO, 0.16, 0.2);
+    }
+  }
+  // ---------- arrangement: intro (chords) -> grooves (fill every 4th loop) -> outro ----------
+  const loopSec = len / sr, nLoops = Math.max(3, Math.round((opt.seconds || 150) / loopSec)), total = nLoops * len, L = new Float32Array(total), R = new Float32Array(total);
+  for (let k = 0; k < nLoops; k++) {
+    const intro = k === 0, outro = k === nLoops - 1 && nLoops >= 4, D = (k % 4 === 0 || k === nLoops - 2) ? D2 : D1, o = k * len;
+    for (let i = 0; i < len; i++) { let l = C[0][i], r = C[1][i]; if (!intro) { l += B[0][i]; r += B[1][i]; } if (!intro && !outro) { l += D[0][i]; r += D[1][i]; } L[o + i] = l; R[o + i] = r; }
+  }
+  for (let i = 0, n = Math.min(total, Math.round(0.02 * sr)); i < n; i++) { L[i] *= i / n; R[i] *= i / n; }
+  for (let i = 0, n = Math.min(total, Math.round(2 * sr)); i < n; i++) { const g = i / n; L[total - 1 - i] *= g; R[total - 1 - i] *= g; }
+  let pk = 1e-9; for (let i = 0; i < total; i++) { const a = Math.abs(L[i]), b = Math.abs(R[i]); if (a > pk) pk = a; if (b > pk) pk = b; }
+  const g = 0.89 / pk; for (let i = 0; i < total; i++) { L[i] *= g; R[i] *= g; }
+  return { L, R, sr, bars, bpm, seconds: total / sr, loops: nLoops };
+}
+const BeatGen = { parseChords, suggestChords, keyFromChords, renderBeat, STYLES: BG_STYLES };
+if (typeof module !== 'undefined') module.exports = BeatGen;
 </script>
 <script>
 'use strict';
@@ -1556,6 +1741,13 @@ async function sendBeatNative(L, R, n, sr) {
     if (c % 8 === 0) { kmsg(`Beat uygulamaya aktarılıyor… %${Math.round(100 * s / n)}`); await new Promise(r => setTimeout(r, 0)); }
   }
 }
+// make a stereo PCM pair the current backing track (web: AudioBuffer, app: sent to the native mixer)
+async function useBeat(L, R, n, sr, name, buf) {
+  if (AND) { await sendBeatNative(L, R, n, sr); K.buf = null; window.CanliNative.beatCtl(3, K.gain); }
+  else { if (!buf) { const AC = window.AudioContext || window.webkitAudioContext, c = ctx || (K.bctx = K.bctx || new AC()); buf = c.createBuffer(2, n, sr); buf.copyToChannel(L, 0); buf.copyToChannel(R, 1); } K.buf = buf; }
+  if (S.outDb < 4) setVal('outDb', 4);   // karaoke: vokali beat'in önüne al
+  K.len = n / sr; K.beatName = name; K.offset = 0; Beat.seek(0);
+}
 async function loadBeat(file) {
   try {
     Beat.pause(); kmsg('Beat çözülüyor…');
@@ -1564,9 +1756,7 @@ async function loadBeat(file) {
     const a0 = Math.max(0, Math.floor(n / 2 - 30 * sr)), a1 = Math.min(n, a0 + 60 * sr), mono = new Float32Array(a1 - a0);
     for (let i = a0; i < a1; i++) mono[i - a0] = (L[i] + R[i]) * 0.5;
     K.det = { k: MusicLib.detectKey(mono, sr), b: MusicLib.detectBpm(mono, sr) };
-    if (AND) { await sendBeatNative(L, R, n, sr); K.buf = null; window.CanliNative.beatCtl(3, K.gain); } else K.buf = buf;
-    if (S.outDb < 4) setVal('outDb', 4);   // karaoke: vokali beat'in önüne al
-    K.len = n / sr; K.beatName = file.name; K.offset = 0; Beat.seek(0);
+    await useBeat(L, R, n, sr, file.name, buf);
     setVal('key', K.det.k.key); setVal('scale', K.det.k.scale);
     if (K.det.b.bpm >= 60) setVal('bpm', Math.round(Math.min(200, K.det.b.bpm)));
     renderSong(); kmsg(`Beat yüklendi. Algılanan ton: ${MusicLib.keyLabel(K.det.k.key, K.det.k.scale)} — otomatik ayarlandı.`, 'ok');
@@ -1620,6 +1810,50 @@ $('#kGain').addEventListener('input', e => { Beat.setGain(+e.target.value / 100)
 try { K.trim = +(localStorage.getItem('canlitune.trim') || 0) || 0; } catch (e) {}
 $('#kTrim').value = K.trim; $('#trimTx').textContent = K.trim + ' ms';
 $('#kTrim').addEventListener('input', e => { K.trim = +e.target.value; $('#trimTx').textContent = K.trim + ' ms'; try { localStorage.setItem('canlitune.trim', K.trim); } catch (x) {} });
+
+// --- original beat generator ---
+{ const sel = $('#gStyle'); for (const k in BeatGen.STYLES) { const o = document.createElement('option'); o.value = k; o.textContent = BeatGen.STYLES[k].label; sel.appendChild(o); }
+  sel.onchange = () => setVal('bpm', BeatGen.STYLES[sel.value].bpm); }
+$('#gBpm').appendChild(slider('bpm', 'Tempo', 60, 200, 1, 'BPM'));
+let gSeed = 1, gBeats = [];
+try { gBeats = JSON.parse(localStorage.getItem('canlitune.beats') || '[]'); } catch (e) { gBeats = []; }
+function gRefresh() { $('#gSaved').innerHTML = '<option value="">Kayıtlı beatlerim (' + gBeats.length + ')</option>' + gBeats.map((b, i) => `<option value="${i}">${esc(b.name)}</option>`).join(''); }
+gRefresh();
+async function genBeat(newSeed) {
+  if (!$('#gChords').value.trim()) $('#gChords').value = BeatGen.suggestChords(S.key, S.scale);
+  const pc = BeatGen.parseChords($('#gChords').value);
+  if (pc.error) { kmsg(`Akor anlaşılmadı: “${pc.error}”. Örnek: Am F C G  ya da  F#m D A E7`, 'err'); return; }
+  if (newSeed) gSeed = 1 + Math.floor(Math.random() * 1e9);
+  Beat.pause(); kmsg('Beat üretiliyor…'); await new Promise(r => setTimeout(r, 30));
+  try {
+    const style = $('#gStyle').value, r = BeatGen.renderBeat({ chords: pc.chords, bpm: S.bpm, style, seconds: +$('#gLen').value * 60, seed: gSeed, sr: 48000 });
+    const kc = BeatGen.keyFromChords(pc.chords); setVal('key', kc.key); setVal('scale', kc.scale); K.det = null;
+    await useBeat(r.L, r.R, r.L.length, r.sr, `Üretilen beat — ${BeatGen.STYLES[style].label}, ${S.bpm} BPM`);
+    renderSong(); kmsg(`Beat hazır (${fmtT(r.seconds)}). Ton akorlardan ayarlandı: ${MusicLib.keyLabel(kc.key, kc.scale)}. ▶ Çal'a bas.`, 'ok');
+  } catch (e) { kmsg('Beat üretilemedi: ' + (e && e.message || e), 'err'); }
+}
+$('#bGen').onclick = () => genBeat(false);
+$('#bGenAgain').onclick = () => genBeat(true);
+$('#bGSug').onclick = () => { $('#gChords').value = BeatGen.suggestChords(S.key, S.scale); };
+$('#bGSave').onclick = () => { const ch = $('#gChords').value.trim(); if (!ch) { kmsg('Önce akor gir.', 'err'); return; }
+  gBeats.unshift({ name: `${K.song ? K.song.title + ' · ' : ''}${ch} · ${BeatGen.STYLES[$('#gStyle').value].label} ${S.bpm}`, style: $('#gStyle').value, chords: ch, bpm: S.bpm, seed: gSeed, len: $('#gLen').value });
+  gBeats = gBeats.slice(0, 60); try { localStorage.setItem('canlitune.beats', JSON.stringify(gBeats)); } catch (e) {} gRefresh(); kmsg('Beat ayarı kaydedildi (seçince aynısı yeniden üretilir).', 'ok'); };
+$('#gSaved').onchange = e => { const b = gBeats[+e.target.value]; if (e.target.value === '' || !b) return; $('#gStyle').value = b.style; $('#gChords').value = b.chords; $('#gLen').value = b.len; setVal('bpm', b.bpm); gSeed = b.seed; genBeat(false); };
+$('#bGDel').onclick = () => { const i = $('#gSaved').value; if (i === '') return; gBeats.splice(+i, 1); try { localStorage.setItem('canlitune.beats', JSON.stringify(gBeats)); } catch (e) {} gRefresh(); };
+$('#bGDet').onclick = () => $('#chordIn').click();
+$('#chordIn').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    kmsg('Dosya analiz ediliyor…');
+    const buf = await decodeFile(f, 22050), n = Math.min(buf.length, 240 * buf.sampleRate), L = buf.getChannelData(0), R = buf.numberOfChannels > 1 ? buf.getChannelData(1) : L, mono = new Float32Array(n);
+    for (let i = 0; i < n; i++) mono[i] = (L[i] + R[i]) * 0.5;
+    await new Promise(r => setTimeout(r, 30));
+    const dc = MusicLib.detectChords(mono, buf.sampleRate), tb = MusicLib.detectBpm(mono, buf.sampleRate);
+    if (!dc) { kmsg('Akor bulunamadı (dosya çok kısa ya da perdesiz).', 'err'); return; }
+    $('#gChords').value = dc.text; if (tb.bpm >= 60) setVal('bpm', Math.round(tb.bpm));
+    kmsg(`Tahmin edilen akorlar: ${dc.text}${tb.bpm ? ' · ~' + tb.bpm + ' BPM' : ''}. ${dc.conf > 0.75 ? 'Tekrar eden bir dizi bulundu' : 'Emin değilim'}; dizi doğru olsa da başlangıç akoru kaymış olabilir. Kontrol edip düzelt, sonra “Beat üret”.`, dc.conf > 0.75 ? 'ok' : '');
+  } catch (x) { kmsg('Dosya açılamadı: ' + (x && x.message || x), 'err'); }
+};
 
 // --- recording ---
 let recOn = false, webRec = null, webChunks = [], recDest = null, recT0 = 0, recPlaying = '', delArmRec = '';

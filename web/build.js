@@ -3,10 +3,11 @@
 const fs = require('fs'), path = require('path'), { execFileSync } = require('child_process');
 const dir = __dirname;
 const rd = f => fs.readFileSync(path.join(dir, f), 'utf8');
-const dsp = rd('dsp-core.js'), presets = rd('presets.json'), artists = rd('artists.json'), musiclib = rd('musiclib.js');
+const dsp = rd('dsp-core.js'), presets = rd('presets.json'), artists = rd('artists.json'), musiclib = rd('musiclib.js'), beatgen = rd('beatgen.js');
 JSON.parse(presets); JSON.parse(artists); // validate
 if (/<\/script/i.test(dsp + presets + artists + musiclib)) throw new Error('</script> inside inlined code');
 execFileSync(process.execPath, [path.join(dir, 'test', 'musiclib.test.js')]);
+execFileSync(process.execPath, [path.join(dir, 'test', 'beatgen.test.js')]);
 let tests = '';
 try {
   const out = execFileSync(process.execPath, ['--expose-gc', path.join(dir, 'test', 'dsp.test.js')], { encoding: 'utf8' });
@@ -21,7 +22,8 @@ const html = rd('template.html')
   .replace('__DSP__', () => dsp)
   .replace('__PRESETS__', () => presets)
   .replace('__ARTISTS__', () => artists)
-  .replace('__MUSICLIB__', () => musiclib);
+  .replace('__MUSICLIB__', () => musiclib)
+  .replace('__BEATGEN__', () => beatgen);
 fs.mkdirSync(path.join(dir, 'dist'), { recursive: true });
 fs.writeFileSync(path.join(dir, 'dist', 'index.html'), html);
 console.log('dist/index.html', (html.length / 1024).toFixed(1), 'KiB');
