@@ -30,7 +30,7 @@ targets:
     info:
       path: CanliTune/Info.plist
       properties:
-        CFBundleDisplayName: CanlıTune
+        CFBundleDisplayName: VoxPulse
         NSMicrophoneUsageDescription: CanlıTune sesini canlı olarak perde düzeltmesinden geçirmek için mikrofonu kullanır.
         UILaunchScreen: {}
         UIBackgroundModes: [audio]

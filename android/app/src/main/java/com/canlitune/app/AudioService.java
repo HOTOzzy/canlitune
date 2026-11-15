@@ -41,7 +41,7 @@ public class AudioService extends Service {
         PendingIntent stop = PendingIntent.getService(this, 1,
                 new Intent(this, AudioService.class).setAction(ACTION_STOP), immutable | PendingIntent.FLAG_UPDATE_CURRENT);
         Notification.Builder b = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(this, CHANNEL) : new Notification.Builder(this);
-        b.setContentTitle("CanlıTune açık")
+        b.setContentTitle("VoxPulse açık")
                 .setContentText("Mikrofon işleniyor; başka uygulama açıkken de çalışır.")
                 .setSmallIcon(R.drawable.ic_fg)
                 .setOngoing(true)

@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#0d0f14">
+<meta name="theme-color" content="#07060d">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>CanlıTune — Canlı Auto-Tune</title>
+<title>VoxPulse — Live Vocal Tuner</title>
 <style>
 :root{--bg:#0d0f14;--card:#161a22;--card2:#1d222c;--line:#2a303c;--tx:#e9edf3;--mut:#8b94a5;--acc:#ff6a3d;--acc2:#3dd6c6;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--r:14px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -85,10 +85,90 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px
 .rec audio{width:100%}
 #bRec.on{background:var(--bad);border-color:var(--bad);color:#fff}
 .hide{display:none!important}
+/* ===== VoxPulse stage theme: dark hall, neon magenta/violet/cyan light, gold for the target note ===== */
+:root{--bg:#07060d;--card:rgba(22,19,40,.74);--card2:rgba(38,33,66,.72);--line:rgba(140,120,255,.2);--tx:#f1eefc;--mut:#9a93b8;--acc:#ff2bd6;--acc2:#19e3ff;--gold:#ffc23d;--vio:#7a5cff;--r:18px;--lvl:0;
+  --grad:linear-gradient(100deg,#ff2bd6 0%,#7a5cff 52%,#19e3ff 100%)}
+html,body{background:var(--bg)}
+#stage{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:radial-gradient(120% 60% at 50% -10%,rgba(122,92,255,.24),transparent 60%),radial-gradient(90% 50% at 50% 112%,rgba(255,43,214,.2),transparent 62%)}
+#stage .beam{position:absolute;top:-22vh;width:46vw;height:130vh;transform-origin:50% 0;filter:blur(16px);opacity:calc(.1 + var(--lvl)*.26);will-change:transform}
+#stage .b1{left:2vw;background:linear-gradient(180deg,rgba(255,43,214,.9),transparent 72%);clip-path:polygon(46% 0,54% 0,100% 100%,0 100%);animation:sweepA 9s ease-in-out infinite alternate}
+#stage .b2{right:2vw;background:linear-gradient(180deg,rgba(25,227,255,.9),transparent 72%);clip-path:polygon(46% 0,54% 0,100% 100%,0 100%);animation:sweepB 11s ease-in-out infinite alternate}
+#stage .grid{position:absolute;left:-50%;right:-50%;bottom:-6vh;height:38vh;transform:perspective(320px) rotateX(64deg);transform-origin:50% 100%;opacity:.3;
+  background-image:linear-gradient(rgba(122,92,255,.75) 1px,transparent 1px),linear-gradient(90deg,rgba(122,92,255,.75) 1px,transparent 1px);background-size:44px 44px;
+  -webkit-mask-image:linear-gradient(transparent,#000 75%);mask-image:linear-gradient(transparent,#000 75%);animation:gridMove 2.4s linear infinite}
+@keyframes sweepA{from{transform:rotate(-16deg)}to{transform:rotate(12deg)}}
+@keyframes sweepB{from{transform:rotate(15deg)}to{transform:rotate(-13deg)}}
+@keyframes gridMove{from{background-position:0 0}to{background-position:0 44px}}
+header,main{position:relative;z-index:1}
+header{padding:14px 16px 8px}
+header h1{font-size:20px;font-weight:800;letter-spacing:3.5px;display:flex;align-items:center;gap:9px}
+header h1 b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.eq{display:inline-flex;align-items:flex-end;gap:3px;height:20px}
+.eq i{width:4px;height:100%;border-radius:2px;background:var(--grad);transform-origin:50% 100%;transform:scaleY(.25);transition:transform .09s linear}
+#stateDot{background:var(--card2);border:1px solid var(--line);border-radius:20px;padding:5px 11px;letter-spacing:.4px}
+#stateDot.on{border-color:rgba(25,227,255,.6);color:var(--tx);box-shadow:0 0 14px rgba(25,227,255,.3)}
+#stateDot.on i{background:var(--acc2);box-shadow:0 0 10px var(--acc2);animation:blink 1.6s ease-in-out infinite}
+@keyframes blink{50%{opacity:.35}}
+.card{backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.05)}
+.card h2{letter-spacing:2.2px;font-size:11.5px;color:#b9b1dc;display:flex;align-items:center;gap:8px}
+.card h2:before{content:"";width:16px;height:3px;border-radius:2px;background:var(--grad)}
+button{border-radius:14px;transition:transform .12s ease,box-shadow .2s ease,background .2s ease,border-color .2s ease;position:relative;overflow:hidden}
+button:active{transform:scale(.96)}
+button.pri{background:var(--grad);border-color:transparent;color:#0b0716;letter-spacing:.3px;box-shadow:0 6px 22px rgba(255,43,214,.35)}
+button.sec{background:rgba(25,227,255,.12);border-color:rgba(25,227,255,.45);color:#c9f7ff}
+button.on{background:var(--acc2);border-color:var(--acc2);color:#04232a;box-shadow:0 0 18px rgba(25,227,255,.45)}
+button .rip{position:absolute;border-radius:50%;background:rgba(255,255,255,.35);transform:scale(0);animation:rip .5s ease-out forwards;pointer-events:none}
+@keyframes rip{to{transform:scale(2.6);opacity:0}}
+select,input[type=text],textarea{border-radius:12px}
+select:focus,input[type=text]:focus,textarea:focus{outline:none;border-color:var(--acc2);box-shadow:0 0 0 3px rgba(25,227,255,.18)}
+.note .big{font-size:58px;letter-spacing:-1px;text-shadow:0 0 calc(10px + var(--lvl)*26px) rgba(25,227,255,.55)}
+.note .tgt{color:var(--gold);text-shadow:0 0 calc(12px + var(--lvl)*30px) rgba(255,194,61,.6)}
+.note .big.pop{animation:pop .22s ease-out}
+@keyframes pop{0%{transform:scale(1.22)}100%{transform:scale(1)}}
+.note .arrow{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.meter{height:9px}.meter>i{background:linear-gradient(90deg,#19e3ff,#7a5cff 55%,#ff2bd6 85%,#ff5a5a);box-shadow:0 0 12px rgba(122,92,255,.6);transition:width .06s linear}
+.cent>i{background:var(--grad);box-shadow:0 0 12px rgba(255,43,214,.5)}
+canvas{background:rgba(10,8,22,.7);border:1px solid var(--line)}
+.ctl label em{color:var(--acc2)}
+input[type=range]::-webkit-slider-runnable-track{height:6px;background:linear-gradient(90deg,rgba(255,43,214,.55),rgba(25,227,255,.55))}
+input[type=range]::-moz-range-track{height:6px;background:linear-gradient(90deg,rgba(255,43,214,.55),rgba(25,227,255,.55))}
+input[type=range]::-webkit-slider-thumb{width:26px;height:26px;margin-top:-10px;background:#fff;border:0;box-shadow:0 0 0 4px rgba(255,43,214,.35),0 0 16px rgba(255,43,214,.7)}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;background:#fff;border:0;box-shadow:0 0 0 4px rgba(255,43,214,.35),0 0 16px rgba(255,43,214,.7)}
+.chips button.blk{background:rgba(8,6,18,.8);color:var(--mut)}
+nav{background:rgba(9,7,20,.82);border-top:1px solid var(--line);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);z-index:6}
+nav .ind{position:absolute;top:0;left:0;height:3px;border-radius:0 0 4px 4px;background:var(--grad);box-shadow:0 0 16px rgba(255,43,214,.8);transition:transform .32s cubic-bezier(.3,1.3,.5,1),width .32s ease;pointer-events:none}
+nav button{transition:color .2s ease,transform .12s ease;overflow:visible;letter-spacing:.3px}
+nav button b{transition:transform .28s cubic-bezier(.3,1.5,.5,1),text-shadow .2s ease}
+nav button.act{color:#fff}
+nav button.act b{transform:translateY(-3px) scale(1.18);text-shadow:0 0 14px rgba(255,43,214,.9)}
+section.tab.act{animation:tabIn .28s cubic-bezier(.2,.8,.2,1) both}
+section.tab.act.fromL{animation-name:tabInL}
+@keyframes tabIn{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+@keyframes tabInL{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
+section.tab.act>.card,section.tab.act>#groups>.card{animation:rise .36s cubic-bezier(.2,.8,.2,1) both}
+section.tab.act>.card:nth-child(2){animation-delay:.04s}section.tab.act>.card:nth-child(3){animation-delay:.08s}section.tab.act>.card:nth-child(4){animation-delay:.12s}section.tab.act>.card:nth-child(n+5){animation-delay:.16s}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.msg{backdrop-filter:blur(10px);animation:rise .25s ease both}
+.art{background:var(--card);backdrop-filter:blur(10px);border-radius:16px;transition:border-color .2s ease,box-shadow .2s ease}
+.art:active{border-color:rgba(255,43,214,.5)}
+.art h3{letter-spacing:.2px}.art summary{color:var(--acc2)}
+.pills span{background:rgba(8,6,18,.7)}
+.gchips button.on{background:var(--grad);border-color:transparent;color:#0b0716;box-shadow:0 0 16px rgba(255,43,214,.4)}
+.lyr{background:rgba(10,8,22,.7);border:1px solid var(--line)}
+.lyr div.cur{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 10px rgba(255,43,214,.45))}
+#activePreset{color:var(--gold)}
+#activePreset.flash{animation:flash .7s ease}
+@keyframes flash{0%{text-shadow:0 0 18px var(--gold);transform:scale(1.06)}100%{text-shadow:none;transform:none}}
+#bRec.on{box-shadow:0 0 20px rgba(248,113,113,.6);animation:blink 1.2s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}#stage .beam{opacity:.12}}
+.gchips button{flex:none}
+#stateDot{max-width:46vw}#stateTx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hide{display:none!important}
 </style>
 </head>
 <body>
-<header><h1>Canlı<b>Tune</b></h1><div id="stateDot"><i></i><span id="stateTx">kapalı</span></div></header>
+<div id="stage" aria-hidden="true"><i class="beam b1"></i><i class="beam b2"></i><i class="grid"></i></div>
+<header><h1><span class="eq" id="eq"><i></i><i></i><i></i><i></i></span>VOX<b>PULSE</b></h1><div id="stateDot"><i></i><span id="stateTx">kapalı</span></div></header>
 <main>
 <!-- ===================== CANLI ===================== -->
 <section class="tab act" id="t-live">
@@ -153,10 +233,10 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px
 <section class="tab" id="t-kar">
   <div class="msg" id="kMsg"></div>
   <div class="card nat hide"><h2>Başka uygulamayla söyle (YouTube vb.)</h2>
-    <p class="small" style="margin:0 0 8px">Dosya indirmene gerek yok: CanlıTune arka planda çalışmaya devam eder, sesin diğer uygulamanın sesiyle birlikte çıkar.</p>
+    <p class="small" style="margin:0 0 8px">Dosya indirmene gerek yok: VoxPulse arka planda çalışmaya devam eder, sesin diğer uygulamanın sesiyle birlikte çıkar.</p>
     <ol class="small" style="margin:0 0 10px;padding-left:18px"><li>Kulaklığı tak ve aşağıdaki düğmeye bas.</li><li>YouTube'da şarkının karaoke sürümünü aç.</li><li>Söyle. Kapatmak için bildirimdeki “Durdur”a bas ya da uygulamaya dön.</li></ol>
     <button class="pri" style="width:100%" id="bBg">▶ Arka plan modunu başlat (vokal öne)</button>
-    <p class="small" style="margin:8px 0 0">Bu düğme motoru başlatır ve vokalini yükseltir (+10 dB, daha sıkı kompresör). Diğer uygulamanın sesini CanlıTune kısamaz; dengeyi “Vokal seviyesi” kaydırıcısıyla kur. Hoparlörden dinlersen mikrofon müziği de duyar ve Auto-Tune şaşırır: kulaklık kullan.</p>
+    <p class="small" style="margin:8px 0 0">Bu düğme motoru başlatır ve vokalini yükseltir (+10 dB, daha sıkı kompresör). Diğer uygulamanın sesini VoxPulse kısamaz; dengeyi “Vokal seviyesi” kaydırıcısıyla kur. Hoparlörden dinlersen mikrofon müziği de duyar ve Auto-Tune şaşırır: kulaklık kullan.</p>
   </div>
   <div class="card"><h2>Şarkı</h2>
     <div id="kSong" class="small">Şarkı seçilmedi. “Sanatçılar” sekmesinden bir şarkıya dokun ya da doğrudan kendi dosyalarını yükle.</div>
@@ -233,7 +313,7 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px
   <div class="card">__INFO__</div>
 </section>
 </main>
-<nav>
+<nav><i class="ind" id="navInd"></i>
   <button class="act" data-t="t-live"><b>◉</b>Canlı</button>
   <button data-t="t-kar"><b>♪</b>Karaoke</button>
   <button data-t="t-art"><b>★</b>Sanatçılar</button>
@@ -382,11 +462,21 @@ function drawChips() {
 drawChips();
 
 /* ---------- tabs ---------- */
-document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
-  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('act', x === b));
-  document.querySelectorAll('section.tab').forEach(s => s.classList.toggle('act', s.id === b.dataset.t));
+const navBtns = Array.from(document.querySelectorAll('nav button')); let tabIdx = 0;
+function moveInd() { const b = navBtns[tabIdx], ind = $('#navInd'); if (!b) return; ind.style.width = (b.offsetWidth * 0.5) + 'px'; ind.style.transform = `translateX(${b.offsetLeft + b.offsetWidth * 0.25}px)`; }
+window.addEventListener('resize', moveInd); setTimeout(moveInd, 60);
+navBtns.forEach((b, i) => b.onclick = () => {
+  const fromL = i < tabIdx; tabIdx = i; moveInd();
+  navBtns.forEach(x => x.classList.toggle('act', x === b));
+  document.querySelectorAll('section.tab').forEach(s => { const on = s.id === b.dataset.t; s.classList.toggle('act', on); s.classList.toggle('fromL', on && fromL); });
   window.scrollTo(0, 0);
 });
+document.addEventListener('pointerdown', e => {
+  const b = e.target.closest('button'); if (!b || b.closest('nav')) return;
+  const r = b.getBoundingClientRect(), d = Math.max(r.width, r.height), i = document.createElement('i');
+  i.className = 'rip'; i.style.width = i.style.height = d + 'px'; i.style.left = (e.clientX - r.left - d / 2) + 'px'; i.style.top = (e.clientY - r.top - d / 2) + 'px';
+  b.appendChild(i); setTimeout(() => i.remove(), 520);
+}, { passive: true });
 function msg(t, kind, el) { const m = el || $('#msg'); m.textContent = t; m.className = 'msg show' + (kind ? ' ' + kind : ''); if (!t) m.className = 'msg'; }
 
 /* ---------- audio ---------- */
@@ -437,7 +527,7 @@ async function startMic() {
   if (Native) {
     const r = await Native.start();
     if (!r.ok) {
-      if (r.err === 'perm') { msg('Mikrofon izni isteniyor…'); window.__canliPerm = g => g ? startMic() : msg('Mikrofon izni verilmedi. Ayarlar → Uygulamalar → CanlıTune → İzinler.', 'err'); return; }
+      if (r.err === 'perm') { msg('Mikrofon izni isteniyor…'); window.__canliPerm = g => g ? startMic() : msg('Mikrofon izni verilmedi. Ayarlar → Uygulamalar → VoxPulse → İzinler.', 'err'); return; }
       msg('Yerel ses motoru başlatılamadı: ' + r.err, 'err'); return;
     }
     nativeActive = true; modeName = Native.name; inLat = r.inLat || 0; Native.params(nativeParams()); started(); return;
@@ -485,7 +575,7 @@ async function stop() {
   if (ctx) { try { await ctx.close(); } catch (e) {} }
   ctx = node = srcNode = stream = null; telem = null; sabView = null;
   try { if (wakeLock) await wakeLock.release(); } catch (e) {} wakeLock = null;
-  $('#stateDot').classList.remove('on'); $('#stateTx').textContent = 'kapalı'; $('#bStop').classList.add('hide');
+  $('#stateDot').classList.remove('on'); $('#stateTx').textContent = 'kapalı'; lvlS = 0; document.documentElement.style.setProperty('--lvl', '0'); eqBars.forEach(e => { e.style.transform = ''; }); $('#bStop').classList.add('hide');
 }
 $('#bMic').onclick = startMic;
 $('#bFile').onclick = () => $('#fileIn').click();
@@ -505,7 +595,8 @@ const H = 300, hIn = new Float32Array(H).fill(-1), hTg = new Float32Array(H).fil
 const cv = $('#graph'), g2 = cv.getContext('2d');
 const db = v => v > 1e-6 ? 20 * Math.log10(v) : -120;
 const nn = m => m < 0 ? '–' : NOTES[((Math.round(m) % 12) + 12) % 12] + (Math.floor(Math.round(m) / 12) - 1);
-let lastSeen = 0, routeAt = 0, route = '', lastT = null;
+let lastSeen = 0, routeAt = 0, route = '', lastT = null, lvlS = 0;
+const eqBars = Array.from(document.querySelectorAll('#eq i'));
 function frame() {
   requestAnimationFrame(frame);
   const t = nativeActive ? Native.poll() : (sabView || telem); if (!t || !running) return;
@@ -514,7 +605,13 @@ function frame() {
   $('#mIn').style.width = Math.max(0, Math.min(100, (inD + 60) / 60 * 100)) + '%'; $('#mInTx').textContent = inD < -99 ? '–∞' : inD.toFixed(0) + ' dB';
   $('#mOut').style.width = Math.max(0, Math.min(100, (outD + 60) / 60 * 100)) + '%'; $('#mOutTx').textContent = outD < -99 ? '–∞' : outD.toFixed(0) + ' dB';
   const voiced = t[4] >= 0;
-  $('#nIn').textContent = nn(t[4]); $('#nTg').textContent = nn(t[5]);
+  { const a = nn(t[4]), b = nn(t[5]), ei = $('#nIn'), et = $('#nTg');
+    if (ei.textContent !== a) ei.textContent = a;
+    if (et.textContent !== b) { et.textContent = b; if (b !== '–') { et.classList.remove('pop'); void et.offsetWidth; et.classList.add('pop'); } } }
+  // stage lights and the logo equaliser follow the input level
+  lvlS += (Math.max(0, Math.min(1, (inD + 48) / 42)) - lvlS) * 0.25;
+  document.documentElement.style.setProperty('--lvl', lvlS.toFixed(3));
+  for (let k = 0; k < 4; k++) eqBars[k].style.transform = `scaleY(${(0.2 + lvlS * (0.55 + 0.45 * Math.abs(Math.sin(now0 / (90 + k * 37) + k)))).toFixed(3)})`;
   const devC = voiced ? Math.round((t[4] - Math.round(t[4])) * 100) : 0;
   $('#nSub').textContent = voiced ? `${t[2].toFixed(1)} Hz · ${devC >= 0 ? '+' : ''}${devC} cent · güven ${(t[3] * 100).toFixed(0)}%` : 'ses yok / perdesiz';
   const c = Math.max(-100, Math.min(100, t[6])), bar = $('#centBar');
@@ -557,14 +654,14 @@ function drawGraph() {
   const span = 7, y = m => Hh / 2 - (m - center) / span * (Hh / 2);
   const mask = maskAbs(); g2.font = '20px system-ui';
   for (let m = Math.floor(center - span); m <= Math.ceil(center + span); m++) {
-    const on = mask[((m % 12) + 12) % 12]; g2.strokeStyle = on ? '#343c4b' : '#1c2028'; g2.lineWidth = on ? 2 : 1;
+    const on = mask[((m % 12) + 12) % 12]; g2.strokeStyle = on ? 'rgba(140,120,255,.38)' : 'rgba(140,120,255,.1)'; g2.lineWidth = on ? 2 : 1;
     g2.beginPath(); g2.moveTo(56, y(m)); g2.lineTo(W, y(m)); g2.stroke();
-    if (on) { g2.fillStyle = '#6b7487'; g2.fillText(nn(m), 4, y(m) + 7); }
+    if (on) { g2.fillStyle = '#9a93b8'; g2.fillText(nn(m), 4, y(m) + 7); }
   }
   const line = (arr, col, w) => { g2.strokeStyle = col; g2.lineWidth = w; g2.beginPath(); let pen = false;
     for (let k = 0; k < H; k++) { const v = arr[(hI + k) % H], x = 56 + k / (H - 1) * (W - 56);
       if (v < 0) { pen = false; continue; } if (!pen) { g2.moveTo(x, y(v)); pen = true; } else g2.lineTo(x, y(v)); } g2.stroke(); };
-  line(hTg, '#ff6a3d', 5); line(hIn, '#3dd6c6', 3);
+  g2.shadowBlur = 14; g2.shadowColor = '#ffc23d'; line(hTg, '#ffc23d', 5); g2.shadowColor = '#19e3ff'; line(hIn, '#19e3ff', 3); g2.shadowBlur = 0;
 }
 requestAnimationFrame(frame);
 
@@ -578,7 +675,7 @@ function applyPreset(p, name, keepKey) {
   for (const k of ['bodyDb', 'presDb', 'airDb', 'lpfHz']) if (!(k in p)) S[k] = DEF[k];   // presets without tone settings must not inherit the previous one's
   for (const k of PRESET_KEYS) if (k in p && !(keepKey && k === 'key')) S[k] = Array.isArray(p[k]) ? p[k].slice() : p[k];
   for (const k in reg) reg[k].forEach(f => f());
-  drawChips(); send(); activePreset = name; $('#activePreset').textContent = 'Preset: ' + name;
+  drawChips(); send(); activePreset = name; { const ap = $('#activePreset'); ap.textContent = 'Preset: ' + name; ap.classList.remove('flash'); void ap.offsetWidth; ap.classList.add('flash'); }
 }
 function refreshList() {
   const l = $('#pList'); l.innerHTML = '';
@@ -833,7 +930,7 @@ async function recToggle() {
       webChunks = []; const mr = webRec = new MediaRecorder(recDest.stream);
       mr.ondataavailable = e => { if (e.data && e.data.size) webChunks.push(e.data); };
       mr.onstop = () => { const blob = new Blob(webChunks, { type: mr.mimeType || 'audio/webm' });
-        webRecs.unshift({ name: 'CanliTune_' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + (/mp4/.test(blob.type) ? '.m4a' : '.webm'), url: URL.createObjectURL(blob), blob, kb: blob.size >> 10 }); renderRecs(); };
+        webRecs.unshift({ name: 'VoxPulse_' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + (/mp4/.test(blob.type) ? '.m4a' : '.webm'), url: URL.createObjectURL(blob), blob, kb: blob.size >> 10 }); renderRecs(); };
       mr.start(); recT0 = performance.now();
     }
     recOn = true; kmsg('Kayıt başladı.');
@@ -849,7 +946,7 @@ window.__canliStopped = () => { if (nativeActive) { nativeActive = false; stop()
 if ($('#bBg')) $('#bBg').onclick = async () => {
   if (!nativeActive) { await startMic(); if (!nativeActive) { kmsg('Ses motoru başlatılamadı (izin gerekiyorsa verip tekrar bas).', 'err'); return; } }
   setVal('outDb', 10); if (S.compRatio < 4) setVal('compRatio', 4); if (S.compThr > -24) setVal('compThr', -24);
-  kmsg('Arka plan modu açık. Şimdi YouTube’a geç; CanlıTune çalışmaya devam eder.', 'ok');
+  kmsg('Arka plan modu açık. Şimdi YouTube’a geç; VoxPulse çalışmaya devam eder.', 'ok');
 };
 window.__canliRecDone = name => { kmsg(name ? `Kaydedildi: ${name}` : 'Kayıt çok kısaydı, silindi.', name ? 'ok' : ''); renderRecs(); };
 window.__canliPlayDone = () => { recPlaying = ''; renderRecs(); };

@@ -56,18 +56,18 @@ jobs:
         working-directory: android
         run: gradle --no-daemon assembleRelease
       - name: Rename
-        run: cp android/app/build/outputs/apk/release/app-release.apk CanliTune.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk VoxPulse.apk
       - uses: actions/upload-artifact@v4
-        with: { name: CanliTune-android, path: CanliTune.apk }
+        with: { name: VoxPulse-android, path: VoxPulse.apk }
       - name: Publish as GitHub release (direct phone download)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: CanlıTune 1.0.${{ github.run_number }}
+          name: VoxPulse 1.0.${{ github.run_number }}
           make_latest: true
-          files: CanliTune.apk
+          files: VoxPulse.apk
           body: |
-            Android: CanliTune.apk dosyasını telefonda indir → "Bilinmeyen kaynaklardan yükleme"ye izin ver → kur.
+            Android: VoxPulse.apk dosyasını telefonda indir → "Bilinmeyen kaynaklardan yükleme"ye izin ver → kur.
             Kablolu (3.5 mm / USB-C) kulaklık önerilir; Bluetooth tek başına ~150–300 ms gecikme ekler.
 
   pages:

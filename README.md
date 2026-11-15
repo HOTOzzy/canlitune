@@ -1,4 +1,4 @@
-# CanlıTune — canlı Auto-Tune (web + Android + iPhone)
+# VoxPulse (eski adıyla CanlıTune) — canlı Auto-Tune (web + Android + iPhone)
 
 Canlı mikrofon için perde düzeltme: YIN perde tespiti, gam kuantalayıcı (Retune / Humanize / Flex-Tune / doğal vibrato),
 iki perde kaydırıcı (ultra düşük gecikmeli periyot-senkron ekleme ve formant koruyan TD-PSOLA), ikinci ses (double/oktav),

@@ -47,11 +47,11 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        getWindow().setStatusBarColor(Color.parseColor("#0d0f14"));
-        getWindow().setNavigationBarColor(Color.parseColor("#0d0f14"));
+        getWindow().setStatusBarColor(Color.parseColor("#07060d"));
+        getWindow().setNavigationBarColor(Color.parseColor("#07060d"));
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         web = new WebView(this);
-        web.setBackgroundColor(Color.parseColor("#0d0f14"));
+        web.setBackgroundColor(Color.parseColor("#07060d"));
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
@@ -294,7 +294,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public boolean recStart() {
             String stamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(new Date());
-            recWav = new File(recDir(), "CanliTune_" + stamp + ".wav");
+            recWav = new File(recDir(), "VoxPulse_" + stamp + ".wav");
             return NativeAudio.nRecStart(recWav.getAbsolutePath());
         }
 
